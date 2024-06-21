@@ -1,0 +1,52 @@
+ta404:
+  modules:
+    captcha:
+      number-check-code-level: 5
+      user-check-code: false
+      # 验证码存储方式 可选 inMemory/redis
+      cache-type: inMemory
+      # 验证码方式 可选 simple/clickWord/blockPuzzle
+      captcha-type: "simple"
+      password-validation-error-number: 1
+      cacheNumber: 10000
+      timingClear: 180
+  component:
+    org:
+      multiple-org: 1
+      multiple-role : true
+    security:
+      db-encoder-type: BCrypt-Sm3
+      maximum-sessions: -1
+      passwordPolicyList:
+        - errorNum: 5
+          lockTime: 10
+          timeInterval: 30
+      permit-urls:
+        - xxx
+      login-permit-urls:
+        - xxx
+      # 是否加密用户名,开启会在登录或登录页修改密码时对用户名加密, 默认false
+      encrypt-login-id: false
+      # 密码等级,从1到4,默认等级为3
+      #      4种字符类型：0-9，a-z，A-Z，特殊字符
+      #      难度等级1:6位纯数字
+      #      难度等级2:4选2，8-20位
+      #      难度等级3:4选3，8-20位
+      #      难度等级4:4选4，8-20位
+      password-level: 3
+  limit:
+    enable: false
+    repeat-extra-url:
+      - /codetable/getCode
+    rate-enable: false
+    rates:
+      - url: /indexRestService/defaultOpen
+        rate: 1.0
+      - url: /indexRestService/rate1
+        rate: 2.0
+      - url: /indexRestService/rate2
+        max-count: 2
+        timeout: 2000
+context:
+  listener:
+    classes: com.yinhai.ta404.autoconfigure.AutoConfigure

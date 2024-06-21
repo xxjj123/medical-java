@@ -1,0 +1,44 @@
+ta404:
+  dynamic:
+    datasource:
+      datasource-list: ta404ds
+      type: druid
+      druid:
+        ta404ds:
+          url: ${DEFAULT_DB_URL:jdbc:mysql://127.0.0.1:3306/5.3.2_release_test?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai}
+          username: ${DEFAULT_DB_USERNAME:myusername}
+          password: ${DEFAULT_DB_PASSWORD:mypassword}
+          #          driver-class-name: org.postgresql.Driver #可不写
+          # 初始化连接数
+          initial-size: 3
+          # 连接池最大连接数量
+          max-active: 10
+          # 获取链接超时时间 （毫秒）
+          max-wait: 60000
+        aaa:
+          url: ${DEFAULT_DB_URL:jdbc:mysql://127.0.0.1:3306/ta404_components?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai}
+          username: ${DEFAULT_DB_USERNAME:myusername}
+          password: ${DEFAULT_DB_PASSWORD:mypassword}
+          #          driver-class-name: org.postgresql.Driver #可不写
+          # 初始化连接数
+          initial-size: 3
+          # 连接池最大连接数量
+          max-active: 10
+          # 获取链接超时时间 （毫秒）
+          max-wait: 60000
+      mybatis:
+        mapper-locations:
+          - classpath*:mapper/read/*.xml
+          - classpath*:mapper/write/*.xml
+          - classpath*:mapper/extend/*.xml
+          - classpath*:mapper/**.xml
+        base-packages:
+          - com.yinhai.ta404.module.mybatis.mapper
+          - com.yinhai.ta404.module.**.mapper.read
+          - com.yinhai.ta404.module.**.mapper.write
+          - com.yinhai.ta404.component.**.mapper.read
+          - com.yinhai.ta404.component.**.mapper.write
+          - com.yinhai.ta404.domain.core.orguserauth.**.mapper.read
+          - com.yinhai.ta404.domain.core.orguserauth.**.mapper.write
+          - com.yinhai.ta404.domain.support.applyexamine.**.mapper.read
+          - com.yinhai.ta404.domain.support.applyexamine.**.mapper.write

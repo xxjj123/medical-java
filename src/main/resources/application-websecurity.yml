@@ -1,0 +1,157 @@
+ta404:
+  modules:
+    crypto-algorithm:
+      # 算法提供者：default默认软件BC实现算法     fmjce渔翁加密机硬件加密
+      provider: default
+    security-session:
+      store: inMemory  # inMemory redis
+    websecurity:
+      # 数据请求设置
+      data-req:
+        # 请求数据级别,encrypt:加密级别,none:直接请求,sign:签名级别,为none的时候,就不需要传递Client-ID头了
+        req-data-level: encrypt
+        # 私钥路径信息,默认/sm2/pri.key.pem,如果使用rsa,可使用/rsa/pri.key.pem
+        private-key-path: /sm2/pri.key.pem
+        # 公钥路径信息,默认/sm2/pub.key.pem,如果使用rsa,可使用/rsa/pub.key.pem
+        public-key-path: /sm2/pub.key.pem
+        # url请求在多长时间内有效,默认1分钟,可以自行配置,如30s,1m,1h等,最好不要设置太长,避免重放攻击
+        req-timeout: 1m
+        # 非对称算法,默认sm2,可选sm2,rsa
+        asymmetric-algo: sm2
+        # 哈希算法,默认sm3,可选sm3,md5
+        data-hash-algo: sm3
+        # 对称算法,默认sm4,可选sm4,aes
+        data-symmetric-algo: sm4
+        # 请求白名单,默认/template/**,/indexRestService/getToken,/indexRestService/getCryptoInfo,
+        # /loginRestService/getConfig,/favicon.ico,/login,/login,/indexRestService/defaultOpen
+        # 新增会追加,必须以/开头,否则无法识别,码表/codetable/getCode根据情况进行设置,可能会影响性能
+        req-url-white-list:
+          - /codetable/getCode
+        # 随机字符串长度,不能小于16,最好是8的整数倍,默认16
+        random-key-length: 16
+      # xss拦截器,对xss攻击进行处理
+      xss-filter:
+        # 是否启用xss,默认为true
+        enable: true
+        # 无需转义的字符，配置时写需要跳过的符号即可，<>为js脚本关键字符最好不要配置跳过。默认值：[]{}/-+:;@*.#=?%
+        skip-chars: "[]{}/-+:;@*.#=?%！!"
+        # 只转义请求url中的xss关键字,如果匹配就不会检查白名单
+        only-transfer-xss-keyword-url:
+        # 当默认的xss过滤无法完成时,可以通过扩展的pattern,进行添加,然后补充,该配置只对转义请求的xss关键字有效
+        extra-xss-pattern: "(document\\.)*|(window\\.)"
+        # 配置整个请求的参数都不转义，以上下文后url开始匹配，可用**通配，
+        xss-white-url-list:
+          - /template/**
+        # xxp:X-XSS-Protection 当检测到跨站脚本攻击 (XSS)时，浏览器将采取的行为
+        # 0: 禁止XSS过滤。
+        # 1: 启用XSS过滤（通常浏览器是默认的）。 如果检测到跨站脚本攻击，浏览器将清除页面删除不安全的部分。
+        # 1;mode=block  :启用XSS过滤。 如果检测到攻击，浏览器将不会清除页面，而是阻止页面加载。
+        # 1; report=<reporting-URI>  (Chromium only),启用XSS过滤。 如果检测到跨站脚本攻击，浏览器将清除页面并使用CSP report-uri指令的功能发送违规报告。
+        #  默认值：1
+        xxp: 1
+      # sql过滤器,对常见的sql字段进行过滤
+      sql-filter:
+        # 是否开启sql过滤,默认false
+        enable: true
+        # 以下的为默认的sql正则匹配,如果默认的无法满足,那么可以进行重写正则的表达式来完成sql的过滤,该配置会覆盖默认配置
+        sql-pattern: "\\s*(SELECT|update|and|or|delete|insert|truncate|char|into|substr|ascii|declare|exec|count|master|into|drop|execute)\\s+|(XMLType\\()|(chr\\(\\d*\\))|(\\s+(UNION|INTERSECT|WHERE|like|MINUS|FROM|or|and|WHEN|THEN|ELSE)\\s+)|(\\s+DUAL)|(DBMS_PIPE\\.RECEIVE_MESSAGE)|(TZ_OFFSET|TO_TIMESTAMP_TZ|BFILENAME|FROM_TZ|NUMTOYMINTERVAL|NUMTODSINTERVAL|DBMS_DATAPUMP|DBMS_REGISTRY|DBMS_METADATA|UTL_HTTP|REQUEST|DBMS_JAVA_TEST|DBMS_LOCK|DBMS_PIPE|DBMS_RANDOM|UTL_FILE|UTL_HTTP|UTL_SMTP|UTL_TCP)"
+      # 服务器返回头信息,避免返回真实服务器信息,根据漏洞来进行攻击
+      server-info: YHServer
+      # ip拦截器相关,客户端请求白名单,防止恶意ip攻击,
+      # 如果前后端在一起,提供公网访问,需要关闭该选项
+      # 如果前端布置在nginx等代理上,那么视情况配置白名单
+      ip-interceptor:
+        # 是否开启,默认为false
+        enable: false
+        # ip白名单,localhost会解析为127.0.0.1,默认包含127.0.0.1
+        client-ip-white-list:
+          - 127.0.0.1
+      # url规则校验
+      url-interceptor:
+        # 是否开启,默认为true
+        enable: true
+        # url匹配正则
+        url-pattern: (.*?)
+        # url正则白名单,比如当命名规则不符合时,可以关闭或者加入白名单,或者修改url的mapping映射为合法正则
+        url-white-list:
+          - /template/**
+      # 内容安全保护
+      csp:
+        # 默认资源配置,默认为 'unsafe-inline' 'unsafe-eval' 'self' data: ws://ta404/webSocketServer,添加会覆盖默认配置,多个以空格分隔
+        default-src: "'unsafe-inline' 'unsafe-eval' 'self' data: ws://ta404/webSocketServer"
+        # 允许哪些可以内嵌自己,默认为 "'self'",注意有双引号和单引号,如果是具体的ip不需要加单引号,多个以空格分隔,如"'self' http://localhost:8082"
+        frame-ancestors: "'self'"
+        # 其他csp选项,如:img-src <source> <source>;script-src <source>;connect-src <source> <source>,指令与指令之间使用分号分隔,指令与指令值之间用空格分隔
+          # 指令集可参考https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Headers/Content-Security-Policy/default-src
+        other-csp-options: "img-src 'self' *.baidu.com *.google.com data:"
+      # 跨域设置,当要访问的资源和自己不同域时,允许哪些其他ip可以跨域访问资源,需要配置成schema://ip:port的格式
+      cors:
+        # 默认包含http://localhost:8080,http://127.0.0.1:8080,新增会追加,多个以逗号分隔
+        allowed-origins: "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:5175,http://127.0.0.1:5175"
+      # csrf配置,因为普通的form表单会直接发起cors请求,而不必进行预检请求,所以新增csrf的拦截处理
+      csrf:
+        # 是否开启csrf,默认为true
+        enable: true
+        # csrf的url白名单,默认/template/**,允许所有的主机进行csrf访问,新增会追加
+        csrf-white-url-list:
+          - /template/**
+        # csrf的主机白名单,需要配置成schema://ip:port的格式,默认http://localhost:8080,http://127.0.0.1:8080,如果主机在csrf中,那么可以访问所有的url,新增会追加
+        csrf-white-host-list:
+          - http://localhost:8080
+        # csrf允许的方法,新增会重写默认配置,隐藏该项,一般不会修改
+        csrf-white-method-list:
+          - GET
+          - HEAD
+          - TRACE
+          - OPTIONS
+      # 文件类型拦截,对上传的文件类型进行拦截,开启后只有配置了白名单的才会允许上传
+      file-interceptor:
+        # 是否开启文件拦截,默认为true
+        enable: true
+        # 由于txt没有固定的文件头,单独进行配置,如果开启,需要考虑其他文件可能伪装成txt的文件进行上传,需要自行决定是否开启
+        support-txt: false
+        # 支持的txt文件类型后缀
+        support-txt-suffix:
+          - sql
+        # 文件类型白名单,默认为doc,png,jpg,raq,新增会追加
+        file-type-white-list:
+          - pdf
+          - xls
+          - xlsx
+          - pem
+        # 文件后缀类型扩展,如果默认的文件类型后缀16进制文件头不存在,可以通过该选项添加,如果添加了已经存在的文件类型,会覆盖默认的使用自定义的文件hex,
+        # 注意:hex的长度不能低于4位(>=4),并且此处不能配置txt类型,如需开启,请参考supportTxt选项
+        extra-map:
+          pem: 2d2d2d
+        # 分片上传url
+        chunk-url: /demo/uploadRestService/chunk
+        # 文件上传请求白名单
+        file-upload-white-url-list:
+          - /template/**
+          - /message/**
+      # 主机头拦截,可选,一般应用于同一个web服务器在同一个IP地址上托管多个网站或web应用程序
+      # 拦截请求的Host,如果nginx进行代理的话,需要记得转发host头
+      # 主机头攻击:https://zhuanlan.zhihu.com/p/143599197
+      host-filter:
+        # 是否开启,如果未配置同一个ip有多个域名,配置为false
+        enable: true
+        # 主机头白名单,允许哪些主机头的可以访问,默认localhost:8080,127.0.0.1:8080,新增会追加
+        host-white-list:
+          - localhost:5173
+          - 127.0.0.1:5173
+          - localhost:5174
+          - 127.0.0.1:5174
+          - localhost:5175
+          - 127.0.0.1:5175
+          - localhost:8081
+          - 127.0.0.1:8081
+      # 数据存储加密
+      sensitive-information-encryption:
+        # 密钥存放位置
+        encryptionKey: /config/sm4.key.pem
+        enable: true
+        fields:
+          - com.yinhai.ta404.module.pagereview.vo.PageReviewVo.functionUrl
+      # 数据查询脱敏
+      sensitive-information-desensitize:
+        enable: false
