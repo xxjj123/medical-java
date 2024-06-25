@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.yinhai</groupId>
+        <artifactId>mids-framework</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>mids-ta404</artifactId>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- 默认核心模块 -->
+        <!-- 日志管理 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-logmg</artifactId>
+        </dependency>
+        <!-- 框架核心模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-core</artifactId>
+        </dependency>
+        <!-- 消息管理 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-messagemg</artifactId>
+        </dependency>
+        <!-- 码表管理 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-dictmg</artifactId>
+        </dependency>
+        <!-- 组织人员权限管理 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-domain-core-orguserauth</artifactId>
+        </dependency>
+        <!-- 配置管理 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-sysconfig</artifactId>
+        </dependency>
+        <!-- 页面还原 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-pagereview</artifactId>
+        </dependency>
+        <!-- 验证码模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-captcha-springboot-starter</artifactId>
+        </dependency>
+
+        <!-- 多租户模块 -->
+        <!-- 多租户 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-saas</artifactId>
+        </dependency>
+
+        <!-- 安全模块 -->
+        <!-- 应用安全模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-module-websecurity</artifactId>
+        </dependency>
+        <!-- 第三方访问权限模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-accessauthority</artifactId>
+        </dependency>
+        <!-- 限流限速模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-ratelimit</artifactId>
+        </dependency>
+
+        <!-- 定时任务模块 -->
+        <!-- 定时任务-xxljob -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-module-xxljob</artifactId>
+        </dependency>
+
+        <!-- 审核审计模块 -->
+        <!-- 审核模块-examine -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-examine</artifactId>
+        </dependency>
+        <!-- 审核模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-examine-locked</artifactId>
+        </dependency>
+        <!-- 审计功能 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-audit</artifactId>
+        </dependency>
+
+        <!-- 报表模块 -->
+        <!-- 润乾报表模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-runqian</artifactId>
+        </dependency>
+
+        <!-- 数据库驱动 -->
+        <!-- 数据源驱动模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-module-datasource</artifactId>
+        </dependency>
+        <!-- 数据库驱动-mysql -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.0.33</version>
+        </dependency>
+
+        <!-- 缓存模块 -->
+        <!-- 缓存模块-redis -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-module-cache-starter-redis</artifactId>
+        </dependency>
+
+        <!-- 认证鉴权模块 -->
+        <!-- security权限信息基础模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-security-domain</artifactId>
+        </dependency>
+        <!-- token认证 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-component-security-token</artifactId>
+        </dependency>
+
+        <!-- 集群模块 -->
+        <!-- 注册中心-redis -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-module-registry-redis</artifactId>
+        </dependency>
+        <!-- 集群同步模块 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-module-cluster</artifactId>
+        </dependency>
+
+        <!-- 其它 -->
+        <!-- 对象存储 -->
+        <dependency>
+            <groupId>com.yinhai.ta404</groupId>
+            <artifactId>ta404-module-storage-default-all</artifactId>
+        </dependency>
+
+        <!-- 默认固定依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

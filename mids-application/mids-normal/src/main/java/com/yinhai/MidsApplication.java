@@ -17,15 +17,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @EnableAsync
 @EnableScheduling
-public class MedicalImageDiagnosisSystemApplication extends SpringBootServletInitializer {
+public class MidsApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
-        SpringApplication.run(MedicalImageDiagnosisSystemApplication.class, args);
+        SpringApplication.run(MidsApplication.class, args);
     }
 
     @Profile("war")
     @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return builder.sources(MedicalImageDiagnosisSystemApplication.class);
+        return builder.sources(MidsApplication.class);
     }
 }
