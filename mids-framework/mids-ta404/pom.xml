@@ -49,11 +49,6 @@
             <groupId>com.yinhai.ta404</groupId>
             <artifactId>ta404-component-sysconfig</artifactId>
         </dependency>
-        <!-- 页面还原 -->
-        <dependency>
-            <groupId>com.yinhai.ta404</groupId>
-            <artifactId>ta404-component-pagereview</artifactId>
-        </dependency>
         <!-- 验证码模块 -->
         <dependency>
             <groupId>com.yinhai.ta404</groupId>
@@ -111,7 +106,6 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>8.0.33</version>
         </dependency>
 
         <!-- 缓存模块 -->

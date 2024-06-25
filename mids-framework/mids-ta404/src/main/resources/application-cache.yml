@@ -2,83 +2,28 @@ ta404:
   modules:
     cache:
       # SpringCache注解默认支持的缓存(后续需要启用primary对应的缓存配置eg: ehcache.active=true)
-      primary: ehcache
-      ehcache:
-        # 是否启动ehcache(默认启用)
-        active: true
-        config-location: cache/ehcache.xml
-      caffeine:
-        # 是否启动caffeine(默认不启用)
-        active: false
-        # 初始的缓存空间大小(条数)
-        initial-capacity: 1000
-        # 最大缓存条数
-        maximum-size: 10000
-        # 最后一次写入后经过固定时间过期(单位:min)
-        expire-after-write: 10
-        # 最后一次访问后经过固定时间过期(单位:min)
-        expire-after-access: 10
-        # 是否开启缓存统计
-        record-stats: false
-        #单个缓存自定义参数
-        define:
-          taStatisticAnalysisCache:
-            expire-after-access: 600
-          taPermissionCache:
-            expire-after-access: 600
-#          taOrgCache:
-#            expire-after-access: 600
-#          taUserCache:
-#            expire-after-access: 600
-#          taResourceCache:
-#            expire-after-access: 600
-#          taRoleCache:
-#            expire-after-access: 600
-
+      primary: redis
       redis:
         # 是否启动redis(默认不启用)
-        active: false
+        active: true
         # redis缓存模式single、cluster
         type: single
         # SpringCache注解缓存失效时间(秒)，0为不失效
-        expire: 0
+        expire: 1800
         #单个缓存自定义参数
         define:
           taStatisticAnalysisCache:
             expire: 600
           taPermissionCache:
             expire: 600
-#          taOrgCache:
-#            expire: 600
-#          taUserCache:
-#            expire: 600
-#          taResourceCache:
-#            expire: 600
-#          taRoleCache:
-#            expire: 600
         # 单点模式
         single:
-          host-name: 127.0.0.1
-          port: 30010
+          host-name: ${redis.host-name}
+          port: ${redis.port}
           # 口令(可选)
-          password: mypassword
+          password: ${redis.password}
           # 指定redis数据库（仅单节点可用，默认为0，集群模式不支持指定数据库）
-          # 0开发环境，3kingbase,8dm,1mysql57
-          db-index: 7
-          #          db-index: 1
-        # 集群cluster模式
-        cluster:
-          # 连接池最大连接数
-          max-redirects: 5
-          # 集群节点(redis模式仅支持集群模式)
-          cluster-nodes[0]: 127.0.0.1:6379 #master
-          cluster-nodes[1]: 127.0.0.1:6380 #master
-          cluster-nodes[2]: 127.0.0.1:6381 #master
-          cluster-nodes[3]: 127.0.0.1:6382 #slave
-          cluster-nodes[4]: 127.0.0.1:6383 #slave
-          cluster-nodes[5]: 127.0.0.1:6384 #slave
-          # 口令(可选)
-          password: test
+          db-index: ${redis.database}
         lettuce:
           io:
             # (可选)io操作线程数，空默认为cpu的availableProcessors，决定lettuce-eventExecutorLoop大小，最小值2

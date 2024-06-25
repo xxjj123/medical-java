@@ -3,11 +3,11 @@ ta404:
     security:
       token:
         # jwt 密钥配置, 建议使用强密钥
-        security-key: Yinhai#1qaz
+        security-key: Ercw57r#NL!9FFzLk
         # 最大并发连接数， -1 为不限制
         max-connections: -1
         # 同一账号允许最多登录数，-1为不限制
-        max-single-account-connections: -1
+        max-single-account-connections: ${max-single-account-connections:1}
         # 当同一账号允许登录数达上线时，是否覆盖之前的登录状态(之前的登录者退出)
         cover-connection: true
         # 每次访问是否刷新 token失效时间
@@ -67,7 +67,8 @@ ta404:
             cluster-nodes[5]: 127.0.0.1:6384 #slave
           # redis单节点配置
           single:
-            hostName: 172.20.23.18
-            port: 30010
-            password: admin123
+            hostName: ${redis.host-name}
+            port: ${redis.port}
+            password: ${redis.password}
+            database: ${redis.database}
 

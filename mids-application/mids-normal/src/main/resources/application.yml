@@ -1,6 +1,6 @@
 ta404:
   application:
-    name: ta404
+    name: mids
     version: 5.4.1-RELEASE
 spring:
   profiles:
@@ -18,9 +18,9 @@ spring:
     multipart:
       max-file-size: 20MB
 server:
-  port: 8081
+  port: ${system.server-port:39625}
   servlet:
     session:
       timeout: 14400s
-    context-path: /ta404
+    context-path: /mids
 

@@ -1,0 +1,24 @@
+# 数据库配置
+db:
+  ta404ds:
+    url: jdbc:mysql://192.168.1.22:3306/mids?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: hzhl5607
+
+# redis配置
+redis:
+  host-name: 192.168.1.4
+  port: 6379
+  password: rd14is
+  database: 0
+
+# system config
+system:
+  # 系统端口号
+  server-port: 39625
+  # 系统同一账号最大允许同时登录数量，-1为不限制
+  max-single-account-connections: -1
+  # 是否开启重复提交限制
+  limit-enable: false
+  # 密码错误开启验证码次数。设置为0则始终显示验证码
+  password-validation-error-number: 8

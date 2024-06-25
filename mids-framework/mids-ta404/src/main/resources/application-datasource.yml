@@ -33,12 +33,11 @@ ta404:
     druid:
       ta404ds:
         datasource:
-          url: ${DEFAULT_DB_URL:jdbc:mysql://127.0.0.1:3306/ta404_540?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=Asia/Shanghai}
-          username: ${DEFAULT_DB_USERNAME:myusername}
-          password: ${DEFAULT_DB_PASSWORD:mypassword}
-          #          driver-class-name: org.postgresql.Driver #可不写
+          url: ${db.ta404ds.url}
+          username: ${db.ta404ds.username}
+          password: ${db.ta404ds.password}
           # 初始化连接数
-          initial-size: 3
+          initial-size: 10
           # 连接池最大连接数量
           max-active: 50
           # 获取链接超时时间 （毫秒）
