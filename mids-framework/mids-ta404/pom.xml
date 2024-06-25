@@ -60,13 +60,6 @@
             <artifactId>ta404-component-captcha-springboot-starter</artifactId>
         </dependency>
 
-        <!-- 多租户模块 -->
-        <!-- 多租户 -->
-        <dependency>
-            <groupId>com.yinhai.ta404</groupId>
-            <artifactId>ta404-component-saas</artifactId>
-        </dependency>
-
         <!-- 安全模块 -->
         <!-- 应用安全模块 -->
         <dependency>
@@ -108,13 +101,6 @@
             <artifactId>ta404-component-audit</artifactId>
         </dependency>
 
-        <!-- 报表模块 -->
-        <!-- 润乾报表模块 -->
-        <dependency>
-            <groupId>com.yinhai.ta404</groupId>
-            <artifactId>ta404-component-runqian</artifactId>
-        </dependency>
-
         <!-- 数据库驱动 -->
         <!-- 数据源驱动模块 -->
         <dependency>
@@ -145,18 +131,6 @@
         <dependency>
             <groupId>com.yinhai.ta404</groupId>
             <artifactId>ta404-component-security-token</artifactId>
-        </dependency>
-
-        <!-- 集群模块 -->
-        <!-- 注册中心-redis -->
-        <dependency>
-            <groupId>com.yinhai.ta404</groupId>
-            <artifactId>ta404-module-registry-redis</artifactId>
-        </dependency>
-        <!-- 集群同步模块 -->
-        <dependency>
-            <groupId>com.yinhai.ta404</groupId>
-            <artifactId>ta404-module-cluster</artifactId>
         </dependency>
 
         <!-- 其它 -->
