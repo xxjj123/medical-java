@@ -22,3 +22,19 @@ system:
   limit-enable: false
   # 密码错误开启验证码次数。设置为0则始终显示验证码
   password-validation-error-number: 8
+
+# 对象存储配置
+ta404:
+  modules:
+    storage:
+      s3:
+        accessKeyId: minio
+        secretAccessKey: Yr3NxqY6
+        endpoint: http://192.168.1.22:9999
+        region: mids
+        bucketName: mids
+      manager:
+        businessTypeAndBucketList:
+          - fsBusiness: dicom
+            fsType: s3
+            bucketName: mids

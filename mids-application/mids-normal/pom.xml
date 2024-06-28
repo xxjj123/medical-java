@@ -20,7 +20,11 @@
     <dependencies>
         <dependency>
             <groupId>com.yinhai</groupId>
-            <artifactId>mids-ta404</artifactId>
+            <artifactId>mids-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.yinhai</groupId>
+            <artifactId>mids-business</artifactId>
         </dependency>
     </dependencies>
 

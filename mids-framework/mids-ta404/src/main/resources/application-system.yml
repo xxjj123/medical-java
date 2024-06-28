@@ -64,9 +64,12 @@ ta404:
       # 难度等级4:4选4，8-20位
       password-level: 3
       permit-urls:
-        #TODO 这里添加项目需要的 “不需登录即可访问的地址”
+        - /oss/*
+        - /doc.html
+        - /webjars/**
+        - /v3/**
+        - /swagger-ui/**
       login-permit-urls:
-        #TODO 这里添加项目需要的 “登录即可访问的地址”
     examine:
       examine-switch: true
 

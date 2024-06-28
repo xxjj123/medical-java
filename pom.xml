@@ -31,6 +31,21 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>com.yinhai</groupId>
+                <artifactId>mids-ta404</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yinhai</groupId>
+                <artifactId>mids-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yinhai</groupId>
+                <artifactId>mids-business</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.yinhai.ta404</groupId>
                 <artifactId>ta404-component-parent</artifactId>
                 <version>5.4.1-RELEASE</version>
@@ -43,14 +58,22 @@
                 <version>5.4.0-RELEASE</version>
             </dependency>
             <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-dependencies</artifactId>
+                <!--在引用时请在maven中央仓库搜索2.X最新版本号-->
+                <version>4.5.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>8.0.33</version>
             </dependency>
             <dependency>
-                <groupId>com.yinhai</groupId>
-                <artifactId>mids-ta404</artifactId>
-                <version>${revision}</version>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>5.8.28</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

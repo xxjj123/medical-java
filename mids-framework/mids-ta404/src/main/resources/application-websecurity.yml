@@ -9,7 +9,7 @@ ta404:
       # 数据请求设置
       data-req:
         # 请求数据级别,encrypt:加密级别,none:直接请求,sign:签名级别,为none的时候,就不需要传递Client-ID头了
-        req-data-level: encrypt
+        req-data-level: none
         # 私钥路径信息,默认/sm2/pri.key.pem,如果使用rsa,可使用/rsa/pri.key.pem
         private-key-path: /sm2/pri.key.pem
         # 公钥路径信息,默认/sm2/pub.key.pem,如果使用rsa,可使用/rsa/pub.key.pem
@@ -145,6 +145,7 @@ ta404:
           - 127.0.0.1:5175
           - localhost:8081
           - 127.0.0.1:8081
+          - localhost:39625
       # 数据存储加密
       sensitive-information-encryption:
         # 密钥存放位置

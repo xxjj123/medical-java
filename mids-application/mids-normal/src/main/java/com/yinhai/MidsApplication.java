@@ -11,7 +11,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity(debug = false)
 @ServletComponentScan
 @SpringBootApplication
 @EnableTransactionManagement

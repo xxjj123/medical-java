@@ -43,6 +43,12 @@
         <dependency>
             <groupId>com.yinhai.ta404</groupId>
             <artifactId>ta404-component-domain-core-orguserauth</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.yinhai.ta404</groupId>
+                    <artifactId>ta404-module-apidoc</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- 配置管理 -->
         <dependency>
@@ -132,6 +138,24 @@
         <dependency>
             <groupId>com.yinhai.ta404</groupId>
             <artifactId>ta404-module-storage-default-all</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.data</groupId>
+                    <artifactId>spring-data-mongodb</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.mongodb</groupId>
+                    <artifactId>mongodb-driver-sync</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.yinhai.yhdcs</groupId>
+                    <artifactId>yhdcs-sdk</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.qcloud</groupId>
+                    <artifactId>cos_api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- 默认固定依赖 -->

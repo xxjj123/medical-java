@@ -22,5 +22,9 @@
             <groupId>com.yinhai</groupId>
             <artifactId>mids-ta404</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.yinhai</groupId>
+            <artifactId>mids-common</artifactId>
+        </dependency>
     </dependencies>
 </project>
