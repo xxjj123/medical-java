@@ -27,7 +27,7 @@ system:
 ta404:
   modules:
     storage:
-      s3:
+      mys3:
         accessKeyId: minio
         secretAccessKey: Yr3NxqY6
         endpoint: http://192.168.1.22:9999
@@ -35,6 +35,6 @@ ta404:
         bucketName: mids
       manager:
         businessTypeAndBucketList:
-          - fsBusiness: dicom
-            fsType: s3
+          - fsBusiness: mids
+            fsType: mys3
             bucketName: mids

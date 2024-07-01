@@ -26,5 +26,9 @@
             <groupId>com.yinhai</groupId>
             <artifactId>mids-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.dtflys.forest</groupId>
+            <artifactId>forest-spring-boot-starter</artifactId>
+        </dependency>
     </dependencies>
 </project>
