@@ -9,23 +9,42 @@
     </parent>
 
     <groupId>com.yinhai</groupId>
-    <artifactId>medical-image-diagnosis-system</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>${pom.package}</packaging>
+    <artifactId>mids</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
 
     <name>medical-image-diagnosis-system</name>
     <description>医疗影像诊断系统</description>
-
+    <modules>
+        <module>mids-framework</module>
+        <module>mids-application</module>
+        <module>mids-business</module>
+    </modules>
 
     <properties>
+        <revision>0.0.1</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>8</java.version>
     </properties>
 
-
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.yinhai</groupId>
+                <artifactId>mids-ta404</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yinhai</groupId>
+                <artifactId>mids-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yinhai</groupId>
+                <artifactId>mids-business</artifactId>
+                <version>${revision}</version>
+            </dependency>
             <dependency>
                 <groupId>com.yinhai.ta404</groupId>
                 <artifactId>ta404-component-parent</artifactId>
@@ -33,204 +52,34 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.yinhai.ta404</groupId>
+                <artifactId>ta404-component-saas</artifactId>
+                <version>5.4.0-RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.xiaoymin</groupId>
+                <artifactId>knife4j-dependencies</artifactId>
+                <!--在引用时请在maven中央仓库搜索2.X最新版本号-->
+                <version>4.5.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>8.0.33</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>5.8.28</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dtflys.forest</groupId>
+                <artifactId>forest-spring-boot-starter</artifactId>
+                <version>1.5.36</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <dependencies>
-    <dependency>
-        <groupId>com.mysql</groupId>
-        <artifactId>mysql-connector-j</artifactId>
-        <version>8.0.33</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-accessauthority</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-audit</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-captcha-springboot-starter</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-dictmg</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-domain-core-orguserauth</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-examine</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-examine-locked</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-logmg</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-messagemg</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-pagereview</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-ratelimit</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-runqian</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-saas</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-security-domain</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-security-token</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-component-sysconfig</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-core</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-module-cache-starter-redis</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-module-cluster</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-module-datasource</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-module-registry-redis</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-module-registry-zookeeper</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-module-websecurity</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <dependency>
-        <groupId>com.yinhai.ta404</groupId>
-        <artifactId>ta404-module-xxljob</artifactId>
-        <version>5.4.1-RELEASE</version>
-    </dependency>
-    <!-- 默认固定依赖 -->
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
-    </dependency>
-
-
-    <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-test</artifactId>
-        <scope>test</scope>
-    </dependency>
-    </dependencies>
-
-    <profiles>
-        <profile>
-            <id>jar</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <pom.package>jar</pom.package>
-            </properties>
-        </profile>
-        <profile>
-            <id>war</id>
-            <properties>
-                <pom.package>war</pom.package>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
-    <build>
-    <plugins>
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <configuration>
-                <!--热启动加载-->
-                <fork>true</fork>
-                <!-- boot 模式启动 -->
-                <mainClass>com.yinhai.MedicalImageDiagnosisSystemApplication</mainClass>
-            </configuration>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>repackage</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <source>${java.version}</source>
-                <target>${java.version}</target>
-                <encoding>UTF-8</encoding>
-            </configuration>
-        </plugin>
-    </plugins>
-    </build>
-
-
 </project>

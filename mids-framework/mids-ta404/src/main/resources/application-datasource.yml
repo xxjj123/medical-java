@@ -1,0 +1,88 @@
+ta404:
+  datasource:
+    druid-stat:
+      ## 配置 WebStatFilter，用于采集 web 关联监控的数据
+      web-stat-filter:
+        # 启动 StatFilter
+        enabled: false
+        # 过滤所有 url
+        url-pattern: /*
+        # 排除一些不必要的url
+        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
+        # 开启 session 统计功能
+        session-stat-enable: true
+        # session 的最大个数，默认100
+        session-stat-max-count: 1000
+      ## 配置 StatViewServlet（监控页面），用于展示 Druid 的统计信息
+      stat-view-servlet:
+        # 启用 StatViewServlet
+        enabled: false
+        # 访问内置监控页面的路径，内置监控页面的首页是 /druid/index.html
+        url-pattern: /druid/*
+        # 不允许清空统计数据，重新计算
+        reset-enable: false
+        # 配置监控页面访问用户和密码
+        login-username: root
+        login-password: 123
+        # 允许访问的地址，如果 allow 没有配置或者为空，则允许所有访问
+        #allow: 127.0.0.1,172.20.23.18
+        # 拒绝访问的地址，deny优先于 allow，如果在 deny 列表中，就算在 allow 列表中，也会被拒绝
+        deny:
+    datasource-list: ta404ds
+    type: druid
+    druid:
+      ta404ds:
+        datasource:
+          url: ${db.ta404ds.url}
+          username: ${db.ta404ds.username}
+          password: ${db.ta404ds.password}
+          # 初始化连接数
+          initial-size: 10
+          # 连接池最大连接数量
+          max-active: 50
+          # 获取链接超时时间 （毫秒）
+          max-wait: 60000
+          # 空闲连接数的回收周期
+          timeBetweenEvictionRunsMillis: 60000
+          # 申请连接时候，并当连接为空闲连接时，验证是否有效
+          testWhileIdle: true
+          # 申请连接时候验证是否有效，优先级高于testWhileIdle
+          testOnBorrow: false
+          # 验证语句
+          validationQuery: SELECT 1
+          filter:
+            # 开启druiddatasource的状态监控
+            stat:
+              enabled: false
+              db-type: mysql
+              # 开启慢sql监控，超过2s 就认为是慢sql，记录到日志中
+              log-slow-sql: false
+              slow-sql-millis: 1000
+        mybatis:
+          #  是否开启查询行数限制
+          enable-query-max-limit: false
+          #  行数限制数量
+          query-max-limit: 1000
+          #  不限制的mapper方法 (mapper.方法名)
+          ignore-limit-mappers:
+            - com.yinhai.ta404.module.dict.mapper.read.DictReadMapper.queryListByAuthority
+            - com.yinhai.ta404.module.mybatis.mapper.Ta404SupportMapper.executeForDate
+            - com.yinhai.ta404.module.mybatis.mapper.Ta404SupportMapper.executeForTimestamp
+            - com.yinhai.ta404.module.mybatis.mapper.Ta404SupportMapper.executeForSequence
+            - com.yinhai.ta404.module.mybatis.mapper.Ta404SupportMapper.executeForUpdateSequence
+          mapper-locations:
+            - classpath*:mapper/read/*.xml
+            - classpath*:mapper/write/*.xml
+            - classpath*:mapper/extend/*.xml
+            - classpath*:mapper/**.xml
+          base-packages:
+            - com.yinhai.ta404.module.mybatis.mapper
+            - com.yinhai.ta404.module.**.mapper.read
+            - com.yinhai.ta404.module.**.mapper.write
+            - com.yinhai.ta404.component.**.mapper.read
+            - com.yinhai.ta404.component.**.mapper.write
+            - com.yinhai.ta404.domain.core.orguserauth.**.mapper.read
+            - com.yinhai.ta404.domain.core.orguserauth.**.mapper.write
+            - com.yinhai.ta404.domain.support.applyexamine.**.mapper.read
+            - com.yinhai.ta404.domain.support.applyexamine.**.mapper.write
+
