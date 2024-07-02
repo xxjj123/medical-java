@@ -85,4 +85,5 @@ ta404:
             - com.yinhai.ta404.domain.core.orguserauth.**.mapper.write
             - com.yinhai.ta404.domain.support.applyexamine.**.mapper.read
             - com.yinhai.ta404.domain.support.applyexamine.**.mapper.write
+            - com.yinhai.mids.business.mapper;
 

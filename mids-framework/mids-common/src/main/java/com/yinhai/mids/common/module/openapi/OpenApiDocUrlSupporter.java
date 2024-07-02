@@ -1,4 +1,4 @@
-package com.yinhai.mids.common.openapi;
+package com.yinhai.mids.common.module.openapi;
 
 import com.yinhai.ta404.core.restservice.interceptor.advice.Ta4AdviceSupporter;
 import com.yinhai.ta404.core.security.matcher.UrlPathMatcher;

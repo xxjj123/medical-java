@@ -1,4 +1,4 @@
-package com.yinhai.mids.common.commons.storage.mys3;
+package com.yinhai.mids.common.module.storage.mys3;
 
 import com.yinhai.ta404.module.storage.ta.all.object.AbstractFSObjectStore;
 import com.yinhai.ta404.module.storage.ta.all.object.impl.S3FSObjectStoreFactory;

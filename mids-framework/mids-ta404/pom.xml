@@ -48,6 +48,10 @@
                     <groupId>com.yinhai.ta404</groupId>
                     <artifactId>ta404-module-apidoc</artifactId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>mybatis-plus</artifactId>
+                    <groupId>com.baomidou</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
         <!-- 配置管理 -->
@@ -71,6 +75,20 @@
         <dependency>
             <groupId>com.yinhai.ta404</groupId>
             <artifactId>ta404-component-accessauthority</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>mybatis</artifactId>
+                    <groupId>org.mybatis</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>mybatis-plus</artifactId>
+                    <groupId>com.baomidou</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>mybatis-spring</artifactId>
+                    <groupId>org.mybatis</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- 限流限速模块 -->
         <dependency>
@@ -107,6 +125,16 @@
         <dependency>
             <groupId>com.yinhai.ta404</groupId>
             <artifactId>ta404-module-datasource</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>mybatis-plus</artifactId>
+                    <groupId>com.baomidou</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>mybatis</artifactId>
+                    <groupId>org.mybatis</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- 数据库驱动-mysql -->
         <dependency>
@@ -167,6 +195,33 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!-- <dependency> -->
+        <!--     <groupId>com.baomidou</groupId> -->
+        <!--     <artifactId>mybatis-plus-boot-starter</artifactId> -->
+        <!--     <exclusions> -->
+        <!--         <exclusion> -->
+        <!--             <groupId>org.mybatis</groupId> -->
+        <!--             <artifactId>mybatis</artifactId> -->
+        <!--         </exclusion> -->
+        <!--         <exclusion> -->
+        <!--             <groupId>org.mybatis</groupId> -->
+        <!--             <artifactId>mybatis-spring</artifactId> -->
+        <!--         </exclusion> -->
+        <!--     </exclusions> -->
+        <!-- </dependency> -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-spring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
         </dependency>
     </dependencies>
 </project>

@@ -1,4 +1,4 @@
-package com.yinhai.mids.common.openapi;
+package com.yinhai.mids.common.module.openapi;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;

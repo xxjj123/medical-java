@@ -1,4 +1,4 @@
-package com.yinhai.mids.common.commons.storage.mys3;
+package com.yinhai.mids.common.module.storage.mys3;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;

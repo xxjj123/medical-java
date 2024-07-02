@@ -1,14 +1,13 @@
-package com.yinhai.mids.common.commons.storage;
+package com.yinhai.mids.common.module.storage;
 
-import com.yinhai.mids.common.commons.storage.mys3.MyS3FSBucketStoreFactory;
-import com.yinhai.mids.common.commons.storage.mys3.MyS3FSObjectStoreFactory;
-import com.yinhai.mids.common.commons.storage.mys3.MyS3StorageProperties;
+import com.yinhai.mids.common.module.storage.mys3.MyS3FSBucketStoreFactory;
+import com.yinhai.mids.common.module.storage.mys3.MyS3FSObjectStoreFactory;
+import com.yinhai.mids.common.module.storage.mys3.MyS3StorageProperties;
 import com.yinhai.ta404.module.storage.ta.all.bucket.AbstractFSBucketStoreFactory;
 import com.yinhai.ta404.module.storage.ta.all.object.AbstractFSObjectStoreFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 
 /**
  * @author zhuhs
@@ -18,7 +17,6 @@ import org.springframework.context.annotation.Primary;
 public class StorageAutoConfig {
 
     @Bean
-    @Primary
     @ConditionalOnProperty(
             prefix = "ta404.modules.storage.mys3",
             name = {"accessKeyId", "access-key-id"}

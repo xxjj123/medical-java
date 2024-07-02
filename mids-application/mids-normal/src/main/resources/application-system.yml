@@ -69,6 +69,7 @@ ta404:
         - /webjars/**
         - /v3/**
         - /swagger-ui/**
+        - /**
       login-permit-urls:
     examine:
       examine-switch: true
