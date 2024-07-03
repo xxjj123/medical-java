@@ -22,6 +22,6 @@ public class SecurityKit {
     @Nullable
     public static String currentUserId() {
         UserAccountVo curUserAccountVo = WebUtil.getCurUserAccountVo();
-        return curUserAccountVo != null ? curUserAccountVo.getUserId() : null;
+        return curUserAccountVo != null ? curUserAccountVo.getUserId() : "anonymous";
     }
 }

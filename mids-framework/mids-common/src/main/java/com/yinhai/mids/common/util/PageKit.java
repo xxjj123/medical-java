@@ -5,6 +5,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.ta404.core.restservice.resultbean.Page;
+import com.yinhai.ta404.core.utils.ValidateUtil;
 
 import java.util.List;
 
@@ -26,9 +27,15 @@ public class PageKit {
     public static void startPage(PageRequest pageRequest) {
         int pageNumber = pageRequest.getPageNumber();
         int pageSize = pageRequest.getPageSize();
-        if (pageNumber > 1 && pageRequest.isCountOptimize()) {
-            // 查询总数优化情况下，页码大于1时，不再统计总数
+
+        if (ValidateUtil.isNotEmpty(pageRequest.getPaginationModel()) && "mostCount".equals(pageRequest.getPaginationModel())) {
+            PageHelper.startPage(pageNumber, pageSize, true).setReasonable(pageRequest.isReasonable());
+        } else if (ValidateUtil.isNotEmpty(pageRequest.getPaginationModel()) && "most".equals(pageRequest.getPaginationModel())) {
             PageHelper.startPage(pageNumber, pageSize, false).setReasonable(pageRequest.isReasonable());
+        } else if (pageNumber > 1) {
+            PageHelper.startPage(pageNumber, pageSize, false).setReasonable(pageRequest.isReasonable());
+        } else if (pageRequest.getOperationNameAndType() != null) {
+            PageHelper.startPage(pageNumber, pageSize, true, pageRequest.isReasonable(), null, pageRequest.getOperationNameAndType());
         } else {
             PageHelper.startPage(pageNumber, pageSize, true).setReasonable(pageRequest.isReasonable());
         }
@@ -50,6 +57,7 @@ public class PageKit {
         page.setPageSize(pageHelperPageInfo.getPageSize());
         page.setCurrentSize(pageHelperPageInfo.getSize());
         page.setTotal(pageHelperPageInfo.getTotal());
+        page.setOperationResult(pageHelperPageInfo.getOperationResult());
         return page;
     }
 

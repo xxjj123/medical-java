@@ -1,9 +1,12 @@
 package com.yinhai.mids.business.service;
 
-import com.yinhai.mids.business.entity.vo.UploadVO;
+import com.yinhai.mids.business.entity.model.ContextFSObject;
+import com.yinhai.mids.business.entity.model.ContextUploadResult;
+import com.yinhai.mids.business.entity.model.UploadResult;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author zhuhs
@@ -11,6 +14,8 @@ import java.io.IOException;
  */
 public interface FileStoreService {
 
-    UploadVO upload(MultipartFile mf) throws IOException;
+    UploadResult upload(MultipartFile mf) throws IOException;
+
+    <T> List<ContextUploadResult<T>> upload(List<ContextFSObject<T>> fsObjects);
 
 }

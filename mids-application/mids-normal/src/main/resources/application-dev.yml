@@ -38,3 +38,5 @@ ta404:
           - fsBusiness: mids
             fsType: mys3
             bucketName: mids
+
+xml-reload-enabled: true

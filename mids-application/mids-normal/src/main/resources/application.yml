@@ -24,7 +24,6 @@ server:
     session:
       timeout: 14400s
     context-path: /mids
-
 knife4j:
   enable: true
   production: false

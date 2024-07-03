@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yinhai.mids.business.mapper.StudyMapper">
+    <resultMap id="BaseResultMap" type="com.yinhai.mids.business.entity.po.StudyPO">
+        <!--@mbg.generated-->
+        <!--@Table tb_study-->
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="study_uid" jdbcType="VARCHAR" property="studyUid"/>
+        <result column="accession_number" jdbcType="VARCHAR" property="accessionNumber"/>
+        <result column="patient_id" jdbcType="VARCHAR" property="patientId"/>
+        <result column="patient_name" jdbcType="VARCHAR" property="patientName"/>
+        <result column="patient_age" jdbcType="VARCHAR" property="patientAge"/>
+        <result column="study_datetime" jdbcType="TIMESTAMP" property="studyDatetime"/>
+        <result column="study_description" jdbcType="VARCHAR" property="studyDescription"/>
+        <result column="algorithm_type" jdbcType="VARCHAR" property="algorithmType"/>
+        <result column="print_status" jdbcType="VARCHAR" property="printStatus"/>
+        <result column="push_status" jdbcType="VARCHAR" property="pushStatus"/>
+        <result column="operate_doctor_user_id" jdbcType="VARCHAR" property="operateDoctorUserId"/>
+        <result column="upload_time" jdbcType="TIMESTAMP" property="uploadTime"/>
+        <result column="upload_user_id" jdbcType="VARCHAR" property="uploadUserId"/>
+        <result column="deleted" jdbcType="TINYINT" property="deleted"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+
+    <resultMap id="StudyPageVO" type="com.yinhai.mids.business.entity.vo.StudyPageVO">
+        <id column="study_id" jdbcType="VARCHAR" property="studyId"/>
+        <result column="study_uid" jdbcType="VARCHAR" property="studyUid"/>
+        <result column="accession_number" jdbcType="VARCHAR" property="accessionNumber"/>
+        <result column="patient_id" jdbcType="VARCHAR" property="patientId"/>
+        <result column="patient_name" jdbcType="VARCHAR" property="patientName"/>
+        <result column="patient_age" jdbcType="VARCHAR" property="patientAge"/>
+        <result column="study_datetime" jdbcType="DATE" property="studyDatetime"/>
+        <result column="study_description" jdbcType="VARCHAR" property="studyDescription"/>
+        <result column="my_favorite" jdbcType="BOOLEAN" property="myFavorite"/>
+        <result column="algorithm_type" jdbcType="VARCHAR" property="algorithmType"/>
+        <result column="print_status" jdbcType="VARCHAR" property="printStatus"/>
+        <result column="push_status" jdbcType="VARCHAR" property="pushStatus"/>
+        <result column="operate_doctor_user_id" jdbcType="VARCHAR" property="operateDoctorUserId"/>
+        <collection property="seriesList" ofType="com.yinhai.mids.business.entity.vo.SeriesPageVO">
+            <id column="series_id" jdbcType="VARCHAR" property="seriesId"/>
+            <result column="study_id" jdbcType="VARCHAR" property="studyId"/>
+            <result column="study_uid" jdbcType="VARCHAR" property="studyUid"/>
+            <result column="series_uid" jdbcType="VARCHAR" property="seriesUid"/>
+            <result column="series_number" jdbcType="VARCHAR" property="seriesNumber"/>
+            <result column="series_description" jdbcType="VARCHAR" property="seriesDescription"/>
+            <result column="image_count" jdbcType="INTEGER" property="imageCount"/>
+            <result column="algorithm_type" jdbcType="VARCHAR" property="algorithmType"/>
+            <result column="compute_status" jdbcType="VARCHAR" property="computeStatus"/>
+            <result column="operate_status" jdbcType="VARCHAR" property="operateStatus"/>
+            <result column="operate_doctor_user_id" jdbcType="VARCHAR" property="operateDoctorUserId"/>
+        </collection>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id,
+        study_uid,
+        accession_number,
+        patient_id,
+        patient_name,
+        patient_age,
+        study_datetime,
+        study_description,
+        algorithm_type,
+        print_status,
+        push_status,
+        operate_doctor_user_id,
+        upload_time,
+        upload_user_id,
+        deleted,
+        create_time,
+        update_time
+    </sql>
+
+    <select id="list" resultMap="StudyPageVO">
+        SELECT a.id                  AS study_id,
+               a.accession_number,
+               a.patient_id,
+               a.patient_name,
+               a.patient_age,
+               a.study_datetime,
+               a.study_description,
+               c.user_id IS NOT NULL AS my_favorite,
+               a.algorithm_type,
+               a.print_status,
+               a.push_status,
+               a.operate_doctor_user_id,
+               b.id                  AS series_id,
+               b.study_uid,
+               b.series_uid,
+               b.series_number,
+               b.series_description,
+               b.image_count,
+               b.algorithm_type,
+               b.compute_status,
+               b.operate_status,
+               b.operate_doctor_user_id
+        FROM tb_study a
+                 JOIN tb_series b
+                 LEFT JOIN (SELECT study_id, user_id FROM tb_favorite WHERE user_id = #{userId,jdbcType=VARCHAR}) c
+                           ON a.id = b.study_id AND a.id = c.study_id
+        <where>
+            <if test="query.startDate != null">
+                AND a.study_datetime > #{query.startDate, jdbcType=DATE}
+            </if>
+            <if test="query.endDate != null">
+                AND a.study_datetime &lt; #{query.endDate,jdbcType=TIMESTAMP}
+            </if>
+            <if test="query.accessionNumber != null and query.accessionNumber != ''">
+                AND a.accession_number = #{query.accessionNumber,jdbcType=VARCHAR}
+            </if>
+            <if test="query.patientId != null and query.patientId != ''">
+                AND a.patient_id = #{query.patientId,jdbcType=VARCHAR}
+            </if>
+            <if test="query.patientName != null and query.patientName != ''">
+                AND a.patient_name = #{query.patientName,jdbcType=VARCHAR}
+            </if>
+            <if test="query.algorithmType != null and query.algorithmType != ''">
+                AND a.algorithm_type = #{query.algorithmType,jdbcType=VARCHAR}
+            </if>
+            <if test="query.computeStatus != null and query.computeStatus != ''">
+                AND b.compute_status = #{query.computeStatus,jdbcType=VARCHAR}
+            </if>
+            <if test="query.myFavorite != null and query.myFavorite == true">
+                AND c.user_id IS NOT NULL
+            </if>
+        </where>
+    </select>
+</mapper>

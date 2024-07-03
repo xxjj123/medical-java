@@ -81,24 +81,9 @@
                 <version>1.5.36</version>
             </dependency>
             <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
-                <version>3.5.7</version>
-            </dependency>
-            <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus</artifactId>
-                <version>3.5.7</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mybatis</groupId>
-                <artifactId>mybatis-spring</artifactId>
-                <version>2.1.2</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mybatis</groupId>
-                <artifactId>mybatis</artifactId>
-                <version>3.5.16</version>
+                <groupId>org.dcm4che</groupId>
+                <artifactId>dcm4che-core</artifactId>
+                <version>5.30.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

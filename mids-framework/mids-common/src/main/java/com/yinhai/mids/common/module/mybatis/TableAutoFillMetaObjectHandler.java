@@ -21,7 +21,6 @@ public class TableAutoFillMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void insertFill(MetaObject metaObject) {
-        log.debug("start insert fill ....");
         // 时间
         Date dbNow = MapperKit.executeForDate();
         this.strictInsertFill(metaObject, "createTime", Date.class, dbNow);
@@ -34,7 +33,6 @@ public class TableAutoFillMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        log.debug("start update fill ....");
         // 时间
         Date dbNow = MapperKit.executeForDate();
         this.strictUpdateFill(metaObject, "updateTime", Date.class, dbNow);
