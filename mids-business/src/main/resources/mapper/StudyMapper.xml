@@ -39,13 +39,13 @@
         <result column="operate_doctor_user_id" jdbcType="VARCHAR" property="operateDoctorUserId"/>
         <collection property="seriesList" ofType="com.yinhai.mids.business.entity.vo.SeriesPageVO">
             <id column="series_id" jdbcType="VARCHAR" property="seriesId"/>
-            <result column="study_id" jdbcType="VARCHAR" property="studyId"/>
-            <result column="study_uid" jdbcType="VARCHAR" property="studyUid"/>
+            <result column="series_study_id" jdbcType="VARCHAR" property="studyId"/>
+            <result column="series_study_uid" jdbcType="VARCHAR" property="studyUid"/>
             <result column="series_uid" jdbcType="VARCHAR" property="seriesUid"/>
             <result column="series_number" jdbcType="VARCHAR" property="seriesNumber"/>
             <result column="series_description" jdbcType="VARCHAR" property="seriesDescription"/>
             <result column="image_count" jdbcType="INTEGER" property="imageCount"/>
-            <result column="algorithm_type" jdbcType="VARCHAR" property="algorithmType"/>
+            <result column="series_algorithm_type" jdbcType="VARCHAR" property="algorithmType"/>
             <result column="compute_status" jdbcType="VARCHAR" property="computeStatus"/>
             <result column="operate_status" jdbcType="VARCHAR" property="operateStatus"/>
             <result column="operate_doctor_user_id" jdbcType="VARCHAR" property="operateDoctorUserId"/>
@@ -75,6 +75,7 @@
 
     <select id="list" resultMap="StudyPageVO">
         SELECT a.id                  AS study_id,
+               a.study_uid,
                a.accession_number,
                a.patient_id,
                a.patient_name,
@@ -87,19 +88,20 @@
                a.push_status,
                a.operate_doctor_user_id,
                b.id                  AS series_id,
-               b.study_uid,
+               b.study_id            AS series_study_id,
+               b.study_uid           AS series_study_uid,
                b.series_uid,
                b.series_number,
                b.series_description,
                b.image_count,
-               b.algorithm_type,
+               b.algorithm_type      AS series_algorithm_type,
                b.compute_status,
                b.operate_status,
                b.operate_doctor_user_id
         FROM tb_study a
-                 JOIN tb_series b
+                 LEFT JOIN tb_series b ON a.id = b.study_id
                  LEFT JOIN (SELECT study_id, user_id FROM tb_favorite WHERE user_id = #{userId,jdbcType=VARCHAR}) c
-                           ON a.id = b.study_id AND a.id = c.study_id
+                           ON a.id = c.study_id
         <where>
             <if test="query.startDate != null">
                 AND a.study_datetime > #{query.startDate, jdbcType=DATE}

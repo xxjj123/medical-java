@@ -16,5 +16,13 @@ public interface StudyService {
 
     void uploadDicom(MultipartFile dicom) throws IOException;
 
-    Page<StudyPageVO> page(StudyPageQuery studyPageQuery, PageRequest pageRequest);
+    Page<StudyPageVO> pageStudies(StudyPageQuery studyPageQuery, PageRequest pageRequest);
+
+    void addFavorite(String studyId);
+
+    void removeFavorite(String studyId);
+
+    void deleteStudy(String studyId);
+
+    void deleteSeries(String seriesId);
 }

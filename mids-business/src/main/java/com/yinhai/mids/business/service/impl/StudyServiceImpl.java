@@ -3,21 +3,16 @@ package com.yinhai.mids.business.service.impl;
 import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ZipUtil;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.yinhai.mids.business.constant.AttachmentType;
 import com.yinhai.mids.business.entity.dto.StudyPageQuery;
 import com.yinhai.mids.business.entity.model.ContextFSObject;
 import com.yinhai.mids.business.entity.model.ContextUploadResult;
 import com.yinhai.mids.business.entity.model.DicomInstance;
 import com.yinhai.mids.business.entity.model.UploadResult;
-import com.yinhai.mids.business.entity.po.AttachmentPO;
-import com.yinhai.mids.business.entity.po.InstancePO;
-import com.yinhai.mids.business.entity.po.SeriesPO;
-import com.yinhai.mids.business.entity.po.StudyPO;
+import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.StudyPageVO;
-import com.yinhai.mids.business.mapper.AttachmentMapper;
-import com.yinhai.mids.business.mapper.InstanceMapper;
-import com.yinhai.mids.business.mapper.SeriesMapper;
-import com.yinhai.mids.business.mapper.StudyMapper;
+import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.service.StudyService;
 import com.yinhai.mids.common.core.PageRequest;
@@ -65,6 +60,9 @@ public class StudyServiceImpl implements StudyService {
 
     @Resource
     private AttachmentMapper attachmentMapper;
+
+    @Resource
+    private FavoriteMapper favoriteMapper;
 
     @Resource
     private FileStoreService fileStoreService;
@@ -189,12 +187,56 @@ public class StudyServiceImpl implements StudyService {
     }
 
     @Override
-    public Page<StudyPageVO> page(StudyPageQuery studyPageQuery, PageRequest pageRequest) {
+    public Page<StudyPageVO> pageStudies(StudyPageQuery studyPageQuery, PageRequest pageRequest) {
         PageKit.startPage(pageRequest);
         List<StudyPageVO> studyPageVOList = studyMapper.list(studyPageQuery, SecurityKit.currentUserId());
         for (StudyPageVO studyPageVO : studyPageVOList) {
             studyPageVO.setSeriesCount(studyPageVO.getSeriesList().size());
         }
         return PageKit.finishPage(studyPageVOList);
+    }
+
+    @Override
+    public void addFavorite(String studyId) {
+        boolean studyExists = studyMapper.exists(Wrappers.<StudyPO>lambdaQuery().eq(StudyPO::getId, studyId));
+        AppAssert.isTrue(studyExists, "该检查不存在！");
+        String currentUserId = SecurityKit.currentUserId();
+        boolean favoriteExists = favoriteMapper.exists(Wrappers.<FavoritePO>lambdaQuery()
+                .eq(FavoritePO::getStudyId, studyId).eq(FavoritePO::getUserId, currentUserId));
+        AppAssert.isFalse(favoriteExists, "该检查已经收藏，无需重复收藏");
+        FavoritePO favoritePO = new FavoritePO();
+        favoritePO.setUserId(currentUserId);
+        favoritePO.setStudyId(studyId);
+        int inserted = favoriteMapper.insert(favoritePO);
+        AppAssert.isTrue(inserted == 1, "收藏失败");
+    }
+
+    @Override
+    public void removeFavorite(String studyId) {
+        boolean studyExists = studyMapper.exists(Wrappers.<StudyPO>lambdaQuery().eq(StudyPO::getId, studyId));
+        AppAssert.isTrue(studyExists, "该检查不存在！");
+        String currentUserId = SecurityKit.currentUserId();
+        boolean favoriteExists = favoriteMapper.exists(Wrappers.<FavoritePO>lambdaQuery()
+                .eq(FavoritePO::getStudyId, studyId).eq(FavoritePO::getUserId, currentUserId));
+        AppAssert.isTrue(favoriteExists, "该检查没有被收藏，不需要取消收藏");
+        int deleted = favoriteMapper.delete(Wrappers.<FavoritePO>lambdaQuery()
+                .eq(FavoritePO::getStudyId, studyId).eq(FavoritePO::getUserId, currentUserId));
+        AppAssert.isTrue(deleted > 0, "取消收藏失败");
+    }
+
+    @Override
+    public void deleteStudy(String studyId) {
+        boolean studyExists = studyMapper.exists(Wrappers.<StudyPO>lambdaQuery().eq(StudyPO::getId, studyId));
+        AppAssert.isTrue(studyExists, "该检查不存在！");
+        int deleted = studyMapper.deleteById(studyId);
+        AppAssert.isTrue(deleted == 1, "删除检查失败");
+    }
+
+    @Override
+    public void deleteSeries(String seriesId) {
+        boolean seriesExists = seriesMapper.exists(Wrappers.<SeriesPO>lambdaQuery().eq(SeriesPO::getId, seriesId));
+        AppAssert.isTrue(seriesExists, "该序列不存在！");
+        int deleted = seriesMapper.deleteById(seriesId);
+        AppAssert.isTrue(deleted == 1, "删除序列失败");
     }
 }
