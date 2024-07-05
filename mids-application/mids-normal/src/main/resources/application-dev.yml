@@ -38,5 +38,14 @@ ta404:
           - fsBusiness: mids
             fsType: mys3
             bucketName: mids
-
+    xxl:
+      job:
+        enable: true
+        admin:
+          addresses: http://192.168.1.4:20705/xxl-job-admin
+        executor:
+          app-name: mids
+          port: 20707
+          log-retention-days: 30 # 执行器日志保存天数
+        access-token: default_token
 xml-reload-enabled: true
