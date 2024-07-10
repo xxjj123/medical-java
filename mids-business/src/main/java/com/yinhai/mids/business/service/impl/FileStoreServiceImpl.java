@@ -6,7 +6,6 @@ import com.yinhai.mids.business.entity.model.UploadResult;
 import com.yinhai.mids.business.entity.po.FileStorePO;
 import com.yinhai.mids.business.mapper.FileStoreMapper;
 import com.yinhai.mids.business.service.FileStoreService;
-import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.MapperKit;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,27 +35,23 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     @Override
     public UploadResult upload(MultipartFile mf) throws IOException {
-        AppAssert.notNull(mf, "上传文件不能为空");
-        AppAssert.notBlank(mf.getOriginalFilename(), "上传文件文件名不能为空");
-        AppAssert.isTrue(mf.getOriginalFilename().length() < 200, "上传文件文件名长度不能大于200");
+        return upload(new ContextFSObject<>(mf));
+    }
 
-        TaFSObject fs = new TaFSObject();
-        fs.setInputstream(new ByteArrayInputStream(mf.getBytes()));
-        fs.setName(mf.getOriginalFilename());
-        fs.setContentType(mf.getContentType());
-        fs = fsManager.putObject("mids", fs);
-
+    @Override
+    public <T> UploadResult upload(ContextFSObject<T> contextFSObject) throws IOException {
+        TaFSObject taFSObject = fsManager.putObject("mids", contextFSObject);
         FileStorePO fileStorePO = new FileStorePO();
-        fileStorePO.setSize(mf.getSize());
-        fileStorePO.setContentType(mf.getContentType());
-        fileStorePO.setOriginalName(mf.getOriginalFilename());
-        fileStorePO.setAccessPath(fs.getKeyId());
+        fileStorePO.setSize(contextFSObject.getSize());
+        fileStorePO.setContentType(contextFSObject.getContentType());
+        fileStorePO.setOriginalName(contextFSObject.getName());
+        fileStorePO.setAccessPath(taFSObject.getKeyId());
         fileStorePO.setUploadTime(MapperKit.executeForDate());
         fileStoreMapper.insert(fileStorePO);
 
         UploadResult uploadResult = new UploadResult();
         uploadResult.setStoreId(fileStorePO.getId());
-        uploadResult.setAccessPath(fs.getKeyId());
+        uploadResult.setAccessPath(taFSObject.getKeyId());
         return uploadResult;
     }
 

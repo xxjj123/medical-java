@@ -16,6 +16,8 @@ public interface FileStoreService {
 
     UploadResult upload(MultipartFile mf) throws IOException;
 
+    <T> UploadResult upload(ContextFSObject<T> contextFSObject) throws IOException;
+
     <T> List<ContextUploadResult<T>> upload(List<ContextFSObject<T>> fsObjects);
 
 }

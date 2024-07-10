@@ -1,19 +1,27 @@
 package com.yinhai.mids.business.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ZipUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.yinhai.mids.business.constant.AttachmentType;
 import com.yinhai.mids.business.entity.dto.StudyPageQuery;
-import com.yinhai.mids.business.entity.model.ContextFSObject;
-import com.yinhai.mids.business.entity.model.ContextUploadResult;
-import com.yinhai.mids.business.entity.model.DicomInstance;
+import com.yinhai.mids.business.entity.model.DicomInfo;
 import com.yinhai.mids.business.entity.model.UploadResult;
-import com.yinhai.mids.business.entity.po.*;
+import com.yinhai.mids.business.entity.po.AttachmentPO;
+import com.yinhai.mids.business.entity.po.FavoritePO;
+import com.yinhai.mids.business.entity.po.SeriesPO;
+import com.yinhai.mids.business.entity.po.StudyPO;
 import com.yinhai.mids.business.entity.vo.StudyPageVO;
-import com.yinhai.mids.business.mapper.*;
+import com.yinhai.mids.business.event.EventConstants;
+import com.yinhai.mids.business.mapper.AttachmentMapper;
+import com.yinhai.mids.business.mapper.FavoriteMapper;
+import com.yinhai.mids.business.mapper.SeriesMapper;
+import com.yinhai.mids.business.mapper.StudyMapper;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.service.StudyService;
 import com.yinhai.mids.business.util.DicomUtil;
@@ -22,6 +30,8 @@ import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.MapperKit;
 import com.yinhai.mids.common.util.PageKit;
 import com.yinhai.mids.common.util.SecurityKit;
+import com.yinhai.ta404.core.event.EventPublish;
+import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.restservice.resultbean.Page;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import lombok.extern.slf4j.Slf4j;
@@ -34,11 +44,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -57,9 +66,6 @@ public class StudyServiceImpl implements StudyService {
     private SeriesMapper seriesMapper;
 
     @Resource
-    private InstanceMapper instanceMapper;
-
-    @Resource
     private AttachmentMapper attachmentMapper;
 
     @Resource
@@ -68,100 +74,76 @@ public class StudyServiceImpl implements StudyService {
     @Resource
     private FileStoreService fileStoreService;
 
+    @Resource
+    private EventPublish eventPublish;
+
     @Override
     public void uploadDicom(MultipartFile dicomZip) throws IOException {
-
-        AppAssert.isTrue("zip".equals(FileTypeUtil.getType(dicomZip.getInputStream())), "当前只允许上传dicom zip文件");
+        AppAssert.equals("zip", FileTypeUtil.getType(dicomZip.getInputStream()), "只允许上传dicom zip文件");
 
         // 解压并读取dicom信息
-        List<DicomInstance> dicomInstanceList = new ArrayList<>();
-        try (InputStream is = dicomZip.getInputStream()) {
-            File tempDir = Files.createTempDirectory("dicom").toFile();
-            ZipUtil.unzip(is, tempDir, Charset.defaultCharset());
+        File tempDir;
+        try {
+            tempDir = Files.createTempDirectory("dicom").toFile();
+        } catch (IOException e) {
+            throw new AppException("创建临时文件异常");
+        }
+        Map<String, DicomInfo> studyMap = new HashMap<>();
+        Multimap<String, DicomInfo> seriesMap = ArrayListMultimap.create();
+        try (InputStream inputStream = dicomZip.getInputStream()) {
+            ZipUtil.unzip(inputStream, tempDir, Charset.defaultCharset());
             for (File dicomFile : FileUtil.ls(tempDir.getAbsolutePath())) {
-                DicomInstance dicomInstance = new DicomInstance();
-                dicomInstance.setDicomInfo(DicomUtil.readDicomInfo(dicomFile));
-                dicomInstance.setDicomFile(dicomFile);
-                dicomInstance.setInstance(new InstancePO());
-                BeanUtil.copyProperties(dicomInstance.getDicomInfo(), dicomInstance.getInstance());
-                dicomInstanceList.add(dicomInstance);
+                DicomInfo dicomInfo = DicomUtil.readDicomInfo(dicomFile);
+                if (!studyMap.containsKey(dicomInfo.getStudyUid())) {
+                    studyMap.put(dicomInfo.getStudyUid(), dicomInfo);
+                }
+                seriesMap.put(dicomInfo.getSeriesUid(), dicomInfo);
             }
         }
 
-        List<String> studyIdList = saveStudies(dicomInstanceList);
-        saveSeries(dicomInstanceList);
-        instanceMapper.insertBatch(dicomInstanceList.stream().map(DicomInstance::getInstance).collect(toList()));
-        saveZipFile(dicomZip, studyIdList);
-        saveDicomFiles(dicomInstanceList);
-    }
-
-    private List<String> saveStudies(List<DicomInstance> dicomInstanceList) {
-        List<String> studyIdList = new ArrayList<>();
-        Map<String, List<DicomInstance>> studyGroup = dicomInstanceList.stream()
-                .collect(groupingBy(di -> di.getDicomInfo().getStudyUid()));
-        for (Map.Entry<String, List<DicomInstance>> entry : studyGroup.entrySet()) {
-            DicomInstance di = entry.getValue().get(0);
+        // 保存study
+        Map<String, StudyPO> studyPOMap = new HashMap<>();
+        List<StudyPO> studyPOList = studyMap.values().stream().map(dicomInfo -> {
             StudyPO studyPO = new StudyPO();
-            BeanUtil.copyProperties(di.getDicomInfo(), studyPO);
+            BeanUtil.copyProperties(dicomInfo, studyPO);
             studyPO.setAlgorithmType("1");
             studyPO.setPrintStatus("1");
             studyPO.setPushStatus("1");
             studyPO.setUploadTime(MapperKit.executeForDate());
             studyPO.setUploadUserId(SecurityKit.currentUserId());
-            studyMapper.insert(studyPO);
-            entry.getValue().forEach(e -> e.getInstance().setStudyId(studyPO.getId()));
-            studyIdList.add(studyPO.getId());
-        }
-        return studyIdList;
-    }
+            studyPOMap.put(dicomInfo.getStudyUid(), studyPO);
+            return studyPO;
+        }).collect(toList());
+        studyMapper.insertBatch(studyPOList);
 
-    private void saveSeries(List<DicomInstance> dicomInstanceList) {
-        Map<String, List<DicomInstance>> seriesGroup = dicomInstanceList.stream()
-                .collect(groupingBy(di -> di.getDicomInfo().getSeriesUid()));
-        for (Map.Entry<String, List<DicomInstance>> entry : seriesGroup.entrySet()) {
-            DicomInstance di = entry.getValue().get(0);
+        // 保存series
+        seriesMapper.insertBatch(seriesMap.keySet().stream().map(seriesUid -> {
+            DicomInfo dicomInfo = CollUtil.getFirst(seriesMap.get(seriesUid));
             SeriesPO seriesPO = new SeriesPO();
-            seriesPO.setStudyId(di.getInstance().getStudyId());
-            BeanUtil.copyProperties(di.getDicomInfo(), seriesPO);
-            seriesPO.setImageCount(entry.getValue().size());
+            seriesPO.setStudyId(studyPOMap.get(dicomInfo.getStudyUid()).getId());
+            BeanUtil.copyProperties(dicomInfo, seriesPO);
+            seriesPO.setImageCount(seriesMap.get(seriesUid).size());
             seriesPO.setAlgorithmType("1");
             seriesPO.setComputeStatus("1");
             seriesPO.setOperateStatus("1");
-            seriesMapper.insert(seriesPO);
-            entry.getValue().forEach(e -> e.getInstance().setSeriesId(seriesPO.getId()));
-        }
-    }
+            return seriesPO;
+        }).collect(toList()));
 
-    private void saveZipFile(MultipartFile dicom, List<String> studyIdList) throws IOException {
-        UploadResult uploadResult = fileStoreService.upload(dicom);
-        attachmentMapper.insertBatch(studyIdList.stream().map(studyId -> {
+        // 保存上传文件
+        UploadResult uploadResult = fileStoreService.upload(dicomZip);
+        attachmentMapper.insertBatch(studyPOList.stream().map(studyPO -> {
             AttachmentPO attachmentPO = new AttachmentPO();
             attachmentPO.setStoreId(uploadResult.getStoreId());
-            attachmentPO.setObjectId(studyId);
-            attachmentPO.setUseType(AttachmentType.DICOM_ZIP);
+            attachmentPO.setObjectId(studyPO.getId());
+            attachmentPO.setUseType(AttachmentType.DICOM_UPLOAD_ZIP);
             return attachmentPO;
         }).collect(toList()));
-    }
 
-    private void saveDicomFiles(List<DicomInstance> dicomInstanceList) {
-        List<ContextFSObject<String>> contextFSObjects = new ArrayList<>();
-        for (DicomInstance di : dicomInstanceList) {
-            ContextFSObject<String> contextFSObject = new ContextFSObject<>();
-            contextFSObject.setContext(di.getInstance().getId());
-            contextFSObject.setName(di.getDicomFile().getName());
-            contextFSObject.setInputstream(FileUtil.getInputStream(di.getDicomFile()));
-            contextFSObject.setContentType(FileUtil.getMimeType(di.getDicomFile().getAbsolutePath()));
-            contextFSObject.setSize(FileUtil.size(di.getDicomFile()));
-            contextFSObjects.add(contextFSObject);
-        }
-        List<ContextUploadResult<String>> contextUploadResults = fileStoreService.upload(contextFSObjects);
-        attachmentMapper.insertBatch(contextUploadResults.stream().map(i -> {
-            AttachmentPO attachmentPO = new AttachmentPO();
-            attachmentPO.setStoreId(i.getStoreId());
-            attachmentPO.setObjectId(i.getContext());
-            attachmentPO.setUseType(AttachmentType.DICOM_FILE);
-            return attachmentPO;
-        }).collect(toList()));
+        // 异步保存instances
+        Map<String, Object> eventSource = new HashMap<>();
+        eventSource.put("studyIdList", studyPOList.stream().map(StudyPO::getId).collect(toList()));
+        eventSource.put("seriesMap", seriesMap);
+        eventPublish.publish(eventSource, EventConstants.DICOM_UPLOAD);
     }
 
     @Override
@@ -217,4 +199,5 @@ public class StudyServiceImpl implements StudyService {
         int deleted = seriesMapper.deleteById(seriesId);
         AppAssert.isTrue(deleted == 1, "删除序列失败");
     }
+
 }

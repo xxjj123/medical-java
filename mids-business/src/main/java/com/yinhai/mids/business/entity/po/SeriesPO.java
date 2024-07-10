@@ -3,6 +3,7 @@ package com.yinhai.mids.business.entity.po;
 import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.Date;
 
@@ -12,6 +13,7 @@ import java.util.Date;
  * @author zhuhs
  * @date 2024/7/2 9:40
  */
+@Accessors(chain = true)
 @Schema(description = "序列表")
 @Data
 @TableName(value = "tb_series")
@@ -73,10 +75,17 @@ public class SeriesPO {
     private String algorithmType;
 
     /**
-     * 计算状态
+     * 申请编号
+     */
+    @TableField(value = "apply_id")
+    @Schema(description = "申请编号")
+    private String applyId;
+
+    /**
+     * 计算状态 1-等待计算 2-计算中 3-计算成功 4-计算失败 5-计算取消  6-计算异常
      */
     @TableField(value = "compute_status")
-    @Schema(description = "计算状态")
+    @Schema(description = "计算状态 1-等待计算 2-计算中 3-计算成功 4-计算失败 5-计算取消 6-计算异常")
     private String computeStatus;
 
     /**

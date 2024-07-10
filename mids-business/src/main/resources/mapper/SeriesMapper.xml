@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yinhai.mids.business.mapper.SeriesMapper">
+  <resultMap id="BaseResultMap" type="com.yinhai.mids.business.entity.po.SeriesPO">
+    <!--@mbg.generated-->
+    <!--@Table tb_series-->
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="study_id" jdbcType="VARCHAR" property="studyId" />
+    <result column="study_uid" jdbcType="VARCHAR" property="studyUid" />
+    <result column="series_uid" jdbcType="VARCHAR" property="seriesUid" />
+    <result column="series_description" jdbcType="VARCHAR" property="seriesDescription" />
+    <result column="image_count" jdbcType="INTEGER" property="imageCount" />
+    <result column="algorithm_type" jdbcType="VARCHAR" property="algorithmType" />
+    <result column="compute_status" jdbcType="VARCHAR" property="computeStatus" />
+    <result column="operate_status" jdbcType="VARCHAR" property="operateStatus" />
+    <result column="operate_doctor_user_id" jdbcType="VARCHAR" property="operateDoctorUserId" />
+    <result column="deleted" jdbcType="TINYINT" property="deleted" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, study_id, study_uid, series_uid, series_description, image_count, algorithm_type, 
+    compute_status, operate_status, operate_doctor_user_id, deleted, create_time, update_time
+  </sql>
+</mapper>

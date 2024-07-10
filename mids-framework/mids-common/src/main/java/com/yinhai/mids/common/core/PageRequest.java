@@ -23,7 +23,7 @@ public class PageRequest extends PageParam {
      */
     private boolean reasonable = true;
 
-    private static PageRequest of(int pageNumber, int pageSize) {
+    public static PageRequest of(int pageNumber, int pageSize) {
         PageRequest pageRequest = new PageRequest();
         pageRequest.setPageNumber(pageNumber);
         pageRequest.setPageSize(pageSize);

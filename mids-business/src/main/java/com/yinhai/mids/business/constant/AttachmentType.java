@@ -14,4 +14,6 @@ public class AttachmentType {
 
     public static final int DICOM_ZIP = 2;
 
+    public static final int DICOM_UPLOAD_ZIP = 3;
+
 }

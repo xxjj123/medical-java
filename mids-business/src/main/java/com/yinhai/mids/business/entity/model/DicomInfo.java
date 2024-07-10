@@ -2,6 +2,7 @@ package com.yinhai.mids.business.entity.model;
 
 import lombok.Data;
 
+import java.io.File;
 import java.util.Date;
 
 /**
@@ -70,5 +71,10 @@ public class DicomInfo {
      * SeriesDescription 序列描述
      */
     private String seriesDescription;
+
+    /**
+     * DICOM文件
+     */
+    private File file;
 
 }
