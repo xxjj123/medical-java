@@ -8,31 +8,37 @@ import lombok.Data;
  * @date 2024/7/2 16:09
  */
 @Data
-public class SeriesPageVO {
+public class SeriesComputePageVO {
 
     /**
-     * 序列主键
+     * 计算序列ID
      */
-    @Schema(description = "主键")
-    private String seriesId;
+    @Schema(description = "计算序列ID")
+    private String seriesComputeId;
 
     /**
      * 检查研究主键
      */
-    @Schema(description = "检查研究主键")
+    @Schema(description = "检查ID")
     private String studyId;
 
     /**
-     * StudyInstanceUID 研究实例UID
+     * 序列ID
      */
-    @Schema(description = "StudyInstanceUID 研究实例UID")
-    private String studyUid;
+    @Schema(description = "序列ID")
+    private String seriesId;
 
     /**
-     * SeriesInstanceUID 序列实例UID
+     * StudyInstanceUID
      */
-    @Schema(description = "SeriesInstanceUID 序列实例UID")
-    private String seriesUid;
+    @Schema(description = "StudyInstanceUID")
+    private String studyInstanceUid;
+
+    /**
+     * SeriesInstanceUID
+     */
+    @Schema(description = "SeriesInstanceUID")
+    private String seriesInstanceUid;
 
     /**
      * SeriesNumber 序列号

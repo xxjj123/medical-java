@@ -16,14 +16,14 @@ public class StudyPageVO {
     /**
      * 检查研究主键
      */
-    @Schema(description = "检查研究主键")
+    @Schema(description = "检查ID")
     private String studyId;
 
     /**
      * StudyInstanceUID 研究实例UID
      */
-    @Schema(description = "StudyInstanceUID 研究实例UID")
-    private String studyUid;
+    @Schema(description = "StudyInstanceUID")
+    private String studyInstanceUid;
 
     /**
      * AccessionNumber 检查号
@@ -53,7 +53,7 @@ public class StudyPageVO {
      * StudyDateAndTime 检查时间
      */
     @Schema(description = "StudyDateAndTime 检查时间")
-    private Date studyDatetime;
+    private Date studyDateAndTime;
 
     /**
      * StudyDescription 检查描述
@@ -97,5 +97,5 @@ public class StudyPageVO {
     @Schema(description = "操作医师")
     private String operateDoctorUserId;
 
-    List<SeriesPageVO> seriesList;
+    List<SeriesComputePageVO> seriesList;
 }
