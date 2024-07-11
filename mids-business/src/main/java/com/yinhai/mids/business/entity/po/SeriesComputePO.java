@@ -98,6 +98,7 @@ public class SeriesComputePO {
     /**
      * 逻辑删除
      */
+    @TableLogic
     @TableField(value = "deleted")
     @Schema(description = "逻辑删除")
     private Boolean deleted;

@@ -298,9 +298,10 @@ public class StudyServiceImpl implements StudyService {
 
     @Override
     public void deleteSeriesCompute(String seriesComputeId) {
-        boolean seriesExists = seriesMapper.exists(Wrappers.<SeriesPO>lambdaQuery().eq(SeriesPO::getId, seriesComputeId));
+        boolean seriesExists = seriesComputeMapper.exists(
+                Wrappers.<SeriesComputePO>lambdaQuery().eq(SeriesComputePO::getId, seriesComputeId));
         AppAssert.isTrue(seriesExists, "该序列不存在！");
-        int deleted = seriesMapper.deleteById(seriesComputeId);
+        int deleted = seriesComputeMapper.deleteById(seriesComputeId);
         AppAssert.isTrue(deleted == 1, "删除序列失败");
     }
 

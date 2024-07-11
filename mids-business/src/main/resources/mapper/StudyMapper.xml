@@ -61,11 +61,15 @@
                  LEFT JOIN (SELECT study_id, user_id FROM tb_favorite WHERE user_id = #{userId,jdbcType=VARCHAR}) d
                            ON a.id = d.study_id
         <where>
+            a.deleted = 0
+              AND b.deleted = 0
+              AND c.deleted = 0
             <if test="query.startDate != null">
                 AND a.study_date_and_time > #{query.startDate, jdbcType=DATE}
             </if>
             <if test="query.endDate != null">
-                AND a.study_date_and_time &lt; #{query.endDate,jdbcType=TIMESTAMP}
+                AND a.study_date_and_time
+                    &lt; #{query.endDate,jdbcType=TIMESTAMP}
             </if>
             <if test="query.accessionNumber != null and query.accessionNumber != ''">
                 AND a.accession_number = #{query.accessionNumber,jdbcType=VARCHAR}
