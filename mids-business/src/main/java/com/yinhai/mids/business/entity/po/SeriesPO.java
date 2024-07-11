@@ -3,18 +3,16 @@ package com.yinhai.mids.business.entity.po;
 import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.experimental.Accessors;
 
 import java.util.Date;
 
 /**
- * 序列表
+ * 序列
  *
  * @author zhuhs
- * @date 2024/7/2 9:40
+ * @date 2024/7/11 9:21
  */
-@Accessors(chain = true)
-@Schema(description = "序列表")
+@Schema(description = "序列")
 @Data
 @TableName(value = "tb_series")
 public class SeriesPO {
@@ -33,18 +31,18 @@ public class SeriesPO {
     private String studyId;
 
     /**
-     * StudyInstanceUID 研究实例UID
+     * StudyInstanceUID
      */
-    @TableField(value = "study_uid")
-    @Schema(description = "StudyInstanceUID 研究实例UID")
-    private String studyUid;
+    @TableField(value = "study_instance_uid")
+    @Schema(description = "StudyInstanceUID")
+    private String studyInstanceUid;
 
     /**
-     * SeriesInstanceUID 序列实例UID
+     * SeriesInstanceUID
      */
-    @TableField(value = "series_uid")
-    @Schema(description = "SeriesInstanceUID 序列实例UID")
-    private String seriesUid;
+    @TableField(value = "series_instance_uid")
+    @Schema(description = "SeriesInstanceUID")
+    private String seriesInstanceUid;
 
     /**
      * SeriesNumber 序列号
@@ -68,46 +66,11 @@ public class SeriesPO {
     private Integer imageCount;
 
     /**
-     * 算法类型
-     */
-    @TableField(value = "algorithm_type")
-    @Schema(description = "算法类型")
-    private String algorithmType;
-
-    /**
-     * 申请编号
-     */
-    @TableField(value = "apply_id")
-    @Schema(description = "申请编号")
-    private String applyId;
-
-    /**
-     * 计算状态 1-等待计算 2-计算中 3-计算成功 4-计算失败 5-计算取消  6-计算异常
-     */
-    @TableField(value = "compute_status")
-    @Schema(description = "计算状态 1-等待计算 2-计算中 3-计算成功 4-计算失败 5-计算取消 6-计算异常")
-    private String computeStatus;
-
-    /**
-     * 操作状态
-     */
-    @TableField(value = "operate_status")
-    @Schema(description = "操作状态")
-    private String operateStatus;
-
-    /**
-     * 操作医师
-     */
-    @TableField(value = "operate_doctor_user_id")
-    @Schema(description = "操作医师")
-    private String operateDoctorUserId;
-
-    /**
      * 逻辑删除
      */
     @TableField(value = "deleted")
     @Schema(description = "逻辑删除")
-    private Integer deleted;
+    private Boolean deleted;
 
     /**
      * 数据创建时间

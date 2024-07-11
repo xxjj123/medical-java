@@ -1,5 +1,6 @@
 package com.yinhai.mids.business.service;
 
+import com.yinhai.mids.business.entity.dto.AlgorithmParam;
 import com.yinhai.mids.business.entity.dto.StudyPageQuery;
 import com.yinhai.mids.business.entity.vo.StudyPageVO;
 import com.yinhai.mids.common.core.PageRequest;
@@ -7,6 +8,7 @@ import com.yinhai.ta404.core.restservice.resultbean.Page;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author zhuhs
@@ -14,7 +16,7 @@ import java.io.IOException;
  */
 public interface StudyService {
 
-    void uploadDicom(MultipartFile dicom) throws IOException;
+    void uploadDicom(MultipartFile dicom, List<AlgorithmParam> algorithmParamList) throws IOException;
 
     Page<StudyPageVO> pageStudies(StudyPageQuery studyPageQuery, PageRequest pageRequest);
 

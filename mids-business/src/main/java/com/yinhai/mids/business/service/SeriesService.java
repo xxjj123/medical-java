@@ -6,6 +6,6 @@ package com.yinhai.mids.business.service;
  */
 public interface SeriesService {
 
-    void reAnalyse(String seriesId);
+    void reAnalyse(String seriesComputeId);
 
 }

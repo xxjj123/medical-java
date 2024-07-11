@@ -2,33 +2,42 @@ package com.yinhai.mids.business.analysis;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.exceptions.ExceptionUtil;
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.yinhai.mids.business.analysis.keya.KeyaAnalyseResult;
 import com.yinhai.mids.business.analysis.keya.KeyaClient;
 import com.yinhai.mids.business.analysis.keya.KeyaResponse;
 import com.yinhai.mids.business.analysis.keya.RegisterBody;
-import com.yinhai.mids.business.constant.AttachmentType;
+import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.*;
-import com.yinhai.mids.business.entity.vo.AttachmentVO;
 import com.yinhai.mids.business.mapper.*;
-import com.yinhai.mids.business.util.AttachmentKit;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.JsonKit;
+import com.yinhai.mids.common.util.MapperKit;
+import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
 import com.yinhai.ta404.module.storage.core.TaFSObject;
 import com.yinhai.ta404.storage.ta.core.FSManager;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.yinhai.mids.business.constant.ComputeStatus.COMPUTE_ERROR;
-import static com.yinhai.mids.business.constant.ComputeStatus.IN_COMPUTE;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author zhuhs
@@ -41,6 +50,12 @@ public class AnalyseEngine {
 
     @Resource
     private SeriesMapper seriesMapper;
+
+    @Resource
+    private SeriesComputeMapper seriesComputeMapper;
+
+    @Resource
+    private InstanceMapper instanceMapper;
 
     @Resource
     private StudyMapper studyMapper;
@@ -60,42 +75,97 @@ public class AnalyseEngine {
     @Resource
     private KeyaClient keyaClient;
 
-    public void register(SeriesPO seriesPO) {
-        try {
-            StudyPO studyPO = studyMapper.selectById(seriesPO.getStudyId());
-            AppAssert.notNull(seriesPO, "检查{}不存在！", seriesPO.getStudyId());
-            List<AttachmentVO> attachments = AttachmentKit.getAttachments(seriesPO.getId(), AttachmentType.DICOM_ZIP);
-            AppAssert.notEmpty(attachments, "序列{}DICOM文件丢失！", seriesPO.getId());
+    @SuppressWarnings("unchecked")
+    public void register(String seriesComputeId) {
+        SeriesComputePO seriesComputePO = seriesComputeMapper.selectById(seriesComputeId);
+        if (seriesComputePO == null) {
+            log.error("计算序列{}不存在", seriesComputeId);
+            return;
+        }
 
-            TaFSObject fsObject = fsManager.getObject("mids", attachments.get(0).getAccessPath());
-            RegisterBody registerBody = new RegisterBody();
-            String applyId = IdUtil.fastSimpleUUID();
-            registerBody.setApplyId(applyId);
-            registerBody.setAccessionNumber(studyPO.getAccessionNumber());
-            registerBody.setStudyInstanceUID(seriesPO.getStudyUid());
-            registerBody.setHospitalId("ctbay99");
-            registerBody.setExaminedName("胸部平扫");
-            registerBody.setPatientName(studyPO.getPatientName());
-            registerBody.setPatientAge(studyPO.getPatientAge());
-            registerBody.setStudyDate(DateUtil.formatDateTime(studyPO.getStudyDatetime()));
-            KeyaResponse response = keyaClient.register(fsObject.getInputstream(), registerBody);
-            if (response.getCode() != 1) {
-                log.error("发起分析异常，分析引擎返回{}", JsonKit.toJsonString(response));
-                seriesMapper.updateById(new SeriesPO().setId(seriesPO.getId()).setComputeStatus(COMPUTE_ERROR));
-                return;
+        StudyPO studyPO = studyMapper.selectById(seriesComputePO.getStudyId());
+        if (studyPO == null) {
+            log.error("计算序列{}对应检查不存在", seriesComputeId);
+            seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+                    .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
+                    .setErrorMessage(StrUtil.format("计算序列{}对应检查不存在", seriesComputeId)));
+            return;
+        }
+
+        LambdaQueryWrapper<InstancePO> queryWrapper = Wrappers.<InstancePO>lambdaQuery()
+                .select(InstancePO::getAccessPath, InstancePO::getSopInstanceUid)
+                .eq(InstancePO::getSeriesId, seriesComputePO.getSeriesId());
+        List<InstancePO> instancePOList = instanceMapper.selectList(queryWrapper);
+        if (CollUtil.isEmpty(instancePOList)) {
+            log.error("计算序列{}对应实例不存在", seriesComputeId);
+            seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+                    .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
+                    .setErrorMessage(StrUtil.format("计算序列{}对应实例不存在", seriesComputeId)));
+            return;
+        }
+
+        RegisterBody registerBody = new RegisterBody();
+        String applyId = IdUtil.fastSimpleUUID();
+        registerBody.setApplyId(applyId);
+        registerBody.setAccessionNumber(studyPO.getAccessionNumber());
+        registerBody.setStudyInstanceUID(studyPO.getStudyInstanceUid());
+        registerBody.setHospitalId("ctbay99");
+        registerBody.setExaminedName("胸部平扫");
+        registerBody.setPatientName(studyPO.getPatientName());
+        registerBody.setPatientAge(studyPO.getPatientAge());
+        registerBody.setStudyDate(DateUtil.formatDateTime(studyPO.getStudyDateAndTime()));
+
+        KeyaResponse response = null;
+        try (InputStream inputStream = readDicomFromFSAndZip(instancePOList)) {
+            response = keyaClient.register(inputStream, registerBody);
+            if (response.getCode() == 1) {
+                seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+                        .setApplyId(applyId)
+                        .setComputeStatus(ComputeStatus.IN_COMPUTE)
+                        .setComputeStartTime(MapperKit.executeForDate())
+                        .setComputeResponse(JsonKit.toJsonString(response)));
+            } else {
+                seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+                        .setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                        .setComputeResponse(JsonKit.toJsonString(response)));
             }
-
-            seriesPO.setApplyId(applyId);
-            seriesMapper.updateById(new SeriesPO().setId(seriesPO.getId()).setComputeStatus(IN_COMPUTE));
         } catch (Exception e) {
-            log.error(e, "发起分析异常，{}", e.getMessage());
-            seriesMapper.updateById(new SeriesPO().setId(seriesPO.getId()).setComputeStatus(COMPUTE_ERROR));
+            log.error(e);
+            seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+                    .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
+                    .setErrorMessage(e instanceof AppException ? ((AppException) e).getErrorMessage()
+                            : ExceptionUtil.getRootCauseMessage(e))
+                    .setComputeResponse(response != null ? JsonKit.toJsonString(response) : null));
         }
     }
 
-    public void result(SeriesPO seriesPO) {
-        String applyId = seriesPO.getApplyId();
-        KeyaResponse keyaResponse = keyaClient.result(applyId);
+    /**
+     * 根据accessPath从fs读取文件并压缩
+     *
+     * @param instancePOList 实例列表
+     * @return {@link File }
+     * @author zhuhs 2024/07/11 14:39
+     */
+    private InputStream readDicomFromFSAndZip(List<InstancePO> instancePOList) {
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+             ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+            for (InstancePO instancePO : instancePOList) {
+                TaFSObject fsObject = fsManager.getObject("mids", instancePO.getAccessPath());
+                zipOutputStream.putNextEntry(new ZipEntry(instancePO.getSopInstanceUid()));
+                try (InputStream inputStream = fsObject.getInputstream()) {
+                    IoUtil.copy(inputStream, zipOutputStream);
+                }
+                zipOutputStream.closeEntry();
+            }
+            return IoUtil.toStream(outputStream);
+        } catch (IOException e) {
+            throw new AppException("读取并压缩DICOM文件异常");
+        }
+    }
+
+    public void result(String applyId) {
+        // KeyaResponse keyaResponse = keyaClient.result(applyId);
+        KeyaResponse keyaResponse = JsonKit.parseObject(ResourceUtil.readUtf8Str("apiResult.json"), KeyaResponse.class);
         if (keyaResponse.getCode() == 1) {
             String dataContent = JsonKit.parseTree(JsonKit.toJsonString(keyaResponse)).get("data").toString();
             KeyaAnalyseResult analyseResult = JsonKit.parseObject(dataContent, KeyaAnalyseResult.class);
@@ -110,6 +180,13 @@ public class AnalyseEngine {
             CollUtil.addIfAbsent(analysisOverviewPOList, getFracOverviewPO(applyId, result));
             analysisOverviewMapper.insertBatch(analysisOverviewPOList);
             saveDetailAndAnnotations(applyId, result, noduleOverviewPO);
+            seriesComputeMapper.update(new SeriesComputePO().setComputeStatus(ComputeStatus.COMPUTE_SUCCESS)
+                            .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
+                    Wrappers.<SeriesComputePO>lambdaQuery().eq(SeriesComputePO::getApplyId, applyId));
+        } else {
+            seriesComputeMapper.update(new SeriesComputePO().setComputeResponse(JsonKit.toJsonString(keyaResponse)),
+                    Wrappers.<SeriesComputePO>lambdaQuery().eq(SeriesComputePO::getApplyId, applyId));
+
         }
     }
 

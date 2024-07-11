@@ -1,0 +1,74 @@
+{
+  "code": 1,
+  "message": "success",
+  "data": {
+    "result": {
+      "calcium": {
+        "finding": "冠状动脉管壁未见钙化，总钙化积分为0。",
+        "hasLesion": false,
+        "number": 0,
+        "SeriesInstanceUID": "1.2.840.113619.6.80.114374083466789.42587.1628645840532.1"
+      },
+      "pneumonia": {
+        "diagnosis": "胸部CT平扫未见明显炎性密度影。",
+        "finding": "双肺纹理清晰，未见明显炎性密度影。  ",
+        "hasLesion": false,
+        "number": 0,
+        "SeriesInstanceUID": "1.2.840.113619.6.80.114374083466789.42587.1628645840532.1"
+      },
+      "nodule": {
+        "diagnosis": "胸部CT平扫未见明显结节影。",
+        "finding": "双肺纹理清晰，未见明显结节影。",
+        "hasLesion": true,
+        "number": 1,
+        "volumeDetailList": [
+          {
+            "annotation": [
+              {
+                "type": "CUBE",
+                "points": [
+                  {
+                    "x": 200,
+                    "y": 395,
+                    "z": 184
+                  },
+                  {
+                    "x": 212,
+                    "y": 408,
+                    "z": 193
+                  }
+                ]
+              }
+            ],
+            "vocabularyEntry": "左肺下叶外基底段:实性结节",
+            "type": "Solid",
+            "lobeSegment": 17,
+            "lobe": "lobe_left_bottom",
+            "volume": 9.3,
+            "ctMeasures": {
+              "mean": -364.7,
+              "minimum": -654,
+              "maximum": -30
+            },
+            "ellipsoidAxis": {
+              "least": 1.9,
+              "minor": 2.6,
+              "major": 3
+            },
+            "riskCode": 1,
+            "SOPInstanceUID": "1.2.840.113619.2.80.2812139045.42587.1628645840.37"
+          }
+        ],
+        "SeriesInstanceUID": "1.2.840.113619.6.80.114374083466789.42587.1628645840532.1"
+      },
+      "frac": {
+        "diagnosis": "肋骨未见明显异常。",
+        "finding": "胸廓对称，肋骨走行自然。片中所示骨性肋骨骨质连续性完整，未见中断影像。",
+        "hasLesion": false,
+        "number": 0,
+        "SeriesInstanceUID": "1.2.840.113619.6.80.114374083466789.42587.1628645840532.1"
+      }
+    },
+    "aiResultUrl": "http://192.168.1.24/#token=eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJpbnRlcm5hbF9pbnRlcm5hbCIsImp3dENsYWltIjp7InVzZXJJZCI6LTEsImFjY291bnQiOiJpbnRlcm5hbCIsIm5hbWUiOiJpbnRlcm5hbCIsInJvbGUiOiJpbnRlcm5hbCIsImFjY291bnRMb2dJZCI6bnVsbH0sImlhdCI6MTcxOTgwMjI2OCwiZXhwIjoxNzIwNDA3MDY4fQ.aPPFZ1LlEX9ux9NhHDaSQykIMlvv-l9GYqfmDtNE6KjD5GUv-zpvVqxiua1E8CHgJplY8pgeA-_MC3qpmqYIUA&StudyInstanceUID=1.2.840.86.755.86226839.811.3515922"
+  }
+}

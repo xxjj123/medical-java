@@ -1,5 +1,6 @@
 package com.yinhai.mids.business.entity.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.File;
@@ -13,68 +14,81 @@ import java.util.Date;
 public class DicomInfo {
 
     /**
-     * StudyInstanceUID 研究实例UID
+     * StudyInstanceUID
      */
-    private String studyUid;
+    @Schema(description = "StudyInstanceUID")
+    private String studyInstanceUid;
 
     /**
-     * SeriesInstanceUID 序列实例UID
+     * SeriesInstanceUID
      */
-    private String seriesUid;
+    @Schema(description = "SeriesInstanceUID")
+    private String seriesInstanceUid;
 
     /**
-     * SOPInstanceUID 服务对象对实例UID
+     * SOPInstanceUID
      */
-    private String instanceUid;
-
-    /**
-     * InstanceNumber 实例顺序
-     */
-    private Integer instanceNumber;
+    @Schema(description = "SOPInstanceUID")
+    private String sopInstanceUid;
 
     /**
      * AccessionNumber 检查号
      */
+    @Schema(description = "AccessionNumber 检查号")
     private String accessionNumber;
 
     /**
      * PatientID 患者ID
      */
+    @Schema(description = "PatientID 患者ID")
     private String patientId;
 
     /**
      * PatientName 患者姓名
      */
+    @Schema(description = "PatientName 患者姓名")
     private String patientName;
 
     /**
      * PatientAge 年龄
      */
+    @Schema(description = "PatientAge 年龄")
     private String patientAge;
 
     /**
      * StudyDateAndTime 检查时间
      */
-    private Date studyDatetime;
+    @Schema(description = "StudyDateAndTime 检查时间")
+    private Date studyDateAndTime;
 
     /**
      * StudyDescription 检查描述
      */
+    @Schema(description = "StudyDescription 检查描述")
     private String studyDescription;
 
     /**
      * SeriesNumber 序列号
      */
+    @Schema(description = "SeriesNumber 序列号")
     private String seriesNumber;
 
     /**
      * SeriesDescription 序列描述
      */
+    @Schema(description = "SeriesDescription 序列描述")
     private String seriesDescription;
+
+    /**
+     * InstanceNumber 实例顺序
+     */
+    @Schema(description = "InstanceNumber 实例顺序")
+    private Integer instanceNumber;
 
     /**
      * DICOM文件
      */
+    @Schema(description = "DICOM文件")
     private File file;
 
 }

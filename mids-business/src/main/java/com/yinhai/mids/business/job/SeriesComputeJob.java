@@ -5,7 +5,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import com.yinhai.mids.business.analysis.AnalyseEngine;
 import com.yinhai.mids.business.constant.ComputeStatus;
-import com.yinhai.mids.business.entity.po.SeriesPO;
+import com.yinhai.mids.business.entity.po.SeriesComputePO;
+import com.yinhai.mids.business.mapper.SeriesComputeMapper;
 import com.yinhai.mids.business.mapper.SeriesMapper;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.util.PageKit;
@@ -25,19 +26,25 @@ public class SeriesComputeJob {
     private SeriesMapper seriesMapper;
 
     @Resource
+    private SeriesComputeMapper seriesComputeMapper;
+
+    @Resource
     private AnalyseEngine analyseEngine;
 
     @XxlJob("register")
     public void register() {
         // 控制每次发起的数量
         PageKit.startPage(PageRequest.of(1, 2));
-        List<SeriesPO> seriesPOList = seriesMapper.selectList(Wrappers.<SeriesPO>lambdaQuery()
-                .eq(SeriesPO::getComputeStatus, ComputeStatus.WAIT_COMPUTE).orderByAsc(SeriesPO::getCreateTime));
-        if (CollUtil.isEmpty(seriesPOList)) {
+        List<SeriesComputePO> seriesComputePOList = seriesComputeMapper.selectList(
+                Wrappers.<SeriesComputePO>lambdaQuery()
+                        .eq(SeriesComputePO::getComputeStatus, ComputeStatus.WAIT_COMPUTE)
+                        .orderByAsc(SeriesComputePO::getCreateTime)
+        );
+        if (CollUtil.isEmpty(seriesComputePOList)) {
             return;
         }
-        for (SeriesPO seriesPO : seriesPOList) {
-            analyseEngine.register(seriesPO);
+        for (SeriesComputePO seriesComputePO : seriesComputePOList) {
+            analyseEngine.register(seriesComputePO.getId());
         }
     }
 
@@ -45,13 +52,16 @@ public class SeriesComputeJob {
     public void result() {
         // 控制每次发起的数量
         PageKit.startPage(PageRequest.of(1, 2));
-        List<SeriesPO> seriesPOList = seriesMapper.selectList(Wrappers.<SeriesPO>lambdaQuery()
-                .eq(SeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE).orderByAsc(SeriesPO::getCreateTime));
-        if (CollUtil.isEmpty(seriesPOList)) {
+        List<SeriesComputePO> seriesComputePOList = seriesComputeMapper.selectList(
+                Wrappers.<SeriesComputePO>lambdaQuery()
+                        .eq(SeriesComputePO::getComputeStatus, ComputeStatus.IN_COMPUTE)
+                        .orderByAsc(SeriesComputePO::getComputeStartTime)
+        );
+        if (CollUtil.isEmpty(seriesComputePOList)) {
             return;
         }
-        for (SeriesPO seriesPO : seriesPOList) {
-            analyseEngine.result(seriesPO);
+        for (SeriesComputePO seriesComputePO : seriesComputePOList) {
+            analyseEngine.result(seriesComputePO.getApplyId());
         }
     }
 

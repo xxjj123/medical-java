@@ -1,9 +1,15 @@
 package com.yinhai.mids.business.controller;
 
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.yinhai.mids.business.entity.dto.AlgorithmParam;
 import com.yinhai.mids.business.entity.dto.StudyPageQuery;
 import com.yinhai.mids.business.entity.vo.StudyPageVO;
 import com.yinhai.mids.business.service.StudyService;
 import com.yinhai.mids.common.core.PageRequest;
+import com.yinhai.mids.common.util.JsonKit;
+import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import com.yinhai.ta404.core.restservice.resultbean.Page;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,7 +24,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author zhuhs
@@ -29,13 +37,27 @@ import java.io.IOException;
 @RestService("study")
 public class StudyController {
 
+    private static final Log log = LogFactory.get();
+
     @Resource
     private StudyService studyService;
 
     @Operation(summary = "dicom文件上传")
     @PostMapping("uploadDicom")
-    public void uploadDicom(@RequestPart("dicom") MultipartFile dicom) throws IOException {
-        studyService.uploadDicom(dicom);
+    public void uploadDicom(@RequestPart("dicom")
+                            @NotNull(message = "DICOM文件不能为空") MultipartFile dicom,
+                            @RequestParam("algorithmConfig")
+                            @NotBlank(message = "算法设置不能为空") String algorithmConfig) throws IOException {
+
+        List<AlgorithmParam> algorithmParamList;
+        try {
+            algorithmParamList = JsonKit.parseObject(algorithmConfig, new TypeReference<List<AlgorithmParam>>() {
+            });
+        } catch (Exception e) {
+            log.error(e, "解析算法设置异常");
+            throw new AppException("解析算法设置异常！");
+        }
+        studyService.uploadDicom(dicom, algorithmParamList);
     }
 
     @Operation(summary = "分页查询检查")

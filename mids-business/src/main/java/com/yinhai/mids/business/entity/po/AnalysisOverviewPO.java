@@ -61,7 +61,7 @@ public class AnalysisOverviewPO {
     /**
      * 阴阳性
      */
-    @TableField(value = "hasLesion")
+    @TableField(value = "has_lesion")
     @Schema(description = "阴阳性")
     private Boolean hasLesion;
 

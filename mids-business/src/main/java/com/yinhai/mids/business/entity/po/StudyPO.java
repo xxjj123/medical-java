@@ -7,12 +7,12 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 检查研究表
+ * 检查
  *
  * @author zhuhs
- * @date 2024/7/2 9:30
+ * @date 2024/7/11 9:19
  */
-@Schema(description = "检查研究表")
+@Schema(description = "检查")
 @Data
 @TableName(value = "tb_study")
 public class StudyPO {
@@ -24,11 +24,11 @@ public class StudyPO {
     private String id;
 
     /**
-     * StudyInstanceUID 研究实例UID
+     * StudyInstanceUID
      */
-    @TableField(value = "study_uid")
-    @Schema(description = "StudyInstanceUID 研究实例UID")
-    private String studyUid;
+    @TableField(value = "study_instance_uid")
+    @Schema(description = "StudyInstanceUID")
+    private String studyInstanceUid;
 
     /**
      * AccessionNumber 检查号
@@ -61,9 +61,9 @@ public class StudyPO {
     /**
      * StudyDateAndTime 检查时间
      */
-    @TableField(value = "study_datetime")
+    @TableField(value = "study_date_and_time")
     @Schema(description = "StudyDateAndTime 检查时间")
-    private Date studyDatetime;
+    private Date studyDateAndTime;
 
     /**
      * StudyDescription 检查描述
@@ -71,13 +71,6 @@ public class StudyPO {
     @TableField(value = "study_description")
     @Schema(description = "StudyDescription 检查描述")
     private String studyDescription;
-
-    /**
-     * 算法类型
-     */
-    @TableField(value = "algorithm_type")
-    @Schema(description = "算法类型")
-    private String algorithmType;
 
     /**
      * 打印状态
@@ -119,7 +112,7 @@ public class StudyPO {
      */
     @TableField(value = "deleted")
     @Schema(description = "逻辑删除")
-    private Integer deleted;
+    private Boolean deleted;
 
     /**
      * 数据创建时间

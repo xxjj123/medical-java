@@ -7,12 +7,12 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 实例表
+ * 实例
  *
  * @author zhuhs
- * @date 2024/7/2 10:43
+ * @date 2024/7/11 9:21
  */
-@Schema(description = "实例表")
+@Schema(description = "实例")
 @Data
 @TableName(value = "tb_instance")
 public class InstancePO {
@@ -38,25 +38,25 @@ public class InstancePO {
     private String seriesId;
 
     /**
-     * StudyInstanceUID 研究实例UID
+     * StudyInstanceUID
      */
-    @TableField(value = "study_uid")
-    @Schema(description = "StudyInstanceUID 研究实例UID")
-    private String studyUid;
+    @TableField(value = "study_instance_uid")
+    @Schema(description = "StudyInstanceUID")
+    private String studyInstanceUid;
 
     /**
-     * SeriesInstanceUID 序列实例UID
+     * SeriesInstanceUID
      */
-    @TableField(value = "series_uid")
-    @Schema(description = "SeriesInstanceUID 序列实例UID")
-    private String seriesUid;
+    @TableField(value = "series_instance_uid")
+    @Schema(description = "SeriesInstanceUID")
+    private String seriesInstanceUid;
 
     /**
-     * SOPInstanceUID 服务对象对实例UID
+     * SOPInstanceUID
      */
-    @TableField(value = "instance_uid")
-    @Schema(description = "SOPInstanceUID 服务对象对实例UID")
-    private String instanceUid;
+    @TableField(value = "sop_instance_uid")
+    @Schema(description = "SOPInstanceUID")
+    private String sopInstanceUid;
 
     /**
      * InstanceNumber 实例顺序
@@ -66,11 +66,18 @@ public class InstancePO {
     private Integer instanceNumber;
 
     /**
+     * 访问路径
+     */
+    @TableField(value = "access_path")
+    @Schema(description = "访问路径")
+    private String accessPath;
+
+    /**
      * 逻辑删除
      */
     @TableField(value = "deleted")
     @Schema(description = "逻辑删除")
-    private Integer deleted;
+    private Boolean deleted;
 
     /**
      * 数据创建时间

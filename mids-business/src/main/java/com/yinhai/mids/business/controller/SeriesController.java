@@ -25,8 +25,8 @@ public class SeriesController {
 
     @Operation(summary = "重新分析")
     @PostMapping("reAnalyse")
-    public void reAnalyse(@RequestParam @NotBlank(message = "序列ID不能为空") String seriesId) {
-        seriesService.reAnalyse(seriesId);
+    public void reAnalyse(@RequestParam @NotBlank(message = "序列ID不能为空") String seriesComputeId) {
+        seriesService.reAnalyse(seriesComputeId);
     }
 
 }
