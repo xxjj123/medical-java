@@ -147,6 +147,8 @@ ta404:
           - localhost:8081
           - 127.0.0.1:8081
           - localhost:39625
+          - 192.168.1.4:39625
+          - 192.168.1.4:39627
       # 数据存储加密
       sensitive-information-encryption:
         # 密钥存放位置

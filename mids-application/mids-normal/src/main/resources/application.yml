@@ -23,7 +23,7 @@ server:
   servlet:
     session:
       timeout: 14400s
-    context-path: /mids
+    context-path: /mids-api
 knife4j:
   enable: true
   production: false
