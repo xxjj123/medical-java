@@ -5,15 +5,12 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.yinhai.mids.business.entity.model.DicomInfo;
 import com.yinhai.ta404.core.exception.AppException;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.DicomInputStream;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -68,7 +65,7 @@ public class DicomUtil {
     public static List<DicomInfo> readDicomInfoFromDir(File dicomDir) {
         List<DicomInfo> dicomInfoList = new ArrayList<>();
         Set<String> sopInstanceUidSet = new HashSet<>();
-        for (File dicomFile : FileUtil.ls(dicomDir.getAbsolutePath())) {
+        for (File dicomFile : FileUtil.loopFiles(dicomDir.getAbsolutePath())) {
             if (FileUtil.isDirectory(dicomFile)) {
                 continue;
             }
@@ -81,26 +78,4 @@ public class DicomUtil {
         }
         return dicomInfoList;
     }
-
-    public static File zipFiles(List<File> files, String zipName) {
-        try {
-            File tempDir = Files.createTempDirectory("dicom").toFile();
-            File zipFile = new File(tempDir, zipName);
-            try (ZipArchiveOutputStream zaos = new ZipArchiveOutputStream(zipFile)) {
-                for (File fileToCompress : files) {
-                    if (fileToCompress.exists() && !fileToCompress.isDirectory()) {
-                        ZipArchiveEntry entry = new ZipArchiveEntry(fileToCompress, fileToCompress.getName());
-                        zaos.putArchiveEntry(entry);
-                        FileUtil.writeToStream(fileToCompress, zaos);
-                        zaos.closeArchiveEntry();
-                    }
-                }
-            }
-            return zipFile;
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            throw new AppException("DICOM文件处理异常！");
-        }
-    }
-
 }

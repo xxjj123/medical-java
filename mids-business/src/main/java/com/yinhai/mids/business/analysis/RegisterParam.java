@@ -1,4 +1,4 @@
-package com.yinhai.mids.business.analysis.keya;
+package com.yinhai.mids.business.analysis;
 
 import lombok.Data;
 
@@ -7,7 +7,7 @@ import lombok.Data;
  * @date 2024/6/30 22:16
  */
 @Data
-public class RegisterBody {
+public class RegisterParam {
 
     /**
      * 申请编号 必须
@@ -60,6 +60,6 @@ public class RegisterBody {
     /**
      * AI分析完成回调地址
      */
-    String callbackUr;
+    String callbackUrl;
 
 }

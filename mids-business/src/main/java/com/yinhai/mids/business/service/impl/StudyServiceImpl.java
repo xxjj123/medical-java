@@ -20,6 +20,8 @@ import com.yinhai.mids.business.entity.model.ContextUploadResult;
 import com.yinhai.mids.business.entity.model.DicomInfo;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.StudyPageVO;
+import com.yinhai.mids.business.event.EventConstants;
+import com.yinhai.mids.business.event.TxEventPublisher;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.service.StudyService;
@@ -61,9 +63,6 @@ public class StudyServiceImpl implements StudyService {
     private SeriesMapper seriesMapper;
 
     @Resource
-    private AttachmentMapper attachmentMapper;
-
-    @Resource
     private InstanceMapper instanceMapper;
 
     @Resource
@@ -74,6 +73,9 @@ public class StudyServiceImpl implements StudyService {
 
     @Resource
     private FileStoreService fileStoreService;
+
+    @Resource
+    private TxEventPublisher eventPublisher;
 
     @Override
     public void uploadDicom(MultipartFile dicomZip, List<AlgorithmParam> algorithmParamList) throws IOException {
@@ -88,7 +90,8 @@ public class StudyServiceImpl implements StudyService {
             List<StudyPO> studyPOList = saveStudy(dicomInfoList);
             List<SeriesPO> seriesPOList = saveSeries(dicomInfoList, studyPOList);
             saveInstance(dicomInfoList, seriesPOList);
-            saveSeriesCompute(seriesPOList, algorithmParamList);
+            List<SeriesComputePO> seriesComputePOList = saveSeriesCompute(seriesPOList, algorithmParamList);
+            seriesComputePOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.COMPUTE_EVENT));
         } finally {
             FileUtil.del(unzippedDicomDir);
         }
@@ -188,9 +191,10 @@ public class StudyServiceImpl implements StudyService {
      *
      * @param seriesPOList       序列列表
      * @param algorithmParamList 算法配置
+     * @return {@link List }<{@link SeriesComputePO }>
      * @author zhuhs 2024/07/11 10:56
      */
-    private void saveSeriesCompute(List<SeriesPO> seriesPOList, List<AlgorithmParam> algorithmParamList) {
+    private List<SeriesComputePO> saveSeriesCompute(List<SeriesPO> seriesPOList, List<AlgorithmParam> algorithmParamList) {
         List<SeriesComputePO> seriesComputePOList = new ArrayList<>();
 
         if (CollUtil.isEmpty(algorithmParamList) || CollUtil.isEmpty(algorithmParamList.get(0).getAlgorithmTypeList())) {
@@ -202,7 +206,7 @@ public class StudyServiceImpl implements StudyService {
                 seriesComputePOList.add(seriesComputePO);
             }
             seriesComputeMapper.insertBatch(seriesComputePOList);
-            return;
+            return seriesComputePOList;
         }
 
         for (SeriesPO seriesPO : seriesPOList) {
@@ -222,6 +226,7 @@ public class StudyServiceImpl implements StudyService {
             }
         }
         seriesComputeMapper.insertBatch(seriesComputePOList);
+        return seriesComputePOList;
     }
 
     /**

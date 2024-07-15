@@ -3,11 +3,11 @@ package com.yinhai.mids.business.job;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxl.job.core.handler.annotation.XxlJob;
-import com.yinhai.mids.business.analysis.AnalyseEngine;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.SeriesComputePO;
 import com.yinhai.mids.business.mapper.SeriesComputeMapper;
 import com.yinhai.mids.business.mapper.SeriesMapper;
+import com.yinhai.mids.business.service.AnalysisService;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.util.PageKit;
 import org.springframework.stereotype.Component;
@@ -29,7 +29,7 @@ public class SeriesComputeJob {
     private SeriesComputeMapper seriesComputeMapper;
 
     @Resource
-    private AnalyseEngine analyseEngine;
+    private AnalysisService analysisService;
 
     @XxlJob("register")
     public void register() {
@@ -44,7 +44,7 @@ public class SeriesComputeJob {
             return;
         }
         for (SeriesComputePO seriesComputePO : seriesComputePOList) {
-            analyseEngine.register(seriesComputePO.getId());
+            analysisService.register(seriesComputePO.getId());
         }
     }
 
@@ -61,7 +61,7 @@ public class SeriesComputeJob {
             return;
         }
         for (SeriesComputePO seriesComputePO : seriesComputePOList) {
-            analyseEngine.result(seriesComputePO.getApplyId());
+            analysisService.result(seriesComputePO.getApplyId());
         }
     }
 

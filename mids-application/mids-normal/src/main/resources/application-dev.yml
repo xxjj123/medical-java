@@ -48,4 +48,12 @@ ta404:
           port: 20707
           log-retention-days: 30 # 执行器日志保存天数
         access-token: default_token
+
+# 是否开启mybatis xml mapper文件热加载
 xml-reload-enabled: true
+
+# 科亚配置
+keya:
+  result-url: http://192.168.1.24/connector/api/common/result
+  register-url: http://192.168.1.24/connector/api/common/from/register/pacs
+  push-callback-url: http://192.168.1.4:39625/mids-api/callback/push

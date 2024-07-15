@@ -1,31 +1,30 @@
-package com.yinhai.mids.business.analysis;
+package com.yinhai.mids.business.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.io.IoUtil;
-import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.yinhai.mids.business.analysis.keya.KeyaAnalyseResult;
-import com.yinhai.mids.business.analysis.keya.KeyaClient;
-import com.yinhai.mids.business.analysis.keya.KeyaResponse;
-import com.yinhai.mids.business.analysis.keya.RegisterBody;
+import com.yinhai.mids.business.analysis.*;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.mapper.*;
+import com.yinhai.mids.business.service.AnalysisService;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.mids.common.util.MapperKit;
 import com.yinhai.ta404.core.exception.AppException;
+import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
 import com.yinhai.ta404.module.storage.core.TaFSObject;
 import com.yinhai.ta404.storage.ta.core.FSManager;
-import org.springframework.stereotype.Component;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.ByteArrayOutputStream;
@@ -41,15 +40,13 @@ import java.util.zip.ZipOutputStream;
 
 /**
  * @author zhuhs
- * @date 2024/7/8 15:25
+ * @date 2024/7/15 15:45
  */
-@Component
-public class AnalyseEngine {
+@Service
+@TaTransactional
+public class AnalysisServiceImpl implements AnalysisService {
 
     private static final Log log = LogFactory.get();
-
-    @Resource
-    private SeriesMapper seriesMapper;
 
     @Resource
     private SeriesComputeMapper seriesComputeMapper;
@@ -75,7 +72,12 @@ public class AnalyseEngine {
     @Resource
     private KeyaClient keyaClient;
 
+    @Resource
+    private KeyaProperties keyaProperties;
+
     @SuppressWarnings("unchecked")
+    @Override
+    @Async("asyncJobExecutorService")
     public void register(String seriesComputeId) {
         SeriesComputePO seriesComputePO = seriesComputeMapper.selectById(seriesComputeId);
         if (seriesComputePO == null) {
@@ -104,20 +106,21 @@ public class AnalyseEngine {
             return;
         }
 
-        RegisterBody registerBody = new RegisterBody();
+        RegisterParam registerParam = new RegisterParam();
         String applyId = IdUtil.fastSimpleUUID();
-        registerBody.setApplyId(applyId);
-        registerBody.setAccessionNumber(studyPO.getAccessionNumber());
-        registerBody.setStudyInstanceUID(studyPO.getStudyInstanceUid());
-        registerBody.setHospitalId("ctbay99");
-        registerBody.setExaminedName("胸部平扫");
-        registerBody.setPatientName(studyPO.getPatientName());
-        registerBody.setPatientAge(studyPO.getPatientAge());
-        registerBody.setStudyDate(DateUtil.formatDateTime(studyPO.getStudyDateAndTime()));
+        registerParam.setApplyId(applyId);
+        registerParam.setAccessionNumber(studyPO.getAccessionNumber());
+        registerParam.setStudyInstanceUID(studyPO.getStudyInstanceUid());
+        registerParam.setHospitalId("ctbay99");
+        registerParam.setExaminedName("胸部平扫");
+        registerParam.setPatientName(studyPO.getPatientName());
+        registerParam.setPatientAge(studyPO.getPatientAge());
+        registerParam.setStudyDate(DateUtil.formatDateTime(studyPO.getStudyDateAndTime()));
+        registerParam.setCallbackUrl(keyaProperties.getPushCallbackUrl());
 
         KeyaResponse response = null;
         try (InputStream inputStream = readDicomFromFSAndZip(instancePOList)) {
-            response = keyaClient.register(inputStream, registerBody);
+            response = keyaClient.register(keyaProperties.getRegisterUrl(), inputStream, registerParam);
             if (response.getCode() == 1) {
                 seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
                         .setApplyId(applyId)
@@ -126,15 +129,21 @@ public class AnalyseEngine {
                         .setComputeResponse(JsonKit.toJsonString(response)));
             } else {
                 seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
-                        .setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                        .setErrorMessage("申请AI分析失败")
+                        .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
                         .setComputeResponse(JsonKit.toJsonString(response)));
             }
         } catch (Exception e) {
             log.error(e);
+            String errorMsg;
+            if (e instanceof AppException) {
+                errorMsg = ((AppException) e).getErrorMessage();
+            } else {
+                errorMsg = ExceptionUtil.getRootCauseMessage(e);
+            }
             seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+                    .setErrorMessage(errorMsg)
                     .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
-                    .setErrorMessage(e instanceof AppException ? ((AppException) e).getErrorMessage()
-                            : ExceptionUtil.getRootCauseMessage(e))
                     .setComputeResponse(response != null ? JsonKit.toJsonString(response) : null));
         }
     }
@@ -163,9 +172,11 @@ public class AnalyseEngine {
         }
     }
 
+    @Override
+    @Async("asyncJobExecutorService")
     public void result(String applyId) {
-        // KeyaResponse keyaResponse = keyaClient.result(applyId);
-        KeyaResponse keyaResponse = JsonKit.parseObject(ResourceUtil.readUtf8Str("apiResult.json"), KeyaResponse.class);
+        KeyaResponse keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
+        // KeyaResponse keyaResponse = JsonKit.parseObject(ResourceUtil.readUtf8Str("apiResult.json"), KeyaResponse.class);
         if (keyaResponse.getCode() == 1) {
             String dataContent = JsonKit.parseTree(JsonKit.toJsonString(keyaResponse)).get("data").toString();
             KeyaAnalyseResult analyseResult = JsonKit.parseObject(dataContent, KeyaAnalyseResult.class);
@@ -184,9 +195,9 @@ public class AnalyseEngine {
                             .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
                     Wrappers.<SeriesComputePO>lambdaQuery().eq(SeriesComputePO::getApplyId, applyId));
         } else {
-            seriesComputeMapper.update(new SeriesComputePO().setComputeResponse(JsonKit.toJsonString(keyaResponse)),
+            seriesComputeMapper.update(new SeriesComputePO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                            .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
                     Wrappers.<SeriesComputePO>lambdaQuery().eq(SeriesComputePO::getApplyId, applyId));
-
         }
     }
 

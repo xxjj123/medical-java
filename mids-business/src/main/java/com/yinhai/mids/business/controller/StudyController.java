@@ -48,7 +48,6 @@ public class StudyController {
                             @NotNull(message = "DICOM文件不能为空") MultipartFile dicom,
                             @RequestParam("algorithmConfig")
                             @NotBlank(message = "算法设置不能为空") String algorithmConfig) throws IOException {
-
         List<AlgorithmParam> algorithmParamList;
         try {
             algorithmParamList = JsonKit.parseObject(algorithmConfig, new TypeReference<List<AlgorithmParam>>() {

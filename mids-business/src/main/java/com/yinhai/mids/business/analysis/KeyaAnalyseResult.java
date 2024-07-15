@@ -1,4 +1,4 @@
-package com.yinhai.mids.business.analysis.keya;
+package com.yinhai.mids.business.analysis;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
