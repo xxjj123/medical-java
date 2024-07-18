@@ -1,4 +1,4 @@
-package com.yinhai.mids.business.analysis;
+package com.yinhai.mids.business.compute;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

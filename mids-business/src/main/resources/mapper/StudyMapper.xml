@@ -14,8 +14,8 @@
         <result column="print_status" jdbcType="VARCHAR" property="printStatus"/>
         <result column="push_status" jdbcType="VARCHAR" property="pushStatus"/>
         <result column="operate_doctor_user_id" jdbcType="VARCHAR" property="operateDoctorUserId"/>
-        <collection property="seriesList" ofType="com.yinhai.mids.business.entity.vo.SeriesComputePageVO">
-            <id column="series_compute_id" jdbcType="VARCHAR" property="seriesComputeId"/>
+        <collection property="seriesList" ofType="com.yinhai.mids.business.entity.vo.ComputeSeriesPageVO">
+            <id column="series_compute_id" jdbcType="VARCHAR" property="computeSeriesId"/>
             <result column="series_study_id" jdbcType="VARCHAR" property="studyId"/>
             <result column="series_id" jdbcType="VARCHAR" property="seriesId"/>
             <result column="series_study_uid" jdbcType="VARCHAR" property="studyInstanceUid"/>

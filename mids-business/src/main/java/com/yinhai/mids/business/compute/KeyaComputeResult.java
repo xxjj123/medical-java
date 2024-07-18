@@ -1,4 +1,4 @@
-package com.yinhai.mids.business.analysis;
+package com.yinhai.mids.business.compute;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -10,7 +10,7 @@ import java.util.List;
  * @date 2024/7/9 17:48
  */
 @Data
-public class KeyaAnalyseResult {
+public class KeyaComputeResult {
     private Result result;
     private String aiResultUrl;
 

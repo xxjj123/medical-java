@@ -16,8 +16,8 @@ import java.util.Date;
 @Accessors(chain = true)
 @Schema(description = "序列计算")
 @Data
-@TableName(value = "tb_series_compute")
-public class SeriesComputePO {
+@TableName(value = "tb_compute_series")
+public class ComputeSeriesPO {
     /**
      * 主键
      */

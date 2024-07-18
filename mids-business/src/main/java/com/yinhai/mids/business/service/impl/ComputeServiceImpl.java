@@ -10,11 +10,11 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.yinhai.mids.business.analysis.*;
+import com.yinhai.mids.business.compute.*;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.mapper.*;
-import com.yinhai.mids.business.service.AnalysisService;
+import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.mids.common.util.MapperKit;
@@ -44,12 +44,12 @@ import java.util.zip.ZipOutputStream;
  */
 @Service
 @TaTransactional
-public class AnalysisServiceImpl implements AnalysisService {
+public class ComputeServiceImpl implements ComputeService {
 
     private static final Log log = LogFactory.get();
 
     @Resource
-    private SeriesComputeMapper seriesComputeMapper;
+    private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
     private InstanceMapper instanceMapper;
@@ -58,7 +58,7 @@ public class AnalysisServiceImpl implements AnalysisService {
     private StudyMapper studyMapper;
 
     @Resource
-    private AnalysisOverviewMapper analysisOverviewMapper;
+    private DiagMapper diagMapper;
 
     @Resource
     private VolumeDetailMapper volumeDetailMapper;
@@ -78,31 +78,31 @@ public class AnalysisServiceImpl implements AnalysisService {
     @SuppressWarnings("unchecked")
     @Override
     @Async("asyncJobExecutorService")
-    public void register(String seriesComputeId) {
-        SeriesComputePO seriesComputePO = seriesComputeMapper.selectById(seriesComputeId);
-        if (seriesComputePO == null) {
-            log.error("计算序列{}不存在", seriesComputeId);
+    public void register(String computeSeriesId) {
+        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
+        if (computeSeriesPO == null) {
+            log.error("计算序列{}不存在", computeSeriesId);
             return;
         }
 
-        StudyPO studyPO = studyMapper.selectById(seriesComputePO.getStudyId());
+        StudyPO studyPO = studyMapper.selectById(computeSeriesPO.getStudyId());
         if (studyPO == null) {
-            log.error("计算序列{}对应检查不存在", seriesComputeId);
-            seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+            log.error("计算序列{}对应检查不存在", computeSeriesId);
+            computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
                     .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
-                    .setErrorMessage(StrUtil.format("计算序列{}对应检查不存在", seriesComputeId)));
+                    .setErrorMessage(StrUtil.format("计算序列{}对应检查不存在", computeSeriesId)));
             return;
         }
 
         LambdaQueryWrapper<InstancePO> queryWrapper = Wrappers.<InstancePO>lambdaQuery()
                 .select(InstancePO::getAccessPath, InstancePO::getSopInstanceUid)
-                .eq(InstancePO::getSeriesId, seriesComputePO.getSeriesId());
+                .eq(InstancePO::getSeriesId, computeSeriesPO.getSeriesId());
         List<InstancePO> instancePOList = instanceMapper.selectList(queryWrapper);
         if (CollUtil.isEmpty(instancePOList)) {
-            log.error("计算序列{}对应实例不存在", seriesComputeId);
-            seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+            log.error("计算序列{}对应实例不存在", computeSeriesId);
+            computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
                     .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
-                    .setErrorMessage(StrUtil.format("计算序列{}对应实例不存在", seriesComputeId)));
+                    .setErrorMessage(StrUtil.format("计算序列{}对应实例不存在", computeSeriesId)));
             return;
         }
 
@@ -122,13 +122,13 @@ public class AnalysisServiceImpl implements AnalysisService {
         try (InputStream inputStream = readDicomFromFSAndZip(instancePOList)) {
             response = keyaClient.register(keyaProperties.getRegisterUrl(), inputStream, registerParam);
             if (response.getCode() == 1) {
-                seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+                computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
                         .setApplyId(applyId)
                         .setComputeStatus(ComputeStatus.IN_COMPUTE)
                         .setComputeStartTime(MapperKit.executeForDate())
                         .setComputeResponse(JsonKit.toJsonString(response)));
             } else {
-                seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+                computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
                         .setErrorMessage("申请AI分析失败")
                         .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
                         .setComputeResponse(JsonKit.toJsonString(response)));
@@ -141,7 +141,7 @@ public class AnalysisServiceImpl implements AnalysisService {
             } else {
                 errorMsg = ExceptionUtil.getRootCauseMessage(e);
             }
-            seriesComputeMapper.updateById(new SeriesComputePO().setId(seriesComputeId)
+            computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
                     .setErrorMessage(errorMsg)
                     .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
                     .setComputeResponse(response != null ? JsonKit.toJsonString(response) : null));
@@ -179,34 +179,34 @@ public class AnalysisServiceImpl implements AnalysisService {
         // KeyaResponse keyaResponse = JsonKit.parseObject(ResourceUtil.readUtf8Str("apiResult.json"), KeyaResponse.class);
         if (keyaResponse.getCode() == 1) {
             String dataContent = JsonKit.parseTree(JsonKit.toJsonString(keyaResponse)).get("data").toString();
-            KeyaAnalyseResult analyseResult = JsonKit.parseObject(dataContent, KeyaAnalyseResult.class);
-            AppAssert.notNull(analyseResult, "解析分析结果异常");
+            KeyaComputeResult computeResult = JsonKit.parseObject(dataContent, KeyaComputeResult.class);
+            AppAssert.notNull(computeResult, "解析分析结果异常");
 
-            List<AnalysisOverviewPO> analysisOverviewPOList = new ArrayList<>();
-            KeyaAnalyseResult.Result result = analyseResult.getResult();
-            CollUtil.addIfAbsent(analysisOverviewPOList, getCalciumOverviewPO(applyId, result));
-            CollUtil.addIfAbsent(analysisOverviewPOList, getPneumoniaOverviewPO(applyId, result));
-            AnalysisOverviewPO noduleOverviewPO = getNoduleOverviewPO(applyId, result);
-            CollUtil.addIfAbsent(analysisOverviewPOList, noduleOverviewPO);
-            CollUtil.addIfAbsent(analysisOverviewPOList, getFracOverviewPO(applyId, result));
-            analysisOverviewMapper.insertBatch(analysisOverviewPOList);
-            saveDetailAndAnnotations(applyId, result, noduleOverviewPO);
-            seriesComputeMapper.update(new SeriesComputePO().setComputeStatus(ComputeStatus.COMPUTE_SUCCESS)
+            List<DiagPO> diagPOList = new ArrayList<>();
+            KeyaComputeResult.Result result = computeResult.getResult();
+            CollUtil.addIfAbsent(diagPOList, getCalciumOverviewPO(applyId, result));
+            CollUtil.addIfAbsent(diagPOList, getPneumoniaOverviewPO(applyId, result));
+            DiagPO noduleDiagPO = getNoduleOverviewPO(applyId, result);
+            CollUtil.addIfAbsent(diagPOList, noduleDiagPO);
+            CollUtil.addIfAbsent(diagPOList, getFracOverviewPO(applyId, result));
+            diagMapper.insertBatch(diagPOList);
+            saveDetailAndAnnotations(applyId, result, noduleDiagPO);
+            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_SUCCESS)
                             .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
-                    Wrappers.<SeriesComputePO>lambdaQuery().eq(SeriesComputePO::getApplyId, applyId));
+                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
         } else {
-            seriesComputeMapper.update(new SeriesComputePO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
                             .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
-                    Wrappers.<SeriesComputePO>lambdaQuery().eq(SeriesComputePO::getApplyId, applyId));
+                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
         }
     }
 
-    private AnalysisOverviewPO getCalciumOverviewPO(String applyId, KeyaAnalyseResult.Result result) {
-        KeyaAnalyseResult.Result.Calcium calcium = result.getCalcium();
+    private DiagPO getCalciumOverviewPO(String applyId, KeyaComputeResult.Result result) {
+        KeyaComputeResult.Result.Calcium calcium = result.getCalcium();
         if (calcium == null) {
             return null;
         }
-        AnalysisOverviewPO calciumOverview = new AnalysisOverviewPO();
+        DiagPO calciumOverview = new DiagPO();
         calciumOverview.setApplyId(applyId);
         calciumOverview.setType("calcium");
         calciumOverview.setSeriesUid(calcium.getSeriesInstanceUID());
@@ -216,12 +216,12 @@ public class AnalysisServiceImpl implements AnalysisService {
         return calciumOverview;
     }
 
-    private AnalysisOverviewPO getPneumoniaOverviewPO(String applyId, KeyaAnalyseResult.Result result) {
-        KeyaAnalyseResult.Result.Pneumonia pneumonia = result.getPneumonia();
+    private DiagPO getPneumoniaOverviewPO(String applyId, KeyaComputeResult.Result result) {
+        KeyaComputeResult.Result.Pneumonia pneumonia = result.getPneumonia();
         if (pneumonia == null) {
             return null;
         }
-        AnalysisOverviewPO pneumoniaOverview = new AnalysisOverviewPO();
+        DiagPO pneumoniaOverview = new DiagPO();
         pneumoniaOverview.setApplyId(applyId);
         pneumoniaOverview.setType("pneumonia");
         pneumoniaOverview.setSeriesUid(pneumonia.getSeriesInstanceUID());
@@ -232,12 +232,12 @@ public class AnalysisServiceImpl implements AnalysisService {
         return pneumoniaOverview;
     }
 
-    private AnalysisOverviewPO getNoduleOverviewPO(String applyId, KeyaAnalyseResult.Result result) {
-        KeyaAnalyseResult.Result.Nodule nodule = result.getNodule();
+    private DiagPO getNoduleOverviewPO(String applyId, KeyaComputeResult.Result result) {
+        KeyaComputeResult.Result.Nodule nodule = result.getNodule();
         if (nodule == null) {
             return null;
         }
-        AnalysisOverviewPO noduleOverview = new AnalysisOverviewPO();
+        DiagPO noduleOverview = new DiagPO();
         noduleOverview.setApplyId(applyId);
         noduleOverview.setType("nodule");
         noduleOverview.setSeriesUid(nodule.getSeriesInstanceUID());
@@ -248,12 +248,12 @@ public class AnalysisServiceImpl implements AnalysisService {
         return noduleOverview;
     }
 
-    private AnalysisOverviewPO getFracOverviewPO(String applyId, KeyaAnalyseResult.Result result) {
-        KeyaAnalyseResult.Result.Frac frac = result.getFrac();
+    private DiagPO getFracOverviewPO(String applyId, KeyaComputeResult.Result result) {
+        KeyaComputeResult.Result.Frac frac = result.getFrac();
         if (frac == null) {
             return null;
         }
-        AnalysisOverviewPO fracOverview = new AnalysisOverviewPO();
+        DiagPO fracOverview = new DiagPO();
         fracOverview.setApplyId(applyId);
         fracOverview.setType("frac");
         fracOverview.setSeriesUid(frac.getSeriesInstanceUID());
@@ -264,63 +264,63 @@ public class AnalysisServiceImpl implements AnalysisService {
         return fracOverview;
     }
 
-    private void saveDetailAndAnnotations(String applyId, KeyaAnalyseResult.Result result, AnalysisOverviewPO noduleOverviewPO) {
+    private void saveDetailAndAnnotations(String applyId, KeyaComputeResult.Result result, DiagPO noduleDiagPO) {
         if (result.getNodule() == null) {
             return;
         }
-        List<KeyaAnalyseResult.Result.Nodule.VolumeDetail> volumeDetailList = result.getNodule().getVolumeDetailList();
+        List<KeyaComputeResult.Result.Nodule.VolumeDetail> volumeDetailList = result.getNodule().getVolumeDetailList();
         if (CollUtil.isEmpty(volumeDetailList)) {
             return;
         }
-        List<VolumeDetailPO> volumeDetailPOList = new ArrayList<>();
-        Map<DetailAnnotationPO, VolumeDetailPO> detailAnnotationPOMap = new HashMap<>();
-        for (KeyaAnalyseResult.Result.Nodule.VolumeDetail volumeDetail : volumeDetailList) {
-            VolumeDetailPO volumeDetailPO = new VolumeDetailPO();
-            volumeDetailPO.setOverviewId(noduleOverviewPO.getId());
-            volumeDetailPO.setApplyId(applyId);
-            volumeDetailPO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
-            volumeDetailPO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
-            volumeDetailPO.setType(volumeDetail.getType());
-            volumeDetailPO.setLobeSegment(volumeDetail.getLobeSegment());
-            volumeDetailPO.setLobe(volumeDetail.getLobe());
-            volumeDetailPO.setVolume(volumeDetail.getVolume());
-            volumeDetailPO.setRiskCode(volumeDetail.getRiskCode());
-            KeyaAnalyseResult.Result.Nodule.VolumeDetail.CtMeasures ctMeasures = volumeDetail.getCtMeasures();
+        List<FocalDetailPO> focalDetailPOList = new ArrayList<>();
+        Map<FocalAnnoPO, FocalDetailPO> detailAnnotationPOMap = new HashMap<>();
+        for (KeyaComputeResult.Result.Nodule.VolumeDetail volumeDetail : volumeDetailList) {
+            FocalDetailPO focalDetailPO = new FocalDetailPO();
+            focalDetailPO.setDiagId(noduleDiagPO.getId());
+            focalDetailPO.setApplyId(applyId);
+            focalDetailPO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
+            focalDetailPO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
+            focalDetailPO.setType(volumeDetail.getType());
+            focalDetailPO.setLobeSegment(volumeDetail.getLobeSegment());
+            focalDetailPO.setLobe(volumeDetail.getLobe());
+            focalDetailPO.setVolume(volumeDetail.getVolume());
+            focalDetailPO.setRiskCode(volumeDetail.getRiskCode());
+            KeyaComputeResult.Result.Nodule.VolumeDetail.CtMeasures ctMeasures = volumeDetail.getCtMeasures();
             if (ctMeasures != null) {
-                volumeDetailPO.setCtMeasuresMean(ctMeasures.getMean());
-                volumeDetailPO.setCtMeasuresMinimum(ctMeasures.getMinimum());
-                volumeDetailPO.setCtMeasuresMaximum(ctMeasures.getMaximum());
+                focalDetailPO.setCtMeasuresMean(ctMeasures.getMean());
+                focalDetailPO.setCtMeasuresMinimum(ctMeasures.getMinimum());
+                focalDetailPO.setCtMeasuresMaximum(ctMeasures.getMaximum());
             }
-            KeyaAnalyseResult.Result.Nodule.VolumeDetail.EllipsoidAxis ellipsoidAxis = volumeDetail.getEllipsoidAxis();
+            KeyaComputeResult.Result.Nodule.VolumeDetail.EllipsoidAxis ellipsoidAxis = volumeDetail.getEllipsoidAxis();
             if (ellipsoidAxis != null) {
-                volumeDetailPO.setEllipsoidAxisLeast(ellipsoidAxis.getLeast());
-                volumeDetailPO.setEllipsoidAxisMinor(ellipsoidAxis.getMinor());
-                volumeDetailPO.setEllipsoidAxisMajor(ellipsoidAxis.getMajor());
+                focalDetailPO.setEllipsoidAxisLeast(ellipsoidAxis.getLeast());
+                focalDetailPO.setEllipsoidAxisMinor(ellipsoidAxis.getMinor());
+                focalDetailPO.setEllipsoidAxisMajor(ellipsoidAxis.getMajor());
             }
-            volumeDetailPOList.add(volumeDetailPO);
-            List<KeyaAnalyseResult.Result.Nodule.VolumeDetail.Annotation> annotationList = volumeDetail.getAnnotation();
+            focalDetailPOList.add(focalDetailPO);
+            List<KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation> annotationList = volumeDetail.getAnnotation();
             if (CollUtil.isEmpty(annotationList)) {
                 continue;
             }
-            for (KeyaAnalyseResult.Result.Nodule.VolumeDetail.Annotation annotation : annotationList) {
-                List<KeyaAnalyseResult.Result.Nodule.VolumeDetail.Annotation.Point> points = annotation.getPoints();
+            for (KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation annotation : annotationList) {
+                List<KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point> points = annotation.getPoints();
                 if (CollUtil.isNotEmpty(points)) {
                     String annotationUid = IdUtil.fastSimpleUUID();
-                    for (KeyaAnalyseResult.Result.Nodule.VolumeDetail.Annotation.Point point : points) {
-                        DetailAnnotationPO annotationPO = new DetailAnnotationPO();
+                    for (KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point : points) {
+                        FocalAnnoPO annotationPO = new FocalAnnoPO();
                         annotationPO.setApplyId(applyId);
                         annotationPO.setAnnotationUid(annotationUid);
                         annotationPO.setType(annotation.getType());
                         annotationPO.setPointX(point.getX());
                         annotationPO.setPointY(point.getY());
                         annotationPO.setPointZ(point.getZ());
-                        detailAnnotationPOMap.put(annotationPO, volumeDetailPO);
+                        detailAnnotationPOMap.put(annotationPO, focalDetailPO);
                     }
                 }
             }
         }
-        volumeDetailMapper.insertBatch(volumeDetailPOList);
-        detailAnnotationPOMap.forEach((key, value) -> key.setVolumeDetailId(value.getId()));
+        volumeDetailMapper.insertBatch(focalDetailPOList);
+        detailAnnotationPOMap.forEach((key, value) -> key.setFocalDetailId(value.getId()));
         detailAnnotationMapper.insertBatch(detailAnnotationPOMap.keySet());
     }
 

@@ -8,13 +8,13 @@ import lombok.Data;
  * @date 2024/7/2 16:09
  */
 @Data
-public class SeriesComputePageVO {
+public class ComputeSeriesPageVO {
 
     /**
      * 计算序列ID
      */
     @Schema(description = "计算序列ID")
-    private String seriesComputeId;
+    private String computeSeriesId;
 
     /**
      * 检查研究主键

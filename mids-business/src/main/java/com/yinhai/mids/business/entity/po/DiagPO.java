@@ -7,15 +7,15 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 分析概述
+ * 诊断结果
  *
  * @author zhuhs
  * @date 2024/7/9 17:28
  */
-@Schema(description = "分析概述")
+@Schema(description = "诊断结果")
 @Data
-@TableName(value = "tb_analysis_overview")
-public class AnalysisOverviewPO {
+@TableName(value = "tb_diag")
+public class DiagPO {
     /**
      * 主键
      */

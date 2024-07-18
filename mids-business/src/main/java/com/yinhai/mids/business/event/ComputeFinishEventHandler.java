@@ -2,7 +2,7 @@ package com.yinhai.mids.business.event;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.yinhai.mids.business.service.AnalysisService;
+import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.ta404.core.event.async.AbstractEventHandler;
 import com.yinhai.ta404.core.event.async.annotation.Consumer;
 import com.yinhai.ta404.core.event.async.disruptor.IEventDisruptor;
@@ -22,12 +22,12 @@ public class ComputeFinishEventHandler implements AbstractEventHandler {
     private static final Log log = LogFactory.get();
 
     @Resource
-    private AnalysisService analysisService;
+    private ComputeService computeService;
 
     @Override
     public void onEvent(IEventDisruptor eventDisruptor, long sequence, boolean endOfBatch) throws Exception {
         IEventMessage eventMessage = eventDisruptor.getEventMessage();
         String applyId = (String) eventMessage.getEventSource();
-        analysisService.result(applyId);
+        computeService.result(applyId);
     }
 }

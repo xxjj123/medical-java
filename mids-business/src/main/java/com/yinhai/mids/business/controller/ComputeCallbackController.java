@@ -2,7 +2,7 @@ package com.yinhai.mids.business.controller;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.yinhai.mids.business.service.SeriesComputeService;
+import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,17 +20,17 @@ import java.util.Map;
 @Validated
 @Tag(name = "分析回调")
 @RestService("callback")
-public class AnalyseCallbackController {
+public class ComputeCallbackController {
 
     private static final Log log = LogFactory.get();
 
     @Resource
-    private SeriesComputeService seriesComputeService;
+    private ComputeSeriesService computeSeriesService;
 
     @Operation(summary = "AI结果推送")
     @PostMapping("push")
     public void push(@RequestParam Map<String, Object> pushParamMap) {
-        seriesComputeService.onAnalysePush(pushParamMap);
+        computeSeriesService.onComputePush(pushParamMap);
     }
 
 }

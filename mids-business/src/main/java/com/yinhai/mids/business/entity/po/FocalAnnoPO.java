@@ -14,8 +14,8 @@ import java.util.Date;
  */
 @Schema(description = "框选区域数据集合")
 @Data
-@TableName(value = "tb_detail_annotation")
-public class DetailAnnotationPO {
+@TableName(value = "tb_focal_anno")
+public class FocalAnnoPO {
     /**
      * 主键
      */
@@ -26,9 +26,9 @@ public class DetailAnnotationPO {
     /**
      * 病灶详情ID
      */
-    @TableField(value = "volume_detail_id")
+    @TableField(value = "focal_detail_id")
     @Schema(description = "病灶详情ID")
-    private String volumeDetailId;
+    private String focalDetailId;
 
     /**
      * 申请编号

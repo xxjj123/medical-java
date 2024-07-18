@@ -66,7 +66,7 @@ public class StudyServiceImpl implements StudyService {
     private InstanceMapper instanceMapper;
 
     @Resource
-    private SeriesComputeMapper seriesComputeMapper;
+    private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
     private FavoriteMapper favoriteMapper;
@@ -90,8 +90,8 @@ public class StudyServiceImpl implements StudyService {
             List<StudyPO> studyPOList = saveStudy(dicomInfoList);
             List<SeriesPO> seriesPOList = saveSeries(dicomInfoList, studyPOList);
             saveInstance(dicomInfoList, seriesPOList);
-            List<SeriesComputePO> seriesComputePOList = saveSeriesCompute(seriesPOList, algorithmParamList);
-            seriesComputePOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.COMPUTE_EVENT));
+            List<ComputeSeriesPO> computeSeriesPOList = saveComputeSeries(seriesPOList, algorithmParamList);
+            computeSeriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.COMPUTE_EVENT));
         } finally {
             FileUtil.del(unzippedDicomDir);
         }
@@ -191,22 +191,22 @@ public class StudyServiceImpl implements StudyService {
      *
      * @param seriesPOList       序列列表
      * @param algorithmParamList 算法配置
-     * @return {@link List }<{@link SeriesComputePO }>
+     * @return {@link List }<{@link ComputeSeriesPO }>
      * @author zhuhs 2024/07/11 10:56
      */
-    private List<SeriesComputePO> saveSeriesCompute(List<SeriesPO> seriesPOList, List<AlgorithmParam> algorithmParamList) {
-        List<SeriesComputePO> seriesComputePOList = new ArrayList<>();
+    private List<ComputeSeriesPO> saveComputeSeries(List<SeriesPO> seriesPOList, List<AlgorithmParam> algorithmParamList) {
+        List<ComputeSeriesPO> computeSeriesPOList = new ArrayList<>();
 
         if (CollUtil.isEmpty(algorithmParamList) || CollUtil.isEmpty(algorithmParamList.get(0).getAlgorithmTypeList())) {
             for (SeriesPO seriesPO : seriesPOList) {
-                SeriesComputePO seriesComputePO = new SeriesComputePO();
-                seriesComputePO.setStudyId(seriesPO.getStudyId());
-                seriesComputePO.setSeriesId(seriesPO.getId());
-                seriesComputePO.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
-                seriesComputePOList.add(seriesComputePO);
+                ComputeSeriesPO computeSeriesPO = new ComputeSeriesPO();
+                computeSeriesPO.setStudyId(seriesPO.getStudyId());
+                computeSeriesPO.setSeriesId(seriesPO.getId());
+                computeSeriesPO.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
+                computeSeriesPOList.add(computeSeriesPO);
             }
-            seriesComputeMapper.insertBatch(seriesComputePOList);
-            return seriesComputePOList;
+            computeSeriesMapper.insertBatch(computeSeriesPOList);
+            return computeSeriesPOList;
         }
 
         for (SeriesPO seriesPO : seriesPOList) {
@@ -215,18 +215,18 @@ public class StudyServiceImpl implements StudyService {
                     continue;
                 }
                 for (String algorithmType : algorithmParam.getAlgorithmTypeList()) {
-                    SeriesComputePO seriesComputePO = new SeriesComputePO();
-                    seriesComputePO.setStudyId(seriesPO.getStudyId());
-                    seriesComputePO.setSeriesId(seriesPO.getId());
-                    seriesComputePO.setAlgorithmType(algorithmType);
-                    seriesComputePO.setApplyId(IdUtil.fastSimpleUUID());
-                    seriesComputePO.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
-                    seriesComputePOList.add(seriesComputePO);
+                    ComputeSeriesPO computeSeriesPO = new ComputeSeriesPO();
+                    computeSeriesPO.setStudyId(seriesPO.getStudyId());
+                    computeSeriesPO.setSeriesId(seriesPO.getId());
+                    computeSeriesPO.setAlgorithmType(algorithmType);
+                    computeSeriesPO.setApplyId(IdUtil.fastSimpleUUID());
+                    computeSeriesPO.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
+                    computeSeriesPOList.add(computeSeriesPO);
                 }
             }
         }
-        seriesComputeMapper.insertBatch(seriesComputePOList);
-        return seriesComputePOList;
+        computeSeriesMapper.insertBatch(computeSeriesPOList);
+        return computeSeriesPOList;
     }
 
     /**
@@ -302,11 +302,11 @@ public class StudyServiceImpl implements StudyService {
     }
 
     @Override
-    public void deleteSeriesCompute(String seriesComputeId) {
-        boolean seriesExists = seriesComputeMapper.exists(
-                Wrappers.<SeriesComputePO>lambdaQuery().eq(SeriesComputePO::getId, seriesComputeId));
+    public void deleteComputeSeries(String computeSeriesId) {
+        boolean seriesExists = computeSeriesMapper.exists(
+                Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getId, computeSeriesId));
         AppAssert.isTrue(seriesExists, "该序列不存在！");
-        int deleted = seriesComputeMapper.deleteById(seriesComputeId);
+        int deleted = computeSeriesMapper.deleteById(computeSeriesId);
         AppAssert.isTrue(deleted == 1, "删除序列失败");
     }
 

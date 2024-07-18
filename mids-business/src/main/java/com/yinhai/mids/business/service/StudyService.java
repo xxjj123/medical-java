@@ -63,8 +63,8 @@ public interface StudyService {
     /**
      * 删除序列
      *
-     * @param seriesComputeId 计算序列ID
+     * @param computeSeriesId 计算序列ID
      * @author zhuhs 2024/07/11 16:37
      */
-    void deleteSeriesCompute(String seriesComputeId);
+    void deleteComputeSeries(String computeSeriesId);
 }

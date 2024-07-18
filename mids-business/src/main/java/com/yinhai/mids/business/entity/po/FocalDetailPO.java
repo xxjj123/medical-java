@@ -14,8 +14,8 @@ import java.util.Date;
  */
 @Schema(description = "病灶详情")
 @Data
-@TableName(value = "tb_volume_detail")
-public class VolumeDetailPO {
+@TableName(value = "tb_focal_detail")
+public class FocalDetailPO {
     /**
      * 主键
      */
@@ -24,11 +24,11 @@ public class VolumeDetailPO {
     private String id;
 
     /**
-     * 分析概述ID
+     * 诊断ID
      */
-    @TableField(value = "overview_id")
-    @Schema(description = "分析概述ID")
-    private String overviewId;
+    @TableField(value = "diag_id")
+    @Schema(description = "诊断ID")
+    private String diagId;
 
     /**
      * 申请编号

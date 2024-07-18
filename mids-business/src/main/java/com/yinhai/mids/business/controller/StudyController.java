@@ -85,8 +85,8 @@ public class StudyController {
 
     @Operation(summary = "删除序列")
     @PostMapping("deleteSeries")
-    public void deleteSeries(@RequestParam @NotBlank(message = "序列ID不能为空") String seriesComputeId) {
-        studyService.deleteSeriesCompute(seriesComputeId);
+    public void deleteSeries(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId) {
+        studyService.deleteComputeSeries(computeSeriesId);
     }
 
 }

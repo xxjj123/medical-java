@@ -97,5 +97,5 @@ public class StudyPageVO {
     @Schema(description = "操作医师")
     private String operateDoctorUserId;
 
-    List<SeriesComputePageVO> seriesList;
+    List<ComputeSeriesPageVO> seriesList;
 }

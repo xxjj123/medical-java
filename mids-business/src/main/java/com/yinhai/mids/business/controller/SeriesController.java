@@ -1,6 +1,6 @@
 package com.yinhai.mids.business.controller;
 
-import com.yinhai.mids.business.service.SeriesComputeService;
+import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,12 +21,12 @@ import javax.validation.constraints.NotBlank;
 public class SeriesController {
 
     @Resource
-    private SeriesComputeService seriesComputeService;
+    private ComputeSeriesService computeSeriesService;
 
     @Operation(summary = "重新分析")
-    @PostMapping("reAnalyse")
-    public void reAnalyse(@RequestParam @NotBlank(message = "序列ID不能为空") String seriesComputeId) {
-        seriesComputeService.reAnalyse(seriesComputeId);
+    @PostMapping("reCompute")
+    public void reCompute(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId) {
+        computeSeriesService.reCompute(computeSeriesId);
     }
 
 }
