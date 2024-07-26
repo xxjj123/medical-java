@@ -65,9 +65,9 @@ public class ComputeSeriesPageVO {
     private String algorithmType;
 
     /**
-     * 计算状态
+     * 计算状态 1-等待计算 2-计算中 3-计算成功 4-计算失败 5-计算取消 6-计算异常
      */
-    @Schema(description = "计算状态")
+    @Schema(description = "计算状态 1-等待计算 2-计算中 3-计算成功 4-计算失败 5-计算取消 6-计算异常")
     private String computeStatus;
 
     /**

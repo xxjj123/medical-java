@@ -9,8 +9,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.Map;
 
 /**
@@ -20,7 +24,7 @@ import java.util.Map;
 @Validated
 @Tag(name = "分析回调")
 @RestService("callback")
-public class ComputeCallbackController {
+public class CallbackController {
 
     private static final Log log = LogFactory.get();
 
@@ -28,9 +32,16 @@ public class ComputeCallbackController {
     private ComputeSeriesService computeSeriesService;
 
     @Operation(summary = "AI结果推送")
-    @PostMapping("push")
-    public void push(@RequestParam Map<String, Object> pushParamMap) {
+    @PostMapping("computePush")
+    public void computePush(@RequestParam Map<String, Object> pushParamMap) {
         computeSeriesService.onComputePush(pushParamMap);
+    }
+
+    @Operation(summary = "3D解析结果推送")
+    @PostMapping("analysePush")
+    public void analysePush(@RequestPart @NotNull(message = "回传文件不能为空") MultipartFile file,
+                            @RequestParam @NotBlank(message = "申请ID不能为空") String applyId) {
+
     }
 
 }

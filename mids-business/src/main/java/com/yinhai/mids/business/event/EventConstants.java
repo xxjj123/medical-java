@@ -10,4 +10,6 @@ public class EventConstants {
 
     public static final String COMPUTE_FINISH_EVENT = "compute_finish_event";
 
+    public static final String ANALYSE_EVENT = "analyse_event";
+
 }

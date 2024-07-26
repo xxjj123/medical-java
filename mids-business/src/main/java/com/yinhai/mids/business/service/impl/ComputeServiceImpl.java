@@ -23,7 +23,6 @@ import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
 import com.yinhai.ta404.module.storage.core.TaFSObject;
 import com.yinhai.ta404.storage.ta.core.FSManager;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -77,7 +76,6 @@ public class ComputeServiceImpl implements ComputeService {
 
     @SuppressWarnings("unchecked")
     @Override
-    @Async("asyncJobExecutorService")
     public void register(String computeSeriesId) {
         ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
         if (computeSeriesPO == null) {
@@ -173,7 +171,6 @@ public class ComputeServiceImpl implements ComputeService {
     }
 
     @Override
-    @Async("asyncJobExecutorService")
     public void result(String applyId) {
         KeyaResponse keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
         // KeyaResponse keyaResponse = JsonKit.parseObject(ResourceUtil.readUtf8Str("apiResult.json"), KeyaResponse.class);

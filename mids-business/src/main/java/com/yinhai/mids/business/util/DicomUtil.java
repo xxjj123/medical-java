@@ -10,6 +10,7 @@ import org.dcm4che3.data.Tag;
 import org.dcm4che3.io.DicomInputStream;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -69,6 +70,9 @@ public class DicomUtil {
             if (FileUtil.isDirectory(dicomFile)) {
                 continue;
             }
+            if (!isDicom(dicomFile)) {
+                continue;
+            }
             DicomInfo dicomInfo = readDicomInfo(dicomFile);
             if (sopInstanceUidSet.contains(dicomInfo.getSopInstanceUid())) {
                 continue;
@@ -77,5 +81,19 @@ public class DicomUtil {
             dicomInfoList.add(dicomInfo);
         }
         return dicomInfoList;
+    }
+
+    private static final String DICOM_HEADER = "DICM";
+
+    private static boolean isDicom(File file) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            fis.read(new byte[128]);
+            byte[] header = new byte[4];
+            fis.read(header);
+            return DICOM_HEADER.equals(new String(header));
+        } catch (Exception e) {
+            log.error(e);
+            throw new AppException("DICOM文件解析异常！");
+        }
     }
 }

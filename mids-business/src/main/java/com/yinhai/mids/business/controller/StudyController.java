@@ -1,5 +1,6 @@
 package com.yinhai.mids.business.controller;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -9,6 +10,8 @@ import com.yinhai.mids.business.entity.vo.StudyPageVO;
 import com.yinhai.mids.business.service.StudyService;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.util.JsonKit;
+import com.yinhai.mids.common.util.MapperKit;
+import com.yinhai.mids.common.util.RestServiceKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import com.yinhai.ta404.core.restservice.resultbean.Page;
@@ -16,7 +19,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -57,10 +59,11 @@ public class StudyController {
             throw new AppException("解析算法设置异常！");
         }
         studyService.uploadDicom(dicom, algorithmParamList);
+        RestServiceKit.setData("uploadTime", DateUtil.formatDateTime(MapperKit.executeForDate()));
     }
 
     @Operation(summary = "分页查询检查")
-    @GetMapping("pageStudies")
+    @PostMapping("pageStudies")
     public Page<StudyPageVO> pageStudies(@ParameterObject StudyPageQuery studyPageQuery, @ParameterObject PageRequest pageRequest) {
         return studyService.pageStudies(studyPageQuery, pageRequest);
     }

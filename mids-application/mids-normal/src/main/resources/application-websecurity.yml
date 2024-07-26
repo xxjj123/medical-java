@@ -153,6 +153,7 @@ ta404:
           - 192.168.1.4:39600
           - 192.168.1.4:39601
           - admin.itsea.com.cn:39627
+          - admin.itsea.com.cn:39600
       # 数据存储加密
       sensitive-information-encryption:
         # 密钥存放位置

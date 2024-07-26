@@ -8,6 +8,7 @@ import com.yinhai.mids.business.entity.model.UploadResult;
 import com.yinhai.mids.business.entity.po.FileStorePO;
 import com.yinhai.mids.business.mapper.FileStoreMapper;
 import com.yinhai.mids.business.service.FileStoreService;
+import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.MapperKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionService;
@@ -107,5 +109,12 @@ public class FileStoreServiceImpl implements FileStoreService {
             contextUploadResultList.add(ur);
         }
         return contextUploadResultList;
+    }
+
+    @Override
+    public InputStream download(String accessPath) {
+        TaFSObject fsObject = fsManager.getObject("mids", accessPath);
+        AppAssert.notNull(fsObject, "文件下载异常");
+        return fsObject.getInputstream();
     }
 }

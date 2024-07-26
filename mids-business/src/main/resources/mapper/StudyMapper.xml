@@ -57,7 +57,7 @@
                c.operate_doctor_user_id
         FROM tb_study a
                  LEFT JOIN tb_series b ON a.id = b.study_id
-                 LEFT JOIN tb_series_compute c ON b.id = c.series_id
+                 LEFT JOIN tb_compute_series c ON b.id = c.series_id
                  LEFT JOIN (SELECT study_id, user_id FROM tb_favorite WHERE user_id = #{userId,jdbcType=VARCHAR}) d
                            ON a.id = d.study_id
         <where>

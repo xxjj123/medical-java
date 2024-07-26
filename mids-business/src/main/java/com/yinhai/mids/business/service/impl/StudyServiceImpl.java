@@ -92,6 +92,7 @@ public class StudyServiceImpl implements StudyService {
             saveInstance(dicomInfoList, seriesPOList);
             List<ComputeSeriesPO> computeSeriesPOList = saveComputeSeries(seriesPOList, algorithmParamList);
             computeSeriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.COMPUTE_EVENT));
+            seriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.ANALYSE_EVENT));
         } finally {
             FileUtil.del(unzippedDicomDir);
         }
