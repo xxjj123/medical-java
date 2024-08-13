@@ -250,6 +250,7 @@ public class StudyServiceImpl implements StudyService {
         try (InputStream inputStream = dicomZip.getInputStream()) {
             ZipUtil.unzip(inputStream, tempDir, Charset.defaultCharset());
         } catch (IOException e) {
+            FileUtil.del(tempDir);
             log.error(e);
             throw new AppException("读取DICOM文件内容异常");
         }
