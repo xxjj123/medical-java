@@ -54,7 +54,7 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
         if (StrUtil.equals(code, "1")) {
             eventPublisher.publish(applyId, EventConstants.COMPUTE_FINISH_EVENT);
         }
-        if (StrUtil.equalsAny(code, "1", "2")) {
+        if (StrUtil.equalsAny(code,  "2","3")) {
             computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
                             .setErrorMessage((String) pushParamMap.get("message"))
                             .setComputeResponse(JsonKit.toJsonString(pushParamMap)),

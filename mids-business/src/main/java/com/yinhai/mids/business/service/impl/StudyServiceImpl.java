@@ -34,13 +34,13 @@ import com.yinhai.mids.common.util.SecurityKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.restservice.resultbean.Page;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
+import com.yinhai.ta404.module.storage.core.ITaFSManager;
+import com.yinhai.ta404.storage.ta.core.FSManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -75,7 +75,20 @@ public class StudyServiceImpl implements StudyService {
     private FileStoreService fileStoreService;
 
     @Resource
+    private DiagMapper diagMapper;
+
+    @Resource
+    private VolumeDetailMapper volumeDetailMapper;
+
+    @Resource
+    private DetailAnnotationMapper detailAnnotationMapper;
+
+    @Resource
     private TxEventPublisher eventPublisher;
+
+
+    @Resource
+    private ITaFSManager<FSManager> fsManager;
 
     @Override
     public void uploadDicom(MultipartFile dicomZip, List<AlgorithmParam> algorithmParamList) throws IOException {

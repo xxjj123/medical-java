@@ -16,7 +16,6 @@ import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeService;
-import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.mids.common.util.MapperKit;
 import com.yinhai.ta404.core.exception.AppException;
@@ -187,35 +186,66 @@ public class ComputeServiceImpl implements ComputeService {
     @Override
     public void result(String applyId) {
         KeyaResponse keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
-        // KeyaResponse keyaResponse = JsonKit.parseObject(ResourceUtil.readUtf8Str("apiResult.json"), KeyaResponse.class);
+
+        while (keyaResponse.getCode() == 2) {
+            // 如果返回码是2，表示结果还在处理中，等待一段时间后重试
+            try {
+                Thread.sleep(1000); // 这里可以调整等待时间，单位为毫秒
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("线程中断异常", e);
+            }
+            keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
+        }
+
         if (keyaResponse.getCode() == 1) {
             String dataContent = JsonKit.parseTree(JsonKit.toJsonString(keyaResponse)).get("data").toString();
             KeyaComputeResult computeResult = JsonKit.parseObject(dataContent, KeyaComputeResult.class);
-            AppAssert.notNull(computeResult, "解析分析结果异常");
+            if(computeResult==null){
+                computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                                .setErrorMessage("解析分析结果异常"),
+                        Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+                throw new AppException("解析分析结果异常");
+            };
 
             List<DiagPO> diagPOList = new ArrayList<>();
             KeyaComputeResult.Result result = computeResult.getResult();
+
+            if (result == null || (result instanceof Map && ((Map<?, ?>) result).isEmpty())) {
+                computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                                .setErrorMessage("解析分析结果为空"),
+                        Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+                throw new AppException("解析分析结果为空");
+            }
+
             CollUtil.addIfAbsent(diagPOList, getCalciumOverviewPO(applyId, result));
             CollUtil.addIfAbsent(diagPOList, getPneumoniaOverviewPO(applyId, result));
             DiagPO noduleDiagPO = getNoduleOverviewPO(applyId, result);
             CollUtil.addIfAbsent(diagPOList, noduleDiagPO);
             CollUtil.addIfAbsent(diagPOList, getFracOverviewPO(applyId, result));
+
+
             diagMapper.insertBatch(diagPOList);
             saveDetailAndAnnotations(applyId, result, noduleDiagPO);
             computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_SUCCESS)
                             .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
                     Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-        } else {
+
+        } else if (keyaResponse.getCode() == 3) {
             computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
                             .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
                     Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
         }
     }
 
+
     private DiagPO getCalciumOverviewPO(String applyId, KeyaComputeResult.Result result) {
         KeyaComputeResult.Result.Calcium calcium = result.getCalcium();
         if (calcium == null) {
-            return null;
+            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                            .setErrorMessage("钙化分析结果为空"),
+                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+            throw new AppException("钙化分析结果为空");
         }
         DiagPO calciumOverview = new DiagPO();
         calciumOverview.setApplyId(applyId);
@@ -230,7 +260,10 @@ public class ComputeServiceImpl implements ComputeService {
     private DiagPO getPneumoniaOverviewPO(String applyId, KeyaComputeResult.Result result) {
         KeyaComputeResult.Result.Pneumonia pneumonia = result.getPneumonia();
         if (pneumonia == null) {
-            return null;
+            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                            .setErrorMessage("钙化分析结果为空"),
+                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+            throw new AppException("钙化分析结果为空");
         }
         DiagPO pneumoniaOverview = new DiagPO();
         pneumoniaOverview.setApplyId(applyId);
@@ -246,7 +279,10 @@ public class ComputeServiceImpl implements ComputeService {
     private DiagPO getNoduleOverviewPO(String applyId, KeyaComputeResult.Result result) {
         KeyaComputeResult.Result.Nodule nodule = result.getNodule();
         if (nodule == null) {
-            return null;
+            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                            .setErrorMessage("结节分析结果为空"),
+                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+            throw new AppException("结节分析结果为空");
         }
         DiagPO noduleOverview = new DiagPO();
         noduleOverview.setApplyId(applyId);
@@ -262,7 +298,10 @@ public class ComputeServiceImpl implements ComputeService {
     private DiagPO getFracOverviewPO(String applyId, KeyaComputeResult.Result result) {
         KeyaComputeResult.Result.Frac frac = result.getFrac();
         if (frac == null) {
-            return null;
+            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                            .setErrorMessage("骨骼分析结果为空"),
+                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+            throw new AppException("骨骼分析结果为空");
         }
         DiagPO fracOverview = new DiagPO();
         fracOverview.setApplyId(applyId);
@@ -285,10 +324,12 @@ public class ComputeServiceImpl implements ComputeService {
         }
         List<FocalDetailPO> focalDetailPOList = new ArrayList<>();
         Map<FocalAnnoPO, FocalDetailPO> detailAnnotationPOMap = new HashMap<>();
-        for (KeyaComputeResult.Result.Nodule.VolumeDetail volumeDetail : volumeDetailList) {
+        for (int i = 0; i < volumeDetailList.size(); i++) {
+            KeyaComputeResult.Result.Nodule.VolumeDetail volumeDetail = volumeDetailList.get(i);
             FocalDetailPO focalDetailPO = new FocalDetailPO();
             focalDetailPO.setDiagId(noduleDiagPO.getId());
             focalDetailPO.setApplyId(applyId);
+            focalDetailPO.setBoxIndex(i);
             focalDetailPO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
             focalDetailPO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
             focalDetailPO.setType(volumeDetail.getType());

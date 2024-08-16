@@ -3,9 +3,11 @@ package com.yinhai.mids.business.controller;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.yinhai.mids.business.service.ComputeSeriesService;
+import com.yinhai.mids.business.service.DiagnoseService;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +17,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -31,6 +35,9 @@ public class CallbackController {
     @Resource
     private ComputeSeriesService computeSeriesService;
 
+    @Resource
+    private DiagnoseService diagnoseService;
+
     @Operation(summary = "AI结果推送")
     @PostMapping("computePush")
     public void computePush(@RequestParam Map<String, Object> pushParamMap) {
@@ -44,4 +51,55 @@ public class CallbackController {
 
     }
 
+
+    @Operation(summary = "MPR解析结果推送")
+    @PostMapping("mprAnalysePush")
+    public ResponseEntity<Map<String, Object>> uploadFile (
+            @RequestPart(value="files",required = false) MultipartFile vtiZip,
+            @RequestParam(value="seriesId" ) @NotNull(message = "计算序列不能为空")  String seriesId,
+            @RequestParam(value="code") @NotNull(message = "code不能为空")  String code,
+            @RequestParam(value="message" )String message) throws IOException {
+
+
+        diagnoseService.onMprPush(vtiZip,seriesId,code,message);
+
+//        System.out.println("分析结果返回-------------------");
+//        System.out.println(seriesId);
+//        System.out.println(code);
+//        System.out.println(message);
+//
+//        Map<String, Object> response = new HashMap<>();
+//
+//        response.put("redirectUrl", null);
+//
+//        try {
+//            if (files == null || files.isEmpty()) {
+//                response.put("code", 300);  // 操作失败
+//                response.put("message", "文件为空");
+//                response.put("serviceSuccess", false);
+//                return ResponseEntity.ok(response);
+//            }
+//            System.out.println(files.getOriginalFilename());
+//
+//            // 在此处处理文件，例如保存或其他操作
+//            // ...
+//
+//            response.put("code", 200);  // 操作成功
+//            response.put("message", "文件处理成功");
+//            response.put("serviceSuccess", true);
+//            return ResponseEntity.ok(response);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            response.put("code", 500);  // 系统错误
+//            response.put("message", "系统错误");
+//            response.put("serviceSuccess", false);
+//            return ResponseEntity.status(500).body(response);
+//        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);  // 操作成功
+        response.put("message", "文件处理成功");
+        response.put("serviceSuccess", true);
+        response.put("redirectUrl", null);
+        return ResponseEntity.ok(response);
+    }
 }

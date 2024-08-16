@@ -54,9 +54,16 @@ public class FocalDetailPO {
     /**
      * 结节类型
      */
-    @TableField(value = "`type`")
+    @TableField(value = "type")
     @Schema(description = "结节类型")
     private String type;
+
+    /**
+     * 肺段
+     */
+    @TableField(value = "box_index")
+    @Schema(description = "结节索引")
+    private Integer boxIndex;
 
     /**
      * 肺段
