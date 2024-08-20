@@ -51,14 +51,20 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
         AppAssert.notBlank(code, "code为空");
         String applyId = (String) pushParamMap.get("applyId");
         AppAssert.notBlank(applyId, "applyId为空");
+        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectOne(
+                Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+        if (computeSeriesPO == null) {
+            log.error("applyId {} 对应计算序列不存在", applyId);
+            return;
+        }
         if (StrUtil.equals(code, "1")) {
             eventPublisher.publish(applyId, EventConstants.COMPUTE_FINISH_EVENT);
         }
-        if (StrUtil.equalsAny(code,  "2","3")) {
-            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                            .setErrorMessage((String) pushParamMap.get("message"))
-                            .setComputeResponse(JsonKit.toJsonString(pushParamMap)),
-                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+        if (StrUtil.equalsAny(code, "2", "3")) {
+            computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesPO.getId())
+                    .setComputeStatus(ComputeStatus.COMPUTE_FAILED)
+                    .setErrorMessage((String) pushParamMap.get("message"))
+                    .setComputeResponse(JsonKit.toJsonString(pushParamMap)));
         }
     }
 }

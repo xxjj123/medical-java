@@ -1,10 +1,14 @@
 package com.yinhai.mids.business.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.text.StrPool;
+import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
@@ -57,13 +61,10 @@ public class ComputeServiceImpl implements ComputeService {
     private StudyMapper studyMapper;
 
     @Resource
-    private DiagMapper diagMapper;
+    private DiagnosisMapper diagnosisMapper;
 
     @Resource
-    private VolumeDetailMapper volumeDetailMapper;
-
-    @Resource
-    private DetailAnnotationMapper detailAnnotationMapper;
+    private NoduleMapper noduleMapper;
 
     @Resource
     private ITaFSManager<FSManager> fsManager;
@@ -82,13 +83,13 @@ public class ComputeServiceImpl implements ComputeService {
             log.error("计算序列{}不存在", computeSeriesId);
             return;
         }
+        computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId).setComputeResponse(null).setErrorMessage(null));
 
         StudyPO studyPO = studyMapper.selectById(computeSeriesPO.getStudyId());
         if (studyPO == null) {
-            log.error("计算序列{}对应检查不存在", computeSeriesId);
-            computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
-                    .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
-                    .setErrorMessage(StrUtil.format("计算序列{}对应检查不存在", computeSeriesId)));
+            String errorMsg = StrUtil.format("计算序列{}对应检查不存在", computeSeriesId);
+            log.error(errorMsg);
+            updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, null, errorMsg);
             return;
         }
 
@@ -97,10 +98,9 @@ public class ComputeServiceImpl implements ComputeService {
                 .eq(InstancePO::getSeriesId, computeSeriesPO.getSeriesId());
         List<InstancePO> instancePOList = instanceMapper.selectList(queryWrapper);
         if (CollUtil.isEmpty(instancePOList)) {
-            log.error("计算序列{}对应实例不存在", computeSeriesId);
-            computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
-                    .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
-                    .setErrorMessage(StrUtil.format("计算序列{}对应实例不存在", computeSeriesId)));
+            String errorMsg = StrUtil.format("计算序列{}对应检查不存在", computeSeriesId);
+            log.error(errorMsg);
+            updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, null, errorMsg);
             return;
         }
 
@@ -127,10 +127,7 @@ public class ComputeServiceImpl implements ComputeService {
                         .setComputeStartTime(MapperKit.executeForDate())
                         .setComputeResponse(JsonKit.toJsonString(response)));
             } else {
-                computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
-                        .setErrorMessage("申请AI分析失败")
-                        .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
-                        .setComputeResponse(JsonKit.toJsonString(response)));
+                updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, response, "申请AI分析失败");
             }
         } catch (Exception e) {
             log.error(e);
@@ -140,10 +137,7 @@ public class ComputeServiceImpl implements ComputeService {
             } else {
                 errorMsg = ExceptionUtil.getRootCauseMessage(e);
             }
-            computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
-                    .setErrorMessage(errorMsg)
-                    .setComputeStatus(ComputeStatus.COMPUTE_ERROR)
-                    .setComputeResponse(response != null ? JsonKit.toJsonString(response) : null));
+            updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, response, errorMsg);
         } finally {
             FileUtil.del(tempZip);
         }
@@ -185,195 +179,116 @@ public class ComputeServiceImpl implements ComputeService {
 
     @Override
     public void result(String applyId) {
-        KeyaResponse keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
-
-        while (keyaResponse.getCode() == 2) {
-            // 如果返回码是2，表示结果还在处理中，等待一段时间后重试
-            try {
-                Thread.sleep(1000); // 这里可以调整等待时间，单位为毫秒
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("线程中断异常", e);
-            }
-            keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
-        }
-
-        if (keyaResponse.getCode() == 1) {
-            String dataContent = JsonKit.parseTree(JsonKit.toJsonString(keyaResponse)).get("data").toString();
-            KeyaComputeResult computeResult = JsonKit.parseObject(dataContent, KeyaComputeResult.class);
-            if(computeResult==null){
-                computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                                .setErrorMessage("解析分析结果异常"),
-                        Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-                throw new AppException("解析分析结果异常");
-            };
-
-            List<DiagPO> diagPOList = new ArrayList<>();
-            KeyaComputeResult.Result result = computeResult.getResult();
-
-            if (result == null || (result instanceof Map && ((Map<?, ?>) result).isEmpty())) {
-                computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                                .setErrorMessage("解析分析结果为空"),
-                        Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-                throw new AppException("解析分析结果为空");
-            }
-
-            CollUtil.addIfAbsent(diagPOList, getCalciumOverviewPO(applyId, result));
-            CollUtil.addIfAbsent(diagPOList, getPneumoniaOverviewPO(applyId, result));
-            DiagPO noduleDiagPO = getNoduleOverviewPO(applyId, result);
-            CollUtil.addIfAbsent(diagPOList, noduleDiagPO);
-            CollUtil.addIfAbsent(diagPOList, getFracOverviewPO(applyId, result));
-
-
-            diagMapper.insertBatch(diagPOList);
-            saveDetailAndAnnotations(applyId, result, noduleDiagPO);
-            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_SUCCESS)
-                            .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
-                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-
-        } else if (keyaResponse.getCode() == 3) {
-            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                            .setComputeResponse(JsonKit.toJsonString(keyaResponse)),
-                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-        }
-    }
-
-
-    private DiagPO getCalciumOverviewPO(String applyId, KeyaComputeResult.Result result) {
-        KeyaComputeResult.Result.Calcium calcium = result.getCalcium();
-        if (calcium == null) {
-            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                            .setErrorMessage("钙化分析结果为空"),
-                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-            throw new AppException("钙化分析结果为空");
-        }
-        DiagPO calciumOverview = new DiagPO();
-        calciumOverview.setApplyId(applyId);
-        calciumOverview.setType("calcium");
-        calciumOverview.setSeriesUid(calcium.getSeriesInstanceUID());
-        calciumOverview.setFinding(calcium.getFinding());
-        calciumOverview.setHasLesion(calcium.isHasLesion());
-        calciumOverview.setNumber(calcium.getNumber());
-        return calciumOverview;
-    }
-
-    private DiagPO getPneumoniaOverviewPO(String applyId, KeyaComputeResult.Result result) {
-        KeyaComputeResult.Result.Pneumonia pneumonia = result.getPneumonia();
-        if (pneumonia == null) {
-            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                            .setErrorMessage("钙化分析结果为空"),
-                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-            throw new AppException("钙化分析结果为空");
-        }
-        DiagPO pneumoniaOverview = new DiagPO();
-        pneumoniaOverview.setApplyId(applyId);
-        pneumoniaOverview.setType("pneumonia");
-        pneumoniaOverview.setSeriesUid(pneumonia.getSeriesInstanceUID());
-        pneumoniaOverview.setDiagnosis(pneumonia.getDiagnosis());
-        pneumoniaOverview.setFinding(pneumonia.getFinding());
-        pneumoniaOverview.setHasLesion(pneumonia.isHasLesion());
-        pneumoniaOverview.setNumber(pneumonia.getNumber());
-        return pneumoniaOverview;
-    }
-
-    private DiagPO getNoduleOverviewPO(String applyId, KeyaComputeResult.Result result) {
-        KeyaComputeResult.Result.Nodule nodule = result.getNodule();
-        if (nodule == null) {
-            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                            .setErrorMessage("结节分析结果为空"),
-                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-            throw new AppException("结节分析结果为空");
-        }
-        DiagPO noduleOverview = new DiagPO();
-        noduleOverview.setApplyId(applyId);
-        noduleOverview.setType("nodule");
-        noduleOverview.setSeriesUid(nodule.getSeriesInstanceUID());
-        noduleOverview.setDiagnosis(nodule.getDiagnosis());
-        noduleOverview.setFinding(nodule.getFinding());
-        noduleOverview.setHasLesion(nodule.isHasLesion());
-        noduleOverview.setNumber(nodule.getNumber());
-        return noduleOverview;
-    }
-
-    private DiagPO getFracOverviewPO(String applyId, KeyaComputeResult.Result result) {
-        KeyaComputeResult.Result.Frac frac = result.getFrac();
-        if (frac == null) {
-            computeSeriesMapper.update(new ComputeSeriesPO().setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                            .setErrorMessage("骨骼分析结果为空"),
-                    Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-            throw new AppException("骨骼分析结果为空");
-        }
-        DiagPO fracOverview = new DiagPO();
-        fracOverview.setApplyId(applyId);
-        fracOverview.setType("frac");
-        fracOverview.setSeriesUid(frac.getSeriesInstanceUID());
-        fracOverview.setDiagnosis(frac.getDiagnosis());
-        fracOverview.setFinding(frac.getFinding());
-        fracOverview.setHasLesion(frac.isHasLesion());
-        fracOverview.setNumber(frac.getNumber());
-        return fracOverview;
-    }
-
-    private void saveDetailAndAnnotations(String applyId, KeyaComputeResult.Result result, DiagPO noduleDiagPO) {
-        if (result.getNodule() == null) {
+        ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(
+                Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+        if (computeSeries == null) {
+            log.error("applyId {} 对应计算序列不存在", applyId);
             return;
         }
-        List<KeyaComputeResult.Result.Nodule.VolumeDetail> volumeDetailList = result.getNodule().getVolumeDetailList();
+        String computeSeriesId = computeSeries.getId();
+
+        KeyaResponse keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
+        int count = 0;
+        while (keyaResponse.getCode() == 2 && count < 6) {
+            // 如果返回码是2，表示结果还在处理中，等待一段时间后重试
+            ThreadUtil.safeSleep(10000);
+            keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
+            count += 1;
+        }
+
+        if (keyaResponse.getCode() != 1) {
+            updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_FAILED, keyaResponse, null);
+            return;
+        }
+
+        String dataContent = JsonKit.parseTree(JsonKit.toJsonString(keyaResponse)).get("data").toString();
+        KeyaComputeResult computeResult = JsonKit.parseObject(dataContent, KeyaComputeResult.class);
+
+        if (computeResult == null || BeanUtil.getProperty(computeResult.getResult(), "nodule") == null) {
+            updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_FAILED, keyaResponse, "计算结果为空");
+            return;
+        }
+        saveNodule(computeSeries, computeResult.getResult().getNodule());
+        updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_SUCCESS, keyaResponse, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void saveNodule(ComputeSeriesPO computeSeries, KeyaComputeResult.Result.Nodule nodule) {
+        String computeSeriesId = computeSeries.getId();
+        diagnosisMapper.delete(Wrappers.<DiagnosisPO>lambdaQuery().eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
+        noduleMapper.delete(Wrappers.<NodulePO>lambdaQuery().eq(NodulePO::getComputeSeriesId, computeSeriesId));
+
+        // 主要诊断信息
+        DiagnosisPO diagnosisPO = new DiagnosisPO();
+        diagnosisPO.setComputeSeriesId(computeSeriesId);
+        diagnosisPO.setType("nodule");
+        diagnosisPO.setDiagnosis(nodule.getDiagnosis());
+        diagnosisPO.setFinding(nodule.getFinding());
+        diagnosisPO.setHasLesion(nodule.isHasLesion());
+        diagnosisPO.setNumber(nodule.getNumber());
+        diagnosisMapper.insert(diagnosisPO);
+
+        // 结节详细信息
+        List<KeyaComputeResult.Result.Nodule.VolumeDetail> volumeDetailList = nodule.getVolumeDetailList();
         if (CollUtil.isEmpty(volumeDetailList)) {
             return;
         }
-        List<FocalDetailPO> focalDetailPOList = new ArrayList<>();
-        Map<FocalAnnoPO, FocalDetailPO> detailAnnotationPOMap = new HashMap<>();
-        for (int i = 0; i < volumeDetailList.size(); i++) {
-            KeyaComputeResult.Result.Nodule.VolumeDetail volumeDetail = volumeDetailList.get(i);
-            FocalDetailPO focalDetailPO = new FocalDetailPO();
-            focalDetailPO.setDiagId(noduleDiagPO.getId());
-            focalDetailPO.setApplyId(applyId);
-            focalDetailPO.setBoxIndex(i);
-            focalDetailPO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
-            focalDetailPO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
-            focalDetailPO.setType(volumeDetail.getType());
-            focalDetailPO.setLobeSegment(volumeDetail.getLobeSegment());
-            focalDetailPO.setLobe(volumeDetail.getLobe());
-            focalDetailPO.setVolume(volumeDetail.getVolume());
-            focalDetailPO.setRiskCode(volumeDetail.getRiskCode());
+        List<NodulePO> nodulePOList = new ArrayList<>();
+        for (KeyaComputeResult.Result.Nodule.VolumeDetail volumeDetail : volumeDetailList) {
+            NodulePO nodulePO = new NodulePO();
+            nodulePO.setComputeSeriesId(computeSeriesId);
+            nodulePO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
+            nodulePO.setSelected(true);
+            nodulePO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
+            nodulePO.setType(volumeDetail.getType());
+            nodulePO.setLobeSegment(volumeDetail.getLobeSegment());
+            nodulePO.setLobe(volumeDetail.getLobe());
+            nodulePO.setVolume(volumeDetail.getVolume());
+            nodulePO.setRiskCode(volumeDetail.getRiskCode());
             KeyaComputeResult.Result.Nodule.VolumeDetail.CtMeasures ctMeasures = volumeDetail.getCtMeasures();
             if (ctMeasures != null) {
-                focalDetailPO.setCtMeasuresMean(ctMeasures.getMean());
-                focalDetailPO.setCtMeasuresMinimum(ctMeasures.getMinimum());
-                focalDetailPO.setCtMeasuresMaximum(ctMeasures.getMaximum());
+                nodulePO.setCtMeasuresMean(ctMeasures.getMean());
+                nodulePO.setCtMeasuresMinimum(ctMeasures.getMinimum());
+                nodulePO.setCtMeasuresMaximum(ctMeasures.getMaximum());
             }
             KeyaComputeResult.Result.Nodule.VolumeDetail.EllipsoidAxis ellipsoidAxis = volumeDetail.getEllipsoidAxis();
             if (ellipsoidAxis != null) {
-                focalDetailPO.setEllipsoidAxisLeast(ellipsoidAxis.getLeast());
-                focalDetailPO.setEllipsoidAxisMinor(ellipsoidAxis.getMinor());
-                focalDetailPO.setEllipsoidAxisMajor(ellipsoidAxis.getMajor());
+                nodulePO.setEllipsoidAxisLeast(ellipsoidAxis.getLeast());
+                nodulePO.setEllipsoidAxisMinor(ellipsoidAxis.getMinor());
+                nodulePO.setEllipsoidAxisMajor(ellipsoidAxis.getMajor());
             }
-            focalDetailPOList.add(focalDetailPO);
             List<KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation> annotationList = volumeDetail.getAnnotation();
-            if (CollUtil.isEmpty(annotationList)) {
-                continue;
+            if (CollUtil.isNotEmpty(annotationList)) {
+                KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation annotation = annotationList.get(0);
+                KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point1 = annotation.getPoints().get(0);
+                KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point2 = annotation.getPoints().get(0);
+                nodulePO.setPoints(StrUtil.join(StrPool.COMMA, ListUtil.of(
+                        point1.getX(), point2.getY(), point1.getY(), point2.getY(), point1.getZ(), point2.getZ())));
             }
-            for (KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation annotation : annotationList) {
-                List<KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point> points = annotation.getPoints();
-                if (CollUtil.isNotEmpty(points)) {
-                    String annotationUid = IdUtil.fastSimpleUUID();
-                    for (KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point : points) {
-                        FocalAnnoPO annotationPO = new FocalAnnoPO();
-                        annotationPO.setApplyId(applyId);
-                        annotationPO.setAnnotationUid(annotationUid);
-                        annotationPO.setType(annotation.getType());
-                        annotationPO.setPointX(point.getX());
-                        annotationPO.setPointY(point.getY());
-                        annotationPO.setPointZ(point.getZ());
-                        detailAnnotationPOMap.put(annotationPO, focalDetailPO);
-                    }
-                }
-            }
+            nodulePOList.add(nodulePO);
         }
-        volumeDetailMapper.insertBatch(focalDetailPOList);
-        detailAnnotationPOMap.forEach((key, value) -> key.setFocalDetailId(value.getId()));
-        detailAnnotationMapper.insertBatch(detailAnnotationPOMap.keySet());
+
+        // 设置IM
+        List<InstancePO> instancePOList = instanceMapper.selectList(Wrappers.<InstancePO>lambdaQuery()
+                .select(InstancePO::getInstanceNumber, InstancePO::getSopInstanceUid)
+                .eq(InstancePO::getSeriesId, computeSeries.getSeriesId()));
+        Map<String, Integer> imMap = new HashMap<>();
+        for (InstancePO instancePO : instancePOList) {
+            imMap.put(instancePO.getSopInstanceUid(), Integer.valueOf(StrUtil.subAfter(instancePO.getSopInstanceUid(), ".", true)));
+        }
+        for (NodulePO nodulePO : nodulePOList) {
+            nodulePO.setIm(imMap.get(nodulePO.getSopInstanceUid()));
+        }
+
+        noduleMapper.insertBatch(nodulePOList);
     }
 
+    private void updateComputeStatus(String computeSeriesId, String computeStatus, KeyaResponse computeResponse, String errorMsg) {
+        ComputeSeriesPO computeSeriesPO = new ComputeSeriesPO();
+        computeSeriesPO.setId(computeSeriesId);
+        computeSeriesPO.setComputeStatus(computeStatus);
+        computeSeriesPO.setComputeResponse(JsonKit.toJsonString(computeResponse));
+        computeSeriesPO.setErrorMessage(errorMsg);
+        computeSeriesMapper.updateById(computeSeriesPO);
+    }
 }
