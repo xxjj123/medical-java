@@ -239,7 +239,6 @@ public class ComputeServiceImpl implements ComputeService {
             noduleLesionPO.setDataType(0);
             noduleLesionPO.setComputeSeriesId(computeSeriesId);
             noduleLesionPO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
-            noduleLesionPO.setSelected(true);
             noduleLesionPO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
             noduleLesionPO.setType(volumeDetail.getType());
             noduleLesionPO.setLobeSegment(volumeDetail.getLobeSegment());
