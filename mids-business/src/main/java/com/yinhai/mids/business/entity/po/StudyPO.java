@@ -52,6 +52,13 @@ public class StudyPO {
     private String patientName;
 
     /**
+     * 患者性别
+     */
+    @Schema(description = "患者性别")
+    @TableField(value = "patient_sex")
+    private String patientSex;
+
+    /**
      * PatientAge 年龄
      */
     @TableField(value = "patient_age")

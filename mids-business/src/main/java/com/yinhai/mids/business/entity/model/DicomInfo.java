@@ -50,6 +50,12 @@ public class DicomInfo {
     private String patientName;
 
     /**
+     * 患者性别
+     */
+    @Schema(description = "患者性别")
+    private String patientSex;
+
+    /**
      * PatientAge 年龄
      */
     @Schema(description = "PatientAge 年龄")

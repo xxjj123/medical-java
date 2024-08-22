@@ -42,6 +42,7 @@ public class DicomUtil {
             dicomInfo.setAccessionNumber(dataset.getString(Tag.AccessionNumber));
             dicomInfo.setPatientId(dataset.getString(Tag.PatientID));
             dicomInfo.setPatientName(dataset.getString(Tag.PatientName));
+            dicomInfo.setPatientSex(dataset.getString(Tag.PatientSex));
             dicomInfo.setPatientAge(dataset.getString(Tag.PatientAge));
             dicomInfo.setStudyDateAndTime(dataset.getDate(Tag.StudyDateAndTime));
             dicomInfo.setStudyDescription(dataset.getString(Tag.StudyDescription));

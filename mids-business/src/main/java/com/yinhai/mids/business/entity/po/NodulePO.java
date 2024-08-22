@@ -86,8 +86,11 @@ public class NodulePO {
     @Schema(description = "体积")
     private Double volume;
 
+    /**
+     * 风险
+     */
     @TableField(value = "risk_code")
-    @Schema(description = "")
+    @Schema(description = "风险")
     private Integer riskCode;
 
     /**
