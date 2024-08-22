@@ -43,8 +43,9 @@ public class NoduleController {
 
     @Operation(summary = "结节病变列表查询")
     @PostMapping("queryNodule")
-    public NoduleVO queryNodule(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId) {
-        return noduleService.queryNodule(computeSeriesId);
+    public NoduleVO queryNodule(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId,
+                                @RequestParam(required = false) Boolean reset) {
+        return noduleService.queryNodule(computeSeriesId, reset);
     }
 
     @Operation(summary = "更新结节病变信息")

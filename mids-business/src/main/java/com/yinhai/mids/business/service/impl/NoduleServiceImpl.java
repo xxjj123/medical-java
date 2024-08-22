@@ -47,7 +47,7 @@ public class NoduleServiceImpl implements NoduleService {
     private DiagnosisMapper diagnosisMapper;
 
     @Resource
-    private NoduleMapper noduleMapper;
+    private NoduleLesionMapper noduleLesionMapper;
 
     @Resource
     private NoduleOperateMapper noduleOperateMapper;
@@ -98,7 +98,7 @@ public class NoduleServiceImpl implements NoduleService {
     }
 
     @Override
-    public NoduleVO queryNodule(String computeSeriesId) {
+    public NoduleVO queryNodule(String computeSeriesId, Boolean reset) {
         ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
         AppAssert.notNull(computeSeriesPO, "该序列不存在！");
         AppAssert.equals(computeSeriesPO.getComputeStatus(), ComputeStatus.COMPUTE_SUCCESS, "当前序列计算状态非成功状态，无法查看结节情况");
@@ -117,16 +117,16 @@ public class NoduleServiceImpl implements NoduleService {
         noduleVO.setSeriesInstanceUid(seriesPO.getSeriesInstanceUid());
         noduleVO.setHasLesion(diagnosisPO.getHasLesion());
         noduleVO.setImageCount(seriesPO.getImageCount());
-        List<NodulePO> nodulePOList = noduleMapper.selectList(
-                Wrappers.<NodulePO>lambdaQuery().eq(NodulePO::getComputeSeriesId, computeSeriesId));
-        noduleVO.setNoduleLesionList(BeanUtil.copyToList(nodulePOList, NoduleLesionVO.class));
+        List<NoduleLesionPO> noduleLesionPOList = noduleLesionMapper.selectList(
+                Wrappers.<NoduleLesionPO>lambdaQuery().eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
+        noduleVO.setNoduleLesionList(BeanUtil.copyToList(noduleLesionPOList, NoduleLesionVO.class));
         return noduleVO;
     }
 
     @Override
     public void updateNoduleLesion(NoduleLesionVO noduleLesionVO) {
-        NodulePO nodulePO = BeanUtil.copyProperties(noduleLesionVO, NodulePO.class);
-        noduleMapper.updateById(nodulePO);
+        NoduleLesionPO noduleLesionPO = BeanUtil.copyProperties(noduleLesionVO, NoduleLesionPO.class);
+        noduleLesionMapper.updateById(noduleLesionPO);
         clearNoduleReport(noduleLesionVO.getComputeSeriesId());
     }
 

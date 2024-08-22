@@ -33,10 +33,11 @@ public interface NoduleService {
      * 结节病变列表查询
      *
      * @param computeSeriesId computeSeriesId
+     * @param reset           是否重置
      * @return {@link NoduleVO }
      * @author zhuhs 2024/08/21
      */
-    NoduleVO queryNodule(String computeSeriesId);
+    NoduleVO queryNodule(String computeSeriesId, Boolean reset);
 
     /**
      * 更新结节病变信息

@@ -7,15 +7,15 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 结节
+ * 结节病变
  *
  * @author zhuhs
  * @date 2024/8/20
  */
-@Schema(description = "结节")
+@Schema(description = "结节病变")
 @Data
-@TableName(value = "tb_nodule")
-public class NodulePO {
+@TableName(value = "tb_nodule_lesion")
+public class NoduleLesionPO {
     /**
      * 主键
      */

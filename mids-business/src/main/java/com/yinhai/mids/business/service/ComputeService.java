@@ -9,5 +9,4 @@ public interface ComputeService {
     void register(String computeSeriesId);
 
     void result(String applyId);
-
 }
