@@ -141,6 +141,7 @@ public class NoduleServiceImpl implements NoduleService {
             CopyOptions copyOptions = new CopyOptions().setIgnoreProperties(
                     NoduleLesionPO::getId, NoduleLesionPO::getCreateTime, NoduleLesionPO::getUpdateTime);
             manualList = BeanUtil.copyToList(sourceList, NoduleLesionPO.class, copyOptions);
+            manualList.forEach(i -> i.setDataType(1));
             noduleLesionMapper.insertBatch(manualList);
         }
         noduleVO.setNoduleLesionList(BeanUtil.copyToList(manualList, NoduleLesionVO.class));
