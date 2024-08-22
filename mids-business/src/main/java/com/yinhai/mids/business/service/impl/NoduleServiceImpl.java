@@ -1,6 +1,7 @@
 package com.yinhai.mids.business.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.text.StrPool;
 import cn.hutool.core.util.BooleanUtil;
@@ -98,7 +99,20 @@ public class NoduleServiceImpl implements NoduleService {
     }
 
     @Override
-    public NoduleVO queryNodule(String computeSeriesId, Boolean reset) {
+    public void resetNoduleOperate(String computeSeriesId) {
+        // 清空操作
+        noduleOperateMapper.delete(Wrappers.<NoduleOperatePO>lambdaQuery().eq(NoduleOperatePO::getComputeSeriesId, computeSeriesId));
+        // 重置病变内容
+        noduleLesionMapper.delete(Wrappers.<NoduleLesionPO>lambdaQuery()
+                .eq(NoduleLesionPO::getDataType, 1)
+                .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
+        // 清空报告
+        clearNoduleReport(computeSeriesId);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public NoduleVO queryNodule(String computeSeriesId) {
         ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
         AppAssert.notNull(computeSeriesPO, "该序列不存在！");
         AppAssert.equals(computeSeriesPO.getComputeStatus(), ComputeStatus.COMPUTE_SUCCESS, "当前序列计算状态非成功状态，无法查看结节情况");
@@ -117,9 +131,19 @@ public class NoduleServiceImpl implements NoduleService {
         noduleVO.setSeriesInstanceUid(seriesPO.getSeriesInstanceUid());
         noduleVO.setHasLesion(diagnosisPO.getHasLesion());
         noduleVO.setImageCount(seriesPO.getImageCount());
-        List<NoduleLesionPO> noduleLesionPOList = noduleLesionMapper.selectList(
-                Wrappers.<NoduleLesionPO>lambdaQuery().eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
-        noduleVO.setNoduleLesionList(BeanUtil.copyToList(noduleLesionPOList, NoduleLesionVO.class));
+        List<NoduleLesionPO> manualList = noduleLesionMapper.selectList(Wrappers.<NoduleLesionPO>lambdaQuery()
+                .eq(NoduleLesionPO::getDataType, 1)
+                .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
+        if (CollUtil.isEmpty(manualList)) {
+            List<NoduleLesionPO> sourceList = noduleLesionMapper.selectList(Wrappers.<NoduleLesionPO>lambdaQuery()
+                    .eq(NoduleLesionPO::getDataType, 0)
+                    .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
+            CopyOptions copyOptions = new CopyOptions().setIgnoreProperties(
+                    NoduleLesionPO::getId, NoduleLesionPO::getCreateTime, NoduleLesionPO::getUpdateTime);
+            manualList = BeanUtil.copyToList(sourceList, NoduleLesionPO.class, copyOptions);
+            noduleLesionMapper.insertBatch(manualList);
+        }
+        noduleVO.setNoduleLesionList(BeanUtil.copyToList(manualList, NoduleLesionVO.class));
         return noduleVO;
     }
 

@@ -41,11 +41,16 @@ public class NoduleController {
         noduleService.saveNoduleOperate(noduleOperateVO);
     }
 
+    @Operation(summary = "重置所有结节操作")
+    @PostMapping("resetOperate")
+    public void resetOperate(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId) {
+        noduleService.resetNoduleOperate(computeSeriesId);
+    }
+
     @Operation(summary = "结节病变列表查询")
     @PostMapping("queryNodule")
-    public NoduleVO queryNodule(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId,
-                                @RequestParam(required = false) Boolean reset) {
-        return noduleService.queryNodule(computeSeriesId, reset);
+    public NoduleVO queryNodule(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId) {
+        return noduleService.queryNodule(computeSeriesId);
     }
 
     @Operation(summary = "更新结节病变信息")
