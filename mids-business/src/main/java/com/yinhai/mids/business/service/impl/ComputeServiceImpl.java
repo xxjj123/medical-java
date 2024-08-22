@@ -64,7 +64,7 @@ public class ComputeServiceImpl implements ComputeService {
     private DiagnosisMapper diagnosisMapper;
 
     @Resource
-    private NoduleMapper noduleMapper;
+    private NoduleLesionMapper noduleLesionMapper;
 
     @Resource
     private ITaFSManager<FSManager> fsManager;
@@ -216,7 +216,7 @@ public class ComputeServiceImpl implements ComputeService {
     private void saveNodule(ComputeSeriesPO computeSeries, KeyaComputeResult.Result.Nodule nodule) {
         String computeSeriesId = computeSeries.getId();
         diagnosisMapper.delete(Wrappers.<DiagnosisPO>lambdaQuery().eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
-        noduleMapper.delete(Wrappers.<NodulePO>lambdaQuery().eq(NodulePO::getComputeSeriesId, computeSeriesId));
+        noduleLesionMapper.delete(Wrappers.<NoduleLesionPO>lambdaQuery().eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
 
         // 主要诊断信息
         DiagnosisPO diagnosisPO = new DiagnosisPO();
@@ -233,39 +233,39 @@ public class ComputeServiceImpl implements ComputeService {
         if (CollUtil.isEmpty(volumeDetailList)) {
             return;
         }
-        List<NodulePO> nodulePOList = new ArrayList<>();
+        List<NoduleLesionPO> noduleLesionPOList = new ArrayList<>();
         for (KeyaComputeResult.Result.Nodule.VolumeDetail volumeDetail : volumeDetailList) {
-            NodulePO nodulePO = new NodulePO();
-            nodulePO.setComputeSeriesId(computeSeriesId);
-            nodulePO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
-            nodulePO.setSelected(true);
-            nodulePO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
-            nodulePO.setType(volumeDetail.getType());
-            nodulePO.setLobeSegment(volumeDetail.getLobeSegment());
-            nodulePO.setLobe(volumeDetail.getLobe());
-            nodulePO.setVolume(volumeDetail.getVolume());
-            nodulePO.setRiskCode(volumeDetail.getRiskCode());
+            NoduleLesionPO noduleLesionPO = new NoduleLesionPO();
+            noduleLesionPO.setComputeSeriesId(computeSeriesId);
+            noduleLesionPO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
+            noduleLesionPO.setSelected(true);
+            noduleLesionPO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
+            noduleLesionPO.setType(volumeDetail.getType());
+            noduleLesionPO.setLobeSegment(volumeDetail.getLobeSegment());
+            noduleLesionPO.setLobe(volumeDetail.getLobe());
+            noduleLesionPO.setVolume(volumeDetail.getVolume());
+            noduleLesionPO.setRiskCode(volumeDetail.getRiskCode());
             KeyaComputeResult.Result.Nodule.VolumeDetail.CtMeasures ctMeasures = volumeDetail.getCtMeasures();
             if (ctMeasures != null) {
-                nodulePO.setCtMeasuresMean(ctMeasures.getMean());
-                nodulePO.setCtMeasuresMinimum(ctMeasures.getMinimum());
-                nodulePO.setCtMeasuresMaximum(ctMeasures.getMaximum());
+                noduleLesionPO.setCtMeasuresMean(ctMeasures.getMean());
+                noduleLesionPO.setCtMeasuresMinimum(ctMeasures.getMinimum());
+                noduleLesionPO.setCtMeasuresMaximum(ctMeasures.getMaximum());
             }
             KeyaComputeResult.Result.Nodule.VolumeDetail.EllipsoidAxis ellipsoidAxis = volumeDetail.getEllipsoidAxis();
             if (ellipsoidAxis != null) {
-                nodulePO.setEllipsoidAxisLeast(ellipsoidAxis.getLeast());
-                nodulePO.setEllipsoidAxisMinor(ellipsoidAxis.getMinor());
-                nodulePO.setEllipsoidAxisMajor(ellipsoidAxis.getMajor());
+                noduleLesionPO.setEllipsoidAxisLeast(ellipsoidAxis.getLeast());
+                noduleLesionPO.setEllipsoidAxisMinor(ellipsoidAxis.getMinor());
+                noduleLesionPO.setEllipsoidAxisMajor(ellipsoidAxis.getMajor());
             }
             List<KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation> annotationList = volumeDetail.getAnnotation();
             if (CollUtil.isNotEmpty(annotationList)) {
                 KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation annotation = annotationList.get(0);
                 KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point1 = annotation.getPoints().get(0);
                 KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point2 = annotation.getPoints().get(0);
-                nodulePO.setPoints(StrUtil.join(StrPool.COMMA, ListUtil.of(
+                noduleLesionPO.setPoints(StrUtil.join(StrPool.COMMA, ListUtil.of(
                         point1.getX(), point2.getY(), point1.getY(), point2.getY(), point1.getZ(), point2.getZ())));
             }
-            nodulePOList.add(nodulePO);
+            noduleLesionPOList.add(noduleLesionPO);
         }
 
         // 设置IM
@@ -276,11 +276,11 @@ public class ComputeServiceImpl implements ComputeService {
         for (InstancePO instancePO : instancePOList) {
             imMap.put(instancePO.getSopInstanceUid(), Integer.valueOf(StrUtil.subAfter(instancePO.getSopInstanceUid(), ".", true)));
         }
-        for (NodulePO nodulePO : nodulePOList) {
-            nodulePO.setIm(imMap.get(nodulePO.getSopInstanceUid()));
+        for (NoduleLesionPO noduleLesionPO : noduleLesionPOList) {
+            noduleLesionPO.setIm(imMap.get(noduleLesionPO.getSopInstanceUid()));
         }
 
-        noduleMapper.insertBatch(nodulePOList);
+        noduleLesionMapper.insertBatch(noduleLesionPOList);
     }
 
     private void updateComputeStatus(String computeSeriesId, String computeStatus, KeyaResponse computeResponse, String errorMsg) {
