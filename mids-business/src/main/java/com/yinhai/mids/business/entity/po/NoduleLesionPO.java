@@ -24,6 +24,13 @@ public class NoduleLesionPO {
     private String id;
 
     /**
+     * 数据类型 0-原始数据 1-人工数据
+     */
+    @TableField(value = "data_type")
+    @Schema(description = "数据类型 0-原始数据 1-人工数据")
+    private Integer dataType;
+
+    /**
      * tb_compute_series.id
      */
     @TableField(value = "compute_series_id")
@@ -36,13 +43,6 @@ public class NoduleLesionPO {
     @TableField(value = "sop_instance_uid")
     @Schema(description = "SOPInstanceUID")
     private String sopInstanceUid;
-
-    /**
-     * 是否选中 0否1是
-     */
-    @TableField(value = "selected")
-    @Schema(description = "是否选中 0否1是")
-    private Boolean selected;
 
     /**
      * IM

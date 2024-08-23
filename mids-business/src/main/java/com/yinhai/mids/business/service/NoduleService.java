@@ -30,14 +30,21 @@ public interface NoduleService {
     void saveNoduleOperate(NoduleOperateVO noduleOperateVO);
 
     /**
+     * 结节操作重置
+     *
+     * @param computeSeriesId computeSeriesId
+     * @author zhuhs 2024/08/22
+     */
+    void resetNoduleOperate(String computeSeriesId);
+
+    /**
      * 结节病变列表查询
      *
      * @param computeSeriesId computeSeriesId
-     * @param reset           是否重置
      * @return {@link NoduleVO }
      * @author zhuhs 2024/08/21
      */
-    NoduleVO queryNodule(String computeSeriesId, Boolean reset);
+    NoduleVO queryNodule(String computeSeriesId);
 
     /**
      * 更新结节病变信息
