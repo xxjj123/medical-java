@@ -50,7 +50,7 @@ public class DiagnoseController {
 
     @Operation(summary = "下载单张切片")
     @PostMapping("getSlice")
-    public ResponseEntity<InputStreamResource> downSlice(@RequestParam("seriesId") @NotBlank(message = "序列ID不能为空") String seriesId,@RequestParam("viewName") @NotBlank(message = "切片方向不能为空") String viewName,@RequestParam("viewIndex")  @NotNull(message = "切片序列不能为空") Integer viewIndex) {
+    public ResponseEntity<InputStreamResource> getSlice(@RequestParam("seriesId") @NotBlank(message = "序列ID不能为空") String seriesId,@RequestParam("viewName") @NotBlank(message = "切片方向不能为空") String viewName,@RequestParam("viewIndex")  @NotNull(message = "切片序列不能为空") Integer viewIndex) {
         try{
             InputStream inputStream=diagnoseService.downSlice(seriesId,viewName,viewIndex);
             HttpHeaders headers = new HttpHeaders();
@@ -68,6 +68,28 @@ public class DiagnoseController {
             throw new AppException("下载切片失败！" );
         }
     }
+
+    @Operation(summary = "下载3d模型")
+    @PostMapping("getModel3d")
+    public ResponseEntity<InputStreamResource> getModel3d(@RequestParam("seriesId") @NotBlank(message = "序列ID不能为空") String seriesId) {
+        try{
+            InputStream inputStream=diagnoseService.downModel3d(seriesId);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=test" );
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(new InputStreamResource(inputStream));
+        } catch (Exception e) {
+            log.error(e);
+            if(e instanceof AppException){
+                throw new AppException("下载模型失败！"+((AppException) e).getErrorMessage());
+
+            }
+            throw new AppException("下载模型失败！" );
+        }
+    }
+
 
 
     @Operation(summary = "下载dicom压缩包")

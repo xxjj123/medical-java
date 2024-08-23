@@ -218,6 +218,20 @@ public class DiagnoseServiceImpl implements DiagnoseService {
         }
     }
 
+    @Override
+    public InputStream downModel3d(String seriesId) {
+        Model3dPO model3dPO = model3dMapper.selectOne(Wrappers.<Model3dPO>lambdaQuery().eq(Model3dPO::getSeriesId, seriesId).eq(Model3dPO::getType, "bone"));
+
+        AppAssert.notNull(model3dPO, "未找到3d模型");
+        try {
+            TaFSObject fsObject = fsManager.getObject("mids", model3dPO.getAccessPath());
+            AppAssert.notNull(fsObject, "文件下载异常");
+            return fsObject.getInputstream();
+        } catch (Exception e) {
+            throw new AppException("读取glb文件异常");
+        }
+    }
+
     ;
 
     @Override
@@ -242,6 +256,7 @@ public class DiagnoseServiceImpl implements DiagnoseService {
                 ContextFSObject<String> contextFSObject;
                 try {
                     contextFSObject = new ContextFSObject<>(vtiFile);
+                    contextFSObject.setContentType("application/vti");
                 } catch (IOException e) {
                     log.error("保存dicom文件异常" + e);
                     throw new AppException("保存dicom文件异常");
@@ -250,9 +265,7 @@ public class DiagnoseServiceImpl implements DiagnoseService {
                 contextFSObjects.add(contextFSObject);
             }
 
-            fileStoreService.upload(contextFSObjects);
             List<ContextUploadResult<String>> contextUploadResults = fileStoreService.upload(contextFSObjects);
-
             List<VtiPO> vtiPOList = new CopyOnWriteArrayList<>();
 
             for(ContextUploadResult<String> contextUploadResult:  contextUploadResults){
@@ -280,6 +293,7 @@ public class DiagnoseServiceImpl implements DiagnoseService {
             Model3dPO model3dPO = new Model3dPO();
             try {
                 ContextFSObject<File> fsObject = new ContextFSObject<>(modelFile);
+                fsObject.setContentType("application/glb");
                 UploadResult uploadResult = fileStoreService.upload(fsObject);
                 model3dPO.setType("bone");
                 model3dPO.setStudyId(seriesPO.getStudyId());

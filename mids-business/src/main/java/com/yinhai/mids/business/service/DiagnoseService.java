@@ -27,6 +27,8 @@ public interface DiagnoseService {
 
     InputStream downSlice(String seriesId,String viewName,Integer viewIndex);
 
+    InputStream downModel3d(String seriesId);
+
     void onMprPush(MultipartFile vtiZip,MultipartFile glbZip,String computeSeriesId,String code,String message)  throws IOException;
 
 

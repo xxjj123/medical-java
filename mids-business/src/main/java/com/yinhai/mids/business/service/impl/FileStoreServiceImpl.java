@@ -88,7 +88,7 @@ public class FileStoreServiceImpl implements FileStoreService {
                 return null;
             });
         }
-
+        System.out.println("baocunl+++++++++++++++++++++++++++++++++++++++++++");
         for (ContextFSObject<T> fsObject : fsObjects) {
             try {
                 completionService.take().get();
