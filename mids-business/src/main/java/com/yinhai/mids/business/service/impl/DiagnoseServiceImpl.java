@@ -13,19 +13,21 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.model.ContextFSObject;
+import com.yinhai.mids.business.entity.model.ContextUploadResult;
+import com.yinhai.mids.business.entity.model.UploadResult;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.FocalDetailVO;
 import com.yinhai.mids.business.entity.vo.FocalVO;
 import com.yinhai.mids.business.entity.vo.SeriesVO;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.DiagnoseService;
+import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
 import com.yinhai.ta404.module.storage.core.TaFSObject;
 import com.yinhai.ta404.storage.ta.core.FSManager;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,9 +42,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorCompletionService;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -70,10 +70,16 @@ public class DiagnoseServiceImpl implements DiagnoseService {
     private VtiMapper vtiMapper;
 
     @Resource
+    private Model3dMapper model3dMapper;
+
+    @Resource
     private DetailAnnotationMapper detailAnnotationMapper;
 
-    @Resource(name = "uploadThreadPool")
-    private ThreadPoolTaskExecutor uploadThreadPool;
+//    @Resource(name = "uploadThreadPool")
+//    private ThreadPoolTaskExecutor uploadThreadPool;
+
+    @Resource
+    private FileStoreService fileStoreService;
 
     @Resource
     private ITaFSManager<FSManager> fsManager;
@@ -215,7 +221,7 @@ public class DiagnoseServiceImpl implements DiagnoseService {
     ;
 
     @Override
-    public void onMprPush(MultipartFile vtiZip, @NotBlank(message = "序列id不能为空") String seriesId, String code, String message) throws IOException {
+    public void onMprPush(MultipartFile vtiZip, MultipartFile glbZip,@NotBlank(message = "序列id不能为空") String seriesId, String code, String message) throws IOException {
         SeriesPO seriesPO = seriesMapper.selectById(seriesId);
         AppAssert.notNull(seriesPO, "该序列不存在!");
 
@@ -223,9 +229,14 @@ public class DiagnoseServiceImpl implements DiagnoseService {
             AppAssert.equals("zip", FileTypeUtil.getType(inputStream), "只允许上传vti zip文件");
         }
 
+        try (InputStream inputStream = glbZip.getInputStream()) {
+            AppAssert.equals("zip", FileTypeUtil.getType(inputStream), "只允许上传glb zip文件");
+        }
+
         List<ContextFSObject<String>> contextFSObjects = new ArrayList<>();
 
-        File unzippedVtiDir = unzipVtiZip(vtiZip);
+        File unzippedVtiDir = unzipFile(vtiZip);
+        File unzippedGlbDir = unzipFile(glbZip);
         try {
             for (File vtiFile : FileUtil.loopFiles(unzippedVtiDir.getAbsolutePath())) {
                 ContextFSObject<String> contextFSObject;
@@ -238,15 +249,57 @@ public class DiagnoseServiceImpl implements DiagnoseService {
                 contextFSObject.setContext(vtiFile.getName());
                 contextFSObjects.add(contextFSObject);
             }
-            List<VtiPO> vtiPOList = upload(contextFSObjects, seriesPO);
+
+            fileStoreService.upload(contextFSObjects);
+            List<ContextUploadResult<String>> contextUploadResults = fileStoreService.upload(contextFSObjects);
+
+            List<VtiPO> vtiPOList = new CopyOnWriteArrayList<>();
+
+            for(ContextUploadResult<String> contextUploadResult:  contextUploadResults){
+                VtiPO vtiPO = new VtiPO();
+                vtiPO.setStudyId(seriesPO.getStudyId());
+                vtiPO.setSeriesId(seriesPO.getId());
+                vtiPO.setStudyInstanceUid(seriesPO.getStudyInstanceUid());
+                vtiPO.setSeriesInstanceUid(seriesPO.getSeriesInstanceUid());
+                String fileName = contextUploadResult.getContext();
+                String withoutExtension = fileName.substring(0, fileName.lastIndexOf('.'));
+                String[] parts = withoutExtension.split("_");
+                String viewName = parts[0];
+                int viewIndex = Integer.parseInt(parts[1]);
+                vtiPO.setViewName(viewName);
+                vtiPO.setViewIndex(viewIndex);
+                vtiPO.setAccessPath(contextUploadResult.getAccessPath());
+                vtiPOList.add(vtiPO);
+            }
+
+
+            List<File> Model3dFiles = FileUtil.loopFiles(unzippedGlbDir.getAbsolutePath());
+            AppAssert.equals(Model3dFiles.size(),1,"生成模型数量不为1");
+
+            File modelFile =  Model3dFiles.get(0);
+            Model3dPO model3dPO = new Model3dPO();
+            try {
+                ContextFSObject<File> fsObject = new ContextFSObject<>(modelFile);
+                UploadResult uploadResult = fileStoreService.upload(fsObject);
+                model3dPO.setType("bone");
+                model3dPO.setStudyId(seriesPO.getStudyId());
+                model3dPO.setSeriesId(seriesPO.getId());
+                model3dPO.setStudyInstanceUid(seriesPO.getStudyInstanceUid());
+                model3dPO.setSeriesInstanceUid(seriesPO.getSeriesInstanceUid());
+                model3dPO.setAccessPath(uploadResult.getAccessPath());
+            } catch (IOException e) {
+                throw new AppException("上传3d文件异常");
+            }
+
             Integer axialCount = CollUtil.count(vtiPOList, e -> StrUtil.equals("axial", e.getViewName()));
             Integer coronalCount = CollUtil.count(vtiPOList, e -> StrUtil.equals("sagittal", e.getViewName()));
             Integer sagittalCount = CollUtil.count(vtiPOList, e -> StrUtil.equals("coronal", e.getViewName()));
 
+            System.out.println(model3dPO);
             seriesMapper.updateById(new SeriesPO().setId(seriesId)
                     .setMprStatus(ComputeStatus.COMPUTE_SUCCESS).setAxialCount(axialCount).setCoronalCount(coronalCount).setSagittalCount(sagittalCount));
             vtiMapper.insertBatch(vtiPOList);
-
+            model3dMapper.insert(model3dPO);
 
         } catch (Exception e) {
             String errorMsg;
@@ -260,47 +313,51 @@ public class DiagnoseServiceImpl implements DiagnoseService {
                     .setMprStatus(ComputeStatus.COMPUTE_ERROR));
         } finally {
             FileUtil.del(unzippedVtiDir);
+            FileUtil.del(unzippedGlbDir);
+
         }
     }
 
-    private <T> List<VtiPO> upload(List<ContextFSObject<T>> fsObjects, SeriesPO seriesPO) {
-        List<VtiPO> vtiPOList = new CopyOnWriteArrayList<>();
-        CompletionService<Void> completionService = new ExecutorCompletionService<>(uploadThreadPool);
-        for (ContextFSObject<T> fsObject : fsObjects) {
-            completionService.submit(() -> {
-                TaFSObject taFSObject = fsManager.putObject("mids", fsObject);
-                fsObject.setKeyId(taFSObject.getKeyId());
-                VtiPO vtiPO = new VtiPO();
-                vtiPO.setStudyId(seriesPO.getStudyId());
-                vtiPO.setSeriesId(seriesPO.getId());
-                vtiPO.setStudyInstanceUid(seriesPO.getStudyInstanceUid());
-                vtiPO.setSeriesInstanceUid(seriesPO.getSeriesInstanceUid());
-                String fileName = (String) fsObject.getContext();
-                String withoutExtension = fileName.substring(0, fileName.lastIndexOf('.'));
-                String[] parts = withoutExtension.split("_");
-                String viewName = parts[0];
-                int viewIndex = Integer.parseInt(parts[1]);
-                vtiPO.setViewName(viewName);
-                vtiPO.setViewIndex(viewIndex);
-                vtiPO.setAccessPath(fsObject.getKeyId());
-                vtiPOList.add(vtiPO);
-                return null;
-            });
-        }
-        for (ContextFSObject<T> fsObject : fsObjects) {
-            try {
-                completionService.take().get();
-            } catch (Exception e) {
-                log.error(e);
-                throw new AppException("文件上传失败！");
-            }
-        }
-        return vtiPOList;
-
-    }
 
 
-    private File unzipVtiZip(MultipartFile vtiZip) {
+//        private <T> List<VtiPO> upload(List<ContextFSObject<T>> fsObjects, SeriesPO seriesPO) {
+//        List<VtiPO> vtiPOList = new CopyOnWriteArrayList<>();
+//        CompletionService<Void> completionService = new ExecutorCompletionService<>(uploadThreadPool);
+//        for (ContextFSObject<T> fsObject : fsObjects) {
+//            completionService.submit(() -> {
+//                TaFSObject taFSObject = fsManager.putObject("mids", fsObject);
+//                fsObject.setKeyId(taFSObject.getKeyId());
+//                VtiPO vtiPO = new VtiPO();
+//                vtiPO.setStudyId(seriesPO.getStudyId());
+//                vtiPO.setSeriesId(seriesPO.getId());
+//                vtiPO.setStudyInstanceUid(seriesPO.getStudyInstanceUid());
+//                vtiPO.setSeriesInstanceUid(seriesPO.getSeriesInstanceUid());
+//                String fileName = (String) fsObject.getContext();
+//                String withoutExtension = fileName.substring(0, fileName.lastIndexOf('.'));
+//                String[] parts = withoutExtension.split("_");
+//                String viewName = parts[0];
+//                int viewIndex = Integer.parseInt(parts[1]);
+//                vtiPO.setViewName(viewName);
+//                vtiPO.setViewIndex(viewIndex);
+//                vtiPO.setAccessPath(fsObject.getKeyId());
+//                vtiPOList.add(vtiPO);
+//                return null;
+//            });
+//        }
+//        for (ContextFSObject<T> fsObject : fsObjects) {
+//            try {
+//                completionService.take().get();
+//            } catch (Exception e) {
+//                log.error(e);
+//                throw new AppException("文件上传失败！");
+//            }
+//        }
+//        return vtiPOList;
+//
+//    }
+
+
+    private File unzipFile(MultipartFile zipFile) {
         File tempDir;
         try {
             tempDir = Files.createTempDirectory("vti").toFile();
@@ -308,7 +365,7 @@ public class DiagnoseServiceImpl implements DiagnoseService {
             log.error(e);
             throw new AppException("创建临时文件异常");
         }
-        try (InputStream inputStream = vtiZip.getInputStream()) {
+        try (InputStream inputStream = zipFile.getInputStream()) {
             ZipUtil.unzip(inputStream, tempDir, Charset.defaultCharset());
         } catch (IOException e) {
             log.error(e);
@@ -316,6 +373,8 @@ public class DiagnoseServiceImpl implements DiagnoseService {
         }
         return tempDir;
     }
+
+
 
     @Override
     public SeriesVO getSeriesInfo(String computeSeriesId) {

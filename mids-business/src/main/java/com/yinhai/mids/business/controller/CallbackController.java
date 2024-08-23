@@ -61,7 +61,6 @@ public class CallbackController {
             @RequestParam(value="code") @NotNull(message = "code不能为空")  String code,
             @RequestParam(value="message" )String message) throws IOException {
 
-
         Map<String, Object> response = new HashMap<>();
 
         response.put("redirectUrl", null);
@@ -80,9 +79,7 @@ public class CallbackController {
                 return ResponseEntity.ok(response);
             }
 
-            // 在此处处理文件，例如保存或其他操作
-            // ...
-            diagnoseService.onMprPush(vti_file,seriesId,code,message);
+            diagnoseService.onMprPush(vti_file,glb_file,seriesId,code,message);
 
             response.put("code", 200);  // 操作成功
             response.put("message", "文件处理成功");

@@ -27,7 +27,8 @@ public interface DiagnoseService {
 
     InputStream downSlice(String seriesId,String viewName,Integer viewIndex);
 
-    void onMprPush(MultipartFile vtiZip,String computeSeriesId,String code,String message)  throws IOException;
+    void onMprPush(MultipartFile vtiZip,MultipartFile glbZip,String computeSeriesId,String code,String message)  throws IOException;
+
 
     SeriesVO getSeriesInfo(String computeSeriesId);
 }
