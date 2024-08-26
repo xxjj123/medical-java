@@ -47,6 +47,11 @@ public class NoduleLesionVO {
     @Schema(description = "肺段 【字典码值】")
     private Integer lobeSegment;
     /**
+     * 肺叶
+     */
+    @Schema(description = "肺叶")
+    private String lobe;
+    /**
      * 体积
      */
     @Schema(description = "体积")

@@ -9,6 +9,7 @@ import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.dto.ManualDiagnosisParam;
 import com.yinhai.mids.business.entity.dto.NoduleOperate;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author zhuhs
@@ -58,6 +60,30 @@ public class NoduleServiceImpl implements NoduleService {
 
     @Resource
     private TextReportMapper textReportMapper;
+
+    /**
+     * 肺叶
+     */
+    private static final Map<Integer, String> LOBE_MAP = ImmutableMap.<Integer, String>builder()
+            .put(1, "lobe_right_top")
+            .put(2, "lobe_right_top")
+            .put(3, "lobe_right_top")
+            .put(4, "lobe_right_middle")
+            .put(5, "lobe_right_middle")
+            .put(6, "lobe_right_bottom")
+            .put(7, "lobe_right_bottom")
+            .put(8, "lobe_right_bottom")
+            .put(9, "lobe_right_bottom")
+            .put(10, "lobe_right_bottom")
+            .put(11, "lobe_left_top")
+            .put(12, "lobe_left_top")
+            .put(13, "lobe_left_top")
+            .put(14, "lobe_left_top")
+            .put(15, "lobe_left_bottom")
+            .put(16, "lobe_left_bottom")
+            .put(17, "lobe_left_bottom")
+            .put(18, "lobe_left_bottom")
+            .build();
 
     @Override
     public NoduleOperateVO queryNoduleOperate(String computeSeriesId) {
@@ -142,6 +168,7 @@ public class NoduleServiceImpl implements NoduleService {
                     NoduleLesionPO::getId, NoduleLesionPO::getCreateTime, NoduleLesionPO::getUpdateTime);
             manualList = BeanUtil.copyToList(sourceList, NoduleLesionPO.class, copyOptions);
             manualList.forEach(i -> i.setDataType(1));
+            manualList.forEach(i -> i.setLobe(LOBE_MAP.get(i.getLobeSegment())));
             noduleLesionMapper.insertBatch(manualList);
         }
         noduleVO.setNoduleLesionList(BeanUtil.copyToList(manualList, NoduleLesionVO.class));
@@ -151,6 +178,7 @@ public class NoduleServiceImpl implements NoduleService {
     @Override
     public void updateNoduleLesion(NoduleLesionVO noduleLesionVO) {
         NoduleLesionPO noduleLesionPO = BeanUtil.copyProperties(noduleLesionVO, NoduleLesionPO.class);
+        noduleLesionPO.setLobe(LOBE_MAP.get(noduleLesionPO.getLobeSegment()));
         noduleLesionMapper.updateById(noduleLesionPO);
         clearNoduleReport(noduleLesionVO.getComputeSeriesId());
     }
