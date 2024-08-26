@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author zhuhs
@@ -86,16 +87,26 @@ public class NoduleServiceImpl implements NoduleService {
             .build();
 
     @Override
+    @SuppressWarnings("unchecked")
     public NoduleOperateVO queryNoduleOperate(String computeSeriesId) {
         NoduleOperatePO noduleOperatePO = noduleOperateMapper.selectOne(
                 Wrappers.<NoduleOperatePO>lambdaQuery().eq(NoduleOperatePO::getComputeSeriesId, computeSeriesId));
-        if (noduleOperatePO == null) {
-            NoduleOperateVO noduleOperateVO = new NoduleOperateVO();
-            noduleOperateVO.setLesionOrderType("1");
-            // TODO 完善其余默认条件
-            return noduleOperateVO;
+        if (noduleOperatePO != null) {
+            return BeanUtil.copyProperties(noduleOperatePO, NoduleOperateVO.class);
         }
-        return BeanUtil.copyProperties(noduleOperatePO, NoduleOperateVO.class);
+        List<NoduleLesionPO> noduleLesionList = noduleLesionMapper.selectList(Wrappers.<NoduleLesionPO>lambdaQuery()
+                .select(NoduleLesionPO::getId)
+                .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
+        NoduleOperateVO noduleOperateVO = new NoduleOperateVO();
+        noduleOperateVO.setComputeSeriesId(computeSeriesId);
+        noduleOperateVO.setLesionOrderType("1");
+        noduleOperateVO.setMajorAxisSelectFilter("2,3,4");
+        noduleOperateVO.setFindingOrderType("1");
+        noduleOperateVO.setDiagnosisType("1");
+        noduleOperateVO.setNoduleSelect(noduleLesionList.stream().map(NoduleLesionPO::getId).collect(
+                Collectors.joining(StrPool.COMMA)));
+        return noduleOperateVO;
+
     }
 
     @Override
