@@ -12,7 +12,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.dto.ManualDiagnosisParam;
-import com.yinhai.mids.business.entity.dto.NoduleOperate;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.NoduleLesionVO;
 import com.yinhai.mids.business.entity.vo.NoduleOperateVO;
@@ -111,28 +110,19 @@ public class NoduleServiceImpl implements NoduleService {
 
     @Override
     public void saveNoduleOperate(NoduleOperateVO noduleOperateVO) {
-        NoduleOperate operate = convertNoduleOperate(noduleOperateVO);
+        validateNoduleOperate(noduleOperateVO);
         NoduleOperatePO noduleOperatePO = new NoduleOperatePO();
-        Joiner joiner = Joiner.on(StrPool.COMMA);
-        noduleOperatePO.setComputeSeriesId(operate.getComputeSeriesId());
-        noduleOperatePO.setLesionOrderType(operate.getLesionOrderType());
-        noduleOperatePO.setRiskFilter(joiner.join(operate.getRiskFilterList()));
-        noduleOperatePO.setTypeFilter(joiner.join(operate.getTypeFilterList()));
-        noduleOperatePO.setMajorAxisSelectFilter(joiner.join(operate.getMajorAxisSelectFilterList()));
-        noduleOperatePO.setMajorAxisScopeFilter(joiner.join(operate.getMajorAxisMin(), operate.getMajorAxisMax()));
-        noduleOperatePO.setFindingOrderType(operate.getFindingOrderType());
-        noduleOperatePO.setDiagnosisType(operate.getDiagnosisType());
-        noduleOperatePO.setNoduleSelect(joiner.join(operate.getNoduleSelectList()));
+        BeanUtil.copyProperties(noduleOperateVO, noduleOperatePO);
         noduleOperatePO.setOperateTime(MapperKit.executeForDate());
         NoduleOperatePO one = noduleOperateMapper.selectOne(Wrappers.<NoduleOperatePO>lambdaQuery()
-                .eq(NoduleOperatePO::getComputeSeriesId, operate.getComputeSeriesId()));
+                .eq(NoduleOperatePO::getComputeSeriesId, noduleOperateVO.getComputeSeriesId()));
         if (one != null) {
             noduleOperatePO.setId(one.getId());
             noduleOperateMapper.updateById(noduleOperatePO);
         } else {
             noduleOperateMapper.insert(noduleOperatePO);
         }
-        clearNoduleReport(operate.getComputeSeriesId());
+        clearNoduleReport(noduleOperateVO.getComputeSeriesId());
     }
 
     @Override
@@ -236,27 +226,21 @@ public class NoduleServiceImpl implements NoduleService {
     }
 
     /**
-     * 对结节操作进行校验和转换
+     * 对结节操作进行校验
      *
      * @param noduleOperateVO noduleOperateVO
-     * @return {@link NoduleOperate }
      * @author zhuhs 2024/08/21
      */
-    private NoduleOperate convertNoduleOperate(NoduleOperateVO noduleOperateVO) {
-        NoduleOperate noduleOperate = new NoduleOperate();
-        noduleOperate.setComputeSeriesId(noduleOperateVO.getComputeSeriesId());
-
+    private void validateNoduleOperate(NoduleOperateVO noduleOperateVO) {
         String lesionOrderType = noduleOperateVO.getLesionOrderType();
         if (StrUtil.isNotBlank(lesionOrderType)) {
             AppAssert.isTrue(StrUtil.equalsAny(lesionOrderType, "1", "2", "3", "4", "5", "6"), "病变排序类型不正确");
-            noduleOperate.setLesionOrderType(lesionOrderType);
         }
 
         List<String> riskFilterList = StrUtil.split(noduleOperateVO.getRiskFilter(), StrPool.COMMA, true, true);
         if (CollUtil.isNotEmpty(riskFilterList)) {
             riskFilterList = CollUtil.distinct(riskFilterList);
             AppAssert.isTrue(CollUtil.allMatch(riskFilterList, s -> StrUtil.equalsAny(s, "1", "2", "3")), "病变良恶性不正确");
-            noduleOperate.setRiskFilterList(riskFilterList);
         }
 
         List<String> typeFilterList = StrUtil.split(noduleOperateVO.getTypeFilter(), StrPool.COMMA, true, true);
@@ -264,7 +248,6 @@ public class NoduleServiceImpl implements NoduleService {
             typeFilterList = CollUtil.distinct(typeFilterList);
             AppAssert.isTrue(CollUtil.allMatch(typeFilterList,
                     s -> StrUtil.equalsAny(s, "GCN", "Solid", "Calcified", "Mixed", "Mass")), "病变类型不正确");
-            noduleOperate.setTypeFilterList(typeFilterList);
         }
 
         if (StrUtil.isBlank(noduleOperateVO.getMajorAxisScopeFilter())) {
@@ -273,7 +256,6 @@ public class NoduleServiceImpl implements NoduleService {
                 majorAxisSelectFilterList = CollUtil.distinct(majorAxisSelectFilterList);
                 AppAssert.isTrue(CollUtil.allMatch(majorAxisSelectFilterList,
                         s -> StrUtil.equalsAny(s, "1", "2", "3", "4")), "病变长径不正确");
-                noduleOperate.setMajorAxisSelectFilterList(majorAxisSelectFilterList);
             }
         }
 
@@ -285,24 +267,19 @@ public class NoduleServiceImpl implements NoduleService {
             AppAssert.isTrue(NumberUtil.isDouble(min), "病变长径范围最小值不正确");
             AppAssert.isTrue(NumberUtil.isDouble(max), "病变长径范围最大值不正确");
             AppAssert.isTrue(Double.parseDouble(min) <= Double.parseDouble(max), "病变长径范围不正确");
-            noduleOperate.setMajorAxisMin(Double.parseDouble(min));
-            noduleOperate.setMajorAxisMax(Double.parseDouble(max));
         }
 
         String findingOrderType = noduleOperateVO.getFindingOrderType();
         if (StrUtil.isNotBlank(findingOrderType)) {
             AppAssert.isTrue(StrUtil.equalsAny(findingOrderType, "1", "2", "3", "4", "5"), "影像所见排序类型不正确");
-            noduleOperate.setFindingOrderType(findingOrderType);
         }
 
         String diagnosisType = noduleOperateVO.getDiagnosisType();
         if (StrUtil.isNotBlank(diagnosisType)) {
             AppAssert.isTrue(StrUtil.equalsAny(diagnosisType, "1", "2"), "影像诊断类型不正确");
-            noduleOperate.setDiagnosisType(diagnosisType);
         }
         List<String> noduleSelectList = StrUtil.split(noduleOperateVO.getNoduleSelect(), StrPool.COMMA, true, true);
-        noduleOperate.setNoduleSelectList(noduleSelectList);
-        return noduleOperate;
+        noduleOperateVO.setNoduleSelect(Joiner.on(StrPool.COMMA).skipNulls().join(noduleSelectList));
     }
 
     @SuppressWarnings("unchecked")
