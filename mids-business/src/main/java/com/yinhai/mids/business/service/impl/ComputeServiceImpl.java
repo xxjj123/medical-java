@@ -261,9 +261,9 @@ public class ComputeServiceImpl implements ComputeService {
             if (CollUtil.isNotEmpty(annotationList)) {
                 KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation annotation = annotationList.get(0);
                 KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point1 = annotation.getPoints().get(0);
-                KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point2 = annotation.getPoints().get(0);
+                KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point2 = annotation.getPoints().get(1);
                 noduleLesionPO.setPoints(StrUtil.join(StrPool.COMMA, ListUtil.of(
-                        point1.getX(), point2.getY(), point1.getY(), point2.getY(), point1.getZ(), point2.getZ())));
+                        point1.getX(), point2.getX(), point1.getY(), point2.getY(), point1.getZ(), point2.getZ())));
             }
             noduleLesionPOList.add(noduleLesionPO);
         }
