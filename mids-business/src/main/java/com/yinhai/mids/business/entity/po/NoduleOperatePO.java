@@ -33,56 +33,56 @@ public class NoduleOperatePO {
     /**
      * 病变排序类型 1-IM 2-肺段 3-长径 4-体积 5-风险 6-类型
      */
-    @TableField(value = "lesion_order_type")
+    @TableField(value = "lesion_order_type", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "病变排序类型 1-IM 2-肺段 3-长径 4-体积 5-风险 6-类型")
     private String lesionOrderType;
 
     /**
      * 良恶性
      */
-    @TableField(value = "risk_filter")
+    @TableField(value = "risk_filter", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "良恶性")
     private String riskFilter;
 
     /**
      * 类型
      */
-    @TableField(value = "type_filter")
+    @TableField(value = "type_filter", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "类型")
     private String typeFilter;
 
     /**
      * 长径选择
      */
-    @TableField(value = "major_axis_select_filter")
+    @TableField(value = "major_axis_select_filter", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "长径选择")
     private String majorAxisSelectFilter;
 
     /**
      * 长径范围
      */
-    @TableField(value = "major_axis_scope_filter")
+    @TableField(value = "major_axis_scope_filter", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "长径范围")
     private String majorAxisScopeFilter;
 
     /**
      * 影像所见排序类型
      */
-    @TableField(value = "finding_order_type")
+    @TableField(value = "finding_order_type", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "影像所见排序类型")
     private String findingOrderType;
 
     /**
      * 影像诊断类型
      */
-    @TableField(value = "diagnosis_type")
+    @TableField(value = "diagnosis_type", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "影像诊断类型")
     private String diagnosisType;
 
     /**
      * 结节勾选项
      */
-    @TableField(value = "nodule_select")
+    @TableField(value = "nodule_select", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "结节勾选项")
     private String noduleSelect;
 

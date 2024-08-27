@@ -85,6 +85,35 @@ public class NoduleServiceImpl implements NoduleService {
             .put(18, "lobe_left_bottom")
             .build();
 
+    private static final Map<Integer, Integer> LOBE_SEGMENT_SORT_MAP = ImmutableMap.<Integer, Integer>builder()
+            .put(1, 11)
+            .put(2, 10)
+            .put(3, 9)
+            .put(4, 13)
+            .put(5, 12)
+            .put(6, 15)
+            .put(7, 16)
+            .put(8, 18)
+            .put(9, 17)
+            .put(10, 14)
+            .put(11, 3)
+            .put(12, 4)
+            .put(13, 2)
+            .put(14, 1)
+            .put(15, 6)
+            .put(16, 8)
+            .put(17, 7)
+            .put(18, 5)
+            .build();
+
+    private static final Map<String, Integer> TYPE_SORT_MAP = ImmutableMap.<String, Integer>builder()
+            .put("GCN", 3)
+            .put("Mass", 1)
+            .put("Mixed", 2)
+            .put("Solid", 4)
+            .put("Calcified", 5)
+            .build();
+
     @Override
     @SuppressWarnings("unchecked")
     public NoduleOperateVO queryNoduleOperate(String computeSeriesId) {
@@ -109,12 +138,17 @@ public class NoduleServiceImpl implements NoduleService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void saveNoduleOperate(NoduleOperateVO noduleOperateVO) {
         validateNoduleOperate(noduleOperateVO);
         NoduleOperatePO noduleOperatePO = new NoduleOperatePO();
         BeanUtil.copyProperties(noduleOperateVO, noduleOperatePO);
+        if (noduleOperatePO.getMajorAxisScopeFilter() != null) {
+            noduleOperatePO.setMajorAxisSelectFilter(null);
+        }
         noduleOperatePO.setOperateTime(MapperKit.executeForDate());
         NoduleOperatePO one = noduleOperateMapper.selectOne(Wrappers.<NoduleOperatePO>lambdaQuery()
+                .select(NoduleOperatePO::getId)
                 .eq(NoduleOperatePO::getComputeSeriesId, noduleOperateVO.getComputeSeriesId()));
         if (one != null) {
             noduleOperatePO.setId(one.getId());
@@ -133,6 +167,9 @@ public class NoduleServiceImpl implements NoduleService {
         noduleLesionMapper.delete(Wrappers.<NoduleLesionPO>lambdaQuery()
                 .eq(NoduleLesionPO::getDataType, 1)
                 .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
+        // 清空人工诊断结果
+        manualDiagnosisMapper.delete(Wrappers.<ManualDiagnosisPO>lambdaQuery().eq(
+                ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
         // 清空报告
         clearNoduleReport(computeSeriesId);
     }
@@ -172,7 +209,12 @@ public class NoduleServiceImpl implements NoduleService {
             manualList.forEach(i -> i.setLobe(LOBE_MAP.get(i.getLobeSegment())));
             noduleLesionMapper.insertBatch(manualList);
         }
-        noduleVO.setNoduleLesionList(BeanUtil.copyToList(manualList, NoduleLesionVO.class));
+        List<NoduleLesionVO> noduleLesionVOList = BeanUtil.copyToList(manualList, NoduleLesionVO.class);
+        for (NoduleLesionVO noduleLesionVO : noduleLesionVOList) {
+            noduleLesionVO.setLobeSegmentSort(LOBE_SEGMENT_SORT_MAP.get(noduleLesionVO.getLobeSegment()));
+            noduleLesionVO.setTypeSort(TYPE_SORT_MAP.get(noduleLesionVO.getType()));
+        }
+        noduleVO.setNoduleLesionList(noduleLesionVOList);
         return noduleVO;
     }
 
@@ -188,19 +230,22 @@ public class NoduleServiceImpl implements NoduleService {
     @SuppressWarnings("unchecked")
     public void saveNoduleManualDiagnosis(ManualDiagnosisParam manualDiagnosisParam) {
         String computeSeriesId = manualDiagnosisParam.getComputeSeriesId();
-        ManualDiagnosisPO manualDiagnosisPO = new ManualDiagnosisPO();
-        manualDiagnosisPO.setComputeSeriesId(computeSeriesId);
-        manualDiagnosisPO.setType("nodule");
-        manualDiagnosisPO.setDiagnosis(manualDiagnosisParam.getDiagnosis());
-        manualDiagnosisPO.setFinding(manualDiagnosisParam.getFinding());
-        manualDiagnosisPO.setDiagnoseTime(MapperKit.executeForDate());
         ManualDiagnosisPO one = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()
                 .select(ManualDiagnosisPO::getId)
                 .eq(ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
         if (one != null) {
-            manualDiagnosisPO.setId(one.getId());
-            manualDiagnosisMapper.updateById(manualDiagnosisPO);
+            manualDiagnosisMapper.update(new ManualDiagnosisPO(), Wrappers.<ManualDiagnosisPO>lambdaUpdate()
+                    .eq(ManualDiagnosisPO::getId, one.getId())
+                    .set(ManualDiagnosisPO::getDiagnosis, manualDiagnosisParam.getDiagnosis())
+                    .set(ManualDiagnosisPO::getFinding, manualDiagnosisParam.getFinding())
+                    .set(ManualDiagnosisPO::getDiagnoseTime, MapperKit.executeForDate()));
         } else {
+            ManualDiagnosisPO manualDiagnosisPO = new ManualDiagnosisPO();
+            manualDiagnosisPO.setComputeSeriesId(computeSeriesId);
+            manualDiagnosisPO.setType("nodule");
+            manualDiagnosisPO.setDiagnosis(manualDiagnosisParam.getDiagnosis());
+            manualDiagnosisPO.setFinding(manualDiagnosisParam.getFinding());
+            manualDiagnosisPO.setDiagnoseTime(MapperKit.executeForDate());
             manualDiagnosisMapper.insert(manualDiagnosisPO);
         }
     }
@@ -209,6 +254,7 @@ public class NoduleServiceImpl implements NoduleService {
     public TextReportVO queryTextReport(String computeSeriesId, Boolean reset) {
         boolean resetReport = BooleanUtil.isTrue(reset);
         if (resetReport) {
+            textReportMapper.delete(Wrappers.<TextReportPO>lambdaQuery().eq(TextReportPO::getComputeSeriesId, computeSeriesId));
             return generateAndSaveTextReport(computeSeriesId);
         }
         TextReportPO textReportPO = textReportMapper.selectOne(Wrappers.<TextReportPO>lambdaQuery()
@@ -232,34 +278,7 @@ public class NoduleServiceImpl implements NoduleService {
      * @author zhuhs 2024/08/21
      */
     private void validateNoduleOperate(NoduleOperateVO noduleOperateVO) {
-        String lesionOrderType = noduleOperateVO.getLesionOrderType();
-        if (StrUtil.isNotBlank(lesionOrderType)) {
-            AppAssert.isTrue(StrUtil.equalsAny(lesionOrderType, "1", "2", "3", "4", "5", "6"), "病变排序类型不正确");
-        }
-
-        List<String> riskFilterList = StrUtil.split(noduleOperateVO.getRiskFilter(), StrPool.COMMA, true, true);
-        if (CollUtil.isNotEmpty(riskFilterList)) {
-            riskFilterList = CollUtil.distinct(riskFilterList);
-            AppAssert.isTrue(CollUtil.allMatch(riskFilterList, s -> StrUtil.equalsAny(s, "1", "2", "3")), "病变良恶性不正确");
-        }
-
-        List<String> typeFilterList = StrUtil.split(noduleOperateVO.getTypeFilter(), StrPool.COMMA, true, true);
-        if (CollUtil.isNotEmpty(typeFilterList)) {
-            typeFilterList = CollUtil.distinct(typeFilterList);
-            AppAssert.isTrue(CollUtil.allMatch(typeFilterList,
-                    s -> StrUtil.equalsAny(s, "GCN", "Solid", "Calcified", "Mixed", "Mass")), "病变类型不正确");
-        }
-
-        if (StrUtil.isBlank(noduleOperateVO.getMajorAxisScopeFilter())) {
-            List<String> majorAxisSelectFilterList = StrUtil.split(noduleOperateVO.getMajorAxisSelectFilter(), StrPool.COMMA, true, true);
-            if (CollUtil.isNotEmpty(majorAxisSelectFilterList)) {
-                majorAxisSelectFilterList = CollUtil.distinct(majorAxisSelectFilterList);
-                AppAssert.isTrue(CollUtil.allMatch(majorAxisSelectFilterList,
-                        s -> StrUtil.equalsAny(s, "1", "2", "3", "4")), "病变长径不正确");
-            }
-        }
-
-        List<String> majorAxisScopeFilterList = StrUtil.split(noduleOperateVO.getMajorAxisScopeFilter(), StrPool.COMMA, true, true);
+        List<String> majorAxisScopeFilterList = StrUtil.split(noduleOperateVO.getMajorAxisScopeFilter(), StrPool.COMMA, false, false);
         if (CollUtil.isNotEmpty(majorAxisScopeFilterList)) {
             AppAssert.isTrue(majorAxisScopeFilterList.size() == 2, "病变长径范围不正确");
             String min = majorAxisScopeFilterList.get(0);
@@ -267,16 +286,6 @@ public class NoduleServiceImpl implements NoduleService {
             AppAssert.isTrue(NumberUtil.isDouble(min), "病变长径范围最小值不正确");
             AppAssert.isTrue(NumberUtil.isDouble(max), "病变长径范围最大值不正确");
             AppAssert.isTrue(Double.parseDouble(min) <= Double.parseDouble(max), "病变长径范围不正确");
-        }
-
-        String findingOrderType = noduleOperateVO.getFindingOrderType();
-        if (StrUtil.isNotBlank(findingOrderType)) {
-            AppAssert.isTrue(StrUtil.equalsAny(findingOrderType, "1", "2", "3", "4", "5"), "影像所见排序类型不正确");
-        }
-
-        String diagnosisType = noduleOperateVO.getDiagnosisType();
-        if (StrUtil.isNotBlank(diagnosisType)) {
-            AppAssert.isTrue(StrUtil.equalsAny(diagnosisType, "1", "2"), "影像诊断类型不正确");
         }
         List<String> noduleSelectList = StrUtil.split(noduleOperateVO.getNoduleSelect(), StrPool.COMMA, true, true);
         noduleOperateVO.setNoduleSelect(Joiner.on(StrPool.COMMA).skipNulls().join(noduleSelectList));

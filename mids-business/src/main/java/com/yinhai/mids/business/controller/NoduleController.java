@@ -37,7 +37,7 @@ public class NoduleController {
 
     @Operation(summary = "保存本次结节操作")
     @PostMapping("saveOperate")
-    public void saveOperate(@RequestBody NoduleOperateVO noduleOperateVO) {
+    public void saveOperate(@RequestBody @Validated NoduleOperateVO noduleOperateVO) {
         noduleService.saveNoduleOperate(noduleOperateVO);
     }
 
@@ -55,13 +55,13 @@ public class NoduleController {
 
     @Operation(summary = "更新结节病变信息")
     @PostMapping("updateNoduleLesion")
-    public void updateNoduleLesion(@RequestBody NoduleLesionVO noduleLesionVO) {
+    public void updateNoduleLesion(@RequestBody @Validated NoduleLesionVO noduleLesionVO) {
         noduleService.updateNoduleLesion(noduleLesionVO);
     }
 
     @Operation(summary = "保存人工诊断结果")
     @PostMapping("saveManualDiagnosis")
-    public void saveManualDiagnosis(@RequestBody ManualDiagnosisParam manualDiagnosisParam) {
+    public void saveManualDiagnosis(@RequestBody @Validated ManualDiagnosisParam manualDiagnosisParam) {
         noduleService.saveNoduleManualDiagnosis(manualDiagnosisParam);
     }
 
@@ -74,7 +74,7 @@ public class NoduleController {
 
     @Operation(summary = "更新文本报告")
     @PostMapping("updateTextReport")
-    public void saveTextReport(@RequestBody TextReportVO textReportVO) {
+    public void saveTextReport(@RequestBody @Validated TextReportVO textReportVO) {
         noduleService.updateTextReport(textReportVO);
     }
 }

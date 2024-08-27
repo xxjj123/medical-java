@@ -1,5 +1,6 @@
 package com.yinhai.mids.business.entity.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -39,6 +40,7 @@ public class TextReportVO {
     /**
      * 检查日期
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "检查日期")
     private Date studyDate;
     /**
@@ -64,6 +66,7 @@ public class TextReportVO {
     /**
      * 报告日期
      */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "报告日期")
     private Date reportDate;
     /**
