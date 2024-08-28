@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 /**
  * @author zhuhs
@@ -28,5 +30,21 @@ public class ImageController {
     @PostMapping("initInfo")
     public ImageInitInfoVO queryStudyInfo(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId) {
         return imageService.queryInitInfo(computeSeriesId);
+    }
+
+    @Operation(summary = "下载影像切片")
+    @PostMapping("downloadSlice")
+    public void downloadSlice(@RequestParam @NotBlank(message = "序列ID不能为空") String seriesId,
+                              @RequestParam @NotBlank(message = "切片方向不能为空") String viewName,
+                              @RequestParam @NotNull(message = "切片序列不能为空") Integer viewIndex,
+                              HttpServletResponse response) {
+        imageService.downloadSlice(seriesId, viewName, viewIndex, response);
+    }
+
+    @Operation(summary = "下载3D模型")
+    @PostMapping("download3dModel")
+    public void download3dModel(@RequestParam @NotBlank(message = "序列ID不能为空") String seriesId,
+                                HttpServletResponse response) {
+        imageService.download3dModel(seriesId, response);
     }
 }
