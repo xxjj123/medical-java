@@ -115,9 +115,6 @@ public class SeriesPO {
     @Schema(description = "矢状面数量")
     private Integer sagittalCount;
 
-
-
-
     /**
      * 逻辑删除
      */

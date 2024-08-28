@@ -1,6 +1,7 @@
 package com.yinhai.mids.business.util;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.yinhai.mids.business.entity.model.DicomInfo;
@@ -12,10 +13,8 @@ import org.dcm4che3.io.DicomInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author zhuhs
@@ -49,6 +48,14 @@ public class DicomUtil {
             dicomInfo.setSeriesNumber(dataset.getString(Tag.SeriesNumber));
             dicomInfo.setSeriesDescription(dataset.getString(Tag.SeriesDescription));
             dicomInfo.setInstanceNumber(Integer.valueOf(dataset.getString(Tag.InstanceNumber)));
+            dicomInfo.setSliceThickness(dataset.getString(Tag.SliceThickness));
+            dicomInfo.setKvp(dataset.getString(Tag.KVP));
+            double[] pixelSpacing = dataset.getDoubles(Tag.PixelSpacing);
+            if (ArrayUtil.isNotEmpty(pixelSpacing)) {
+                dicomInfo.setPixelSpacing(Arrays.stream(pixelSpacing).mapToObj(Double::toString).collect(Collectors.joining(",")));
+            }
+            dicomInfo.setInstitutionName(dataset.getString(Tag.InstitutionName));
+            dicomInfo.setManufacturer(dataset.getString(Tag.Manufacturer));
             dicomInfo.setFile(dicomFile);
         } catch (IOException e) {
             log.error(e);

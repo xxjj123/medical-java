@@ -4,12 +4,10 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.model.ContextFSObject;
@@ -34,7 +32,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,8 +40,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 @Service
 @TaTransactional
@@ -172,36 +167,6 @@ public class DiagnoseServiceImpl implements DiagnoseService {
             noduleDetailVOList.add(focalDetail);
         }
         return noduleDetailVOList;
-
-    }
-
-
-    @Override
-    public InputStream downloadDicomZip(@NotNull(message = "序列id不能为空") String computeSeriesId) {
-        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
-        AppAssert.notNull(computeSeriesPO, "该序列不存在! ");
-
-        LambdaQueryWrapper<InstancePO> queryWrapper = Wrappers.<InstancePO>lambdaQuery()
-                .select(InstancePO::getAccessPath, InstancePO::getSopInstanceUid)
-                .eq(InstancePO::getSeriesId, computeSeriesPO.getSeriesId());
-        List<InstancePO> instancePOList = instanceMapper.selectList(queryWrapper);
-
-        AppAssert.notEmpty(instancePOList, "未读取到dicom实例信息");
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-             ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
-            for (InstancePO instancePO : instancePOList) {
-                TaFSObject fsObject = fsManager.getObject("mids", instancePO.getAccessPath());
-                zipOutputStream.putNextEntry(new ZipEntry(instancePO.getSopInstanceUid()));
-                try (InputStream inputStream = fsObject.getInputstream()) {
-                    IoUtil.copy(inputStream, zipOutputStream);
-                }
-                zipOutputStream.closeEntry();
-            }
-            return IoUtil.toStream(outputStream);
-        } catch (IOException e) {
-            throw new AppException("读取并压缩DICOM文件异常");
-        }
-
 
     }
 

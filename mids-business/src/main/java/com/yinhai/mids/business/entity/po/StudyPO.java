@@ -80,6 +80,41 @@ public class StudyPO {
     private String studyDescription;
 
     /**
+     * 切片厚度 SliceThickness
+     */
+    @TableField(value = "slice_thickness")
+    @Schema(description="切片厚度 SliceThickness")
+    private String sliceThickness;
+
+    /**
+     * KVP
+     */
+    @TableField(value = "kvp")
+    @Schema(description="KVP")
+    private String kvp;
+
+    /**
+     * PixelSpacing
+     */
+    @TableField(value = "pixel_spacing")
+    @Schema(description="PixelSpacing")
+    private String pixelSpacing;
+
+    /**
+     * InstitutionName
+     */
+    @TableField(value = "institution_name")
+    @Schema(description="InstitutionName")
+    private String institutionName;
+
+    /**
+     * Manufacturer
+     */
+    @TableField(value = "manufacturer")
+    @Schema(description="Manufacturer")
+    private String manufacturer;
+
+    /**
      * 打印状态
      */
     @TableField(value = "print_status")

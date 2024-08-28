@@ -18,13 +18,6 @@ public interface DiagnoseService {
      */
     FocalVO getNoduleInfo(String computeSeriesId);
 
-
-    /**
-     * 读取dicom压缩包
-     *
-     */
-    InputStream downloadDicomZip(String computeSeriesId);
-
     InputStream downSlice(String seriesId,String viewName,Integer viewIndex);
 
     InputStream downModel3d(String seriesId);
