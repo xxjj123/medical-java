@@ -80,13 +80,6 @@ public class NoduleOperatePO {
     private String diagnosisType;
 
     /**
-     * 结节勾选项
-     */
-    @TableField(value = "nodule_select", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "结节勾选项")
-    private String noduleSelect;
-
-    /**
      * 操作时间
      */
     @TableField(value = "operate_time")

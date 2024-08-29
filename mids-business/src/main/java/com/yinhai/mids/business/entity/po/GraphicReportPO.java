@@ -7,15 +7,15 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 文本报告
+ * 图文报告
  *
  * @author zhuhs
- * @date 2024/8/22
+ * @date 2024/8/29
  */
-@Schema(description = "文本报告")
+@Schema(description = "图文报告")
 @Data
-@TableName(value = "tb_text_report")
-public class TextReportPO {
+@TableName(value = "tb_graphic_report")
+public class GraphicReportPO {
     /**
      * 主键
      */
@@ -40,35 +40,35 @@ public class TextReportPO {
     /**
      * 患者编号
      */
-    @TableField(value = "patient_id", updateStrategy = FieldStrategy.ALWAYS)
+    @TableField(value = "patient_id")
     @Schema(description = "患者编号")
     private String patientId;
 
     /**
      * 检查号
      */
-    @TableField(value = "accession_number", updateStrategy = FieldStrategy.ALWAYS)
+    @TableField(value = "accession_number")
     @Schema(description = "检查号")
     private String accessionNumber;
 
     /**
      * 检查日期
      */
-    @TableField(value = "study_date", updateStrategy = FieldStrategy.ALWAYS)
+    @TableField(value = "study_date")
     @Schema(description = "检查日期")
     private Date studyDate;
 
     /**
      * 患者姓名
      */
-    @TableField(value = "patient_name", updateStrategy = FieldStrategy.ALWAYS)
+    @TableField(value = "patient_name")
     @Schema(description = "患者姓名")
     private String patientName;
 
     /**
      * 患者性别
      */
-    @TableField(value = "patient_sex", updateStrategy = FieldStrategy.ALWAYS)
+    @TableField(value = "patient_sex")
     @Schema(description = "患者性别")
     private String patientSex;
 
@@ -87,37 +87,23 @@ public class TextReportPO {
     private String examinedName;
 
     /**
-     * 影像所见
-     */
-    @TableField(value = "finding", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "影像所见")
-    private String finding;
-
-    /**
-     * 影像诊断
-     */
-    @TableField(value = "diagnosis", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "影像诊断")
-    private String diagnosis;
-
-    /**
      * 报告日期
      */
-    @TableField(value = "report_date", updateStrategy = FieldStrategy.ALWAYS)
+    @TableField(value = "report_date")
     @Schema(description = "报告日期")
     private Date reportDate;
 
     /**
      * 报告医生
      */
-    @TableField(value = "report_doctor", updateStrategy = FieldStrategy.ALWAYS)
+    @TableField(value = "report_doctor")
     @Schema(description = "报告医生")
     private String reportDoctor;
 
     /**
      * 审核医生
      */
-    @TableField(value = "audit_doctor", updateStrategy = FieldStrategy.ALWAYS)
+    @TableField(value = "audit_doctor")
     @Schema(description = "审核医生")
     private String auditDoctor;
 

@@ -59,9 +59,4 @@ public class NoduleOperateVO {
     @AllowedValues(allowed = {"1", "2"}, delimited = true, message = "影像诊断类型值不正确")
     @Schema(description = "影像诊断类型 1-无 2-NCCN")
     private String diagnosisType;
-    /**
-     * 结节勾选项
-     */
-    @Schema(description = "结节勾选项，病变ID 【多值逗号拼接】")
-    private String noduleSelect;
 }

@@ -1,10 +1,7 @@
 package com.yinhai.mids.business.controller;
 
 import com.yinhai.mids.business.entity.dto.ManualDiagnosisParam;
-import com.yinhai.mids.business.entity.vo.NoduleLesionVO;
-import com.yinhai.mids.business.entity.vo.NoduleOperateVO;
-import com.yinhai.mids.business.entity.vo.NoduleVO;
-import com.yinhai.mids.business.entity.vo.TextReportVO;
+import com.yinhai.mids.business.entity.vo.*;
 import com.yinhai.mids.business.service.NoduleService;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -76,5 +73,18 @@ public class NoduleController {
     @PostMapping("updateTextReport")
     public void saveTextReport(@RequestBody @Validated TextReportVO textReportVO) {
         noduleService.updateTextReport(textReportVO);
+    }
+
+    @Operation(summary = "查询图文报告")
+    @PostMapping("queryGraphicReport")
+    public GraphicReportVO queryGraphicReport(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId,
+                                        @RequestParam(required = false) Boolean reset) {
+        return noduleService.queryGraphicReport(computeSeriesId, reset);
+    }
+
+    @Operation(summary = "更新图文报告")
+    @PostMapping("updateGraphicReport")
+    public void updateGraphicReport(@RequestBody @Validated GraphicReportVO graphicReportVO) {
+        noduleService.updateGraphicReport(graphicReportVO);
     }
 }

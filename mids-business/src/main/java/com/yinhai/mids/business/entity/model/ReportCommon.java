@@ -1,4 +1,4 @@
-package com.yinhai.mids.business.entity.vo;
+package com.yinhai.mids.business.entity.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,19 +8,13 @@ import javax.validation.constraints.NotBlank;
 import java.util.Date;
 
 /**
- * 文本报告
+ * 报告公共字段
  *
  * @author zhuhs
- * @date 2024/8/22
+ * @date 2024/8/29
  */
 @Data
-public class TextReportVO {
-    /**
-     * 报告ID
-     */
-    @NotBlank(message = "报告ID不能为空")
-    @Schema(description = "报告ID")
-    private String id;
+public class ReportCommon {
     /**
      * 计算序列ID
      */

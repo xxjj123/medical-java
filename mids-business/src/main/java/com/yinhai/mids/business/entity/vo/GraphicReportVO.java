@@ -6,15 +6,16 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import java.util.Date;
+import java.util.List;
 
 /**
- * 文本报告
+ * 图文报告
  *
  * @author zhuhs
- * @date 2024/8/22
+ * @date 2024/8/29
  */
 @Data
-public class TextReportVO {
+public class GraphicReportVO {
     /**
      * 报告ID
      */
@@ -89,4 +90,10 @@ public class TextReportVO {
      */
     @Schema(description = "审核医生")
     private String auditDoctor;
+
+    /**
+     * 结节病变列表
+     */
+    @Schema(description = "结节病变列表")
+    private List<NoduleLesionVO> noduleLesionList;
 }

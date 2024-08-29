@@ -45,6 +45,13 @@ public class NoduleLesionPO {
     private String sopInstanceUid;
 
     /**
+     * 选中状态 1是0否
+     */
+    @TableField(value = "checked")
+    @Schema(description = "选中状态 1是0否")
+    private Boolean checked;
+
+    /**
      * IM
      */
     @TableField(value = "im")

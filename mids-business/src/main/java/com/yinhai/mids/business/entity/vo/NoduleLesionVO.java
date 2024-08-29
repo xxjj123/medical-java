@@ -34,6 +34,12 @@ public class NoduleLesionVO {
     @Schema(description = "SOPInstanceUID")
     private String sopInstanceUid;
     /**
+     * 选中状态 1是0否
+     */
+    @NotNull(message = "选中状态不能为空")
+    @Schema(description = "选中状态 1是0否")
+    private Boolean checked;
+    /**
      * IM
      */
     @Schema(description = "IM")

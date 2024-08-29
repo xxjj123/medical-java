@@ -237,6 +237,7 @@ public class ComputeServiceImpl implements ComputeService {
         for (KeyaComputeResult.Result.Nodule.VolumeDetail volumeDetail : volumeDetailList) {
             NoduleLesionPO noduleLesionPO = new NoduleLesionPO();
             noduleLesionPO.setDataType(0);
+            noduleLesionPO.setChecked(true);
             noduleLesionPO.setComputeSeriesId(computeSeriesId);
             noduleLesionPO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
             noduleLesionPO.setVocabularyEntry(volumeDetail.getVocabularyEntry());

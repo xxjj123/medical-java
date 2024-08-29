@@ -8,15 +8,12 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.dto.ManualDiagnosisParam;
+import com.yinhai.mids.business.entity.model.ReportCommon;
 import com.yinhai.mids.business.entity.po.*;
-import com.yinhai.mids.business.entity.vo.NoduleLesionVO;
-import com.yinhai.mids.business.entity.vo.NoduleOperateVO;
-import com.yinhai.mids.business.entity.vo.NoduleVO;
-import com.yinhai.mids.business.entity.vo.TextReportVO;
+import com.yinhai.mids.business.entity.vo.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.NoduleService;
 import com.yinhai.mids.common.exception.AppAssert;
@@ -27,7 +24,6 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author zhuhs
@@ -60,6 +56,9 @@ public class NoduleServiceImpl implements NoduleService {
 
     @Resource
     private TextReportMapper textReportMapper;
+
+    @Resource
+    private GraphicReportMapper graphicReportMapper;
 
     /**
      * 肺叶
@@ -115,26 +114,19 @@ public class NoduleServiceImpl implements NoduleService {
             .build();
 
     @Override
-    @SuppressWarnings("unchecked")
     public NoduleOperateVO queryNoduleOperate(String computeSeriesId) {
         NoduleOperatePO noduleOperatePO = noduleOperateMapper.selectOne(
                 Wrappers.<NoduleOperatePO>lambdaQuery().eq(NoduleOperatePO::getComputeSeriesId, computeSeriesId));
         if (noduleOperatePO != null) {
             return BeanUtil.copyProperties(noduleOperatePO, NoduleOperateVO.class);
         }
-        List<NoduleLesionPO> noduleLesionList = noduleLesionMapper.selectList(Wrappers.<NoduleLesionPO>lambdaQuery()
-                .select(NoduleLesionPO::getId)
-                .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
         NoduleOperateVO noduleOperateVO = new NoduleOperateVO();
         noduleOperateVO.setComputeSeriesId(computeSeriesId);
         noduleOperateVO.setLesionOrderType("1");
         noduleOperateVO.setMajorAxisSelectFilter("2,3,4");
         noduleOperateVO.setFindingOrderType("1");
         noduleOperateVO.setDiagnosisType("1");
-        noduleOperateVO.setNoduleSelect(noduleLesionList.stream().map(NoduleLesionPO::getId).collect(
-                Collectors.joining(StrPool.COMMA)));
         return noduleOperateVO;
-
     }
 
     @Override
@@ -271,6 +263,41 @@ public class NoduleServiceImpl implements NoduleService {
         textReportMapper.updateById(BeanUtil.copyProperties(textReportVO, TextReportPO.class));
     }
 
+    @Override
+    public GraphicReportVO queryGraphicReport(String computeSeriesId, Boolean reset) {
+        GraphicReportVO graphicReportVO;
+        boolean resetReport = BooleanUtil.isTrue(reset);
+        if (resetReport) {
+            graphicReportMapper.delete(Wrappers.<GraphicReportPO>lambdaQuery().eq(GraphicReportPO::getComputeSeriesId, computeSeriesId));
+            graphicReportVO = generateAndSaveGraphicReport(computeSeriesId);
+        } else {
+            GraphicReportPO graphicReportPO = graphicReportMapper.selectOne(Wrappers.<GraphicReportPO>lambdaQuery()
+                    .eq(GraphicReportPO::getReportType, "nodule")
+                    .eq(GraphicReportPO::getComputeSeriesId, computeSeriesId));
+            if (graphicReportPO != null) {
+                graphicReportVO = BeanUtil.copyProperties(graphicReportPO, GraphicReportVO.class);
+            } else {
+                graphicReportVO = generateAndSaveGraphicReport(computeSeriesId);
+            }
+        }
+        List<NoduleLesionPO> noduleLesionPOList = noduleLesionMapper.selectList(Wrappers.<NoduleLesionPO>lambdaQuery()
+                .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId)
+                .eq(NoduleLesionPO::getDataType, 0)
+                .eq(NoduleLesionPO::getChecked, 1));
+        List<NoduleLesionVO> noduleLesionVOList = BeanUtil.copyToList(noduleLesionPOList, NoduleLesionVO.class);
+        for (NoduleLesionVO noduleLesionVO : noduleLesionVOList) {
+            noduleLesionVO.setLobeSegmentSort(LOBE_SEGMENT_SORT_MAP.get(noduleLesionVO.getLobeSegment()));
+            noduleLesionVO.setTypeSort(TYPE_SORT_MAP.get(noduleLesionVO.getType()));
+        }
+        graphicReportVO.setNoduleLesionList(noduleLesionVOList);
+        return graphicReportVO;
+    }
+
+    @Override
+    public void updateGraphicReport(GraphicReportVO graphicReportVO) {
+        graphicReportMapper.updateById(BeanUtil.copyProperties(graphicReportVO, GraphicReportPO.class));
+    }
+
     /**
      * 对结节操作进行校验
      *
@@ -287,12 +314,33 @@ public class NoduleServiceImpl implements NoduleService {
             AppAssert.isTrue(NumberUtil.isDouble(max), "病变长径范围最大值不正确");
             AppAssert.isTrue(Double.parseDouble(min) <= Double.parseDouble(max), "病变长径范围不正确");
         }
-        List<String> noduleSelectList = StrUtil.split(noduleOperateVO.getNoduleSelect(), StrPool.COMMA, true, true);
-        noduleOperateVO.setNoduleSelect(Joiner.on(StrPool.COMMA).skipNulls().join(noduleSelectList));
+    }
+
+    private TextReportVO generateAndSaveTextReport(String computeSeriesId) {
+        ReportCommon reportCommon = queryReportCommon(computeSeriesId);
+        TextReportVO textReportVO = BeanUtil.copyProperties(reportCommon, TextReportVO.class);
+
+        TextReportPO reportPO = BeanUtil.copyProperties(textReportVO, TextReportPO.class);
+        reportPO.setReportType("nodule");
+        textReportMapper.insert(reportPO);
+        textReportVO.setId(reportPO.getId());
+
+        return textReportVO;
+    }
+
+    private GraphicReportVO generateAndSaveGraphicReport(String computeSeriesId) {
+        ReportCommon reportCommon = queryReportCommon(computeSeriesId);
+        GraphicReportVO graphicReportVO = BeanUtil.copyProperties(reportCommon, GraphicReportVO.class);
+
+        GraphicReportPO reportPO = BeanUtil.copyProperties(graphicReportVO, GraphicReportPO.class);
+        reportPO.setReportType("nodule");
+        graphicReportMapper.insert(reportPO);
+        graphicReportVO.setId(reportPO.getId());
+        return graphicReportVO;
     }
 
     @SuppressWarnings("unchecked")
-    private TextReportVO generateAndSaveTextReport(String computeSeriesId) {
+    private ReportCommon queryReportCommon(String computeSeriesId) {
         ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
                 .select(ComputeSeriesPO::getStudyId)
                 .eq(ComputeSeriesPO::getId, computeSeriesId));
@@ -304,32 +352,28 @@ public class NoduleServiceImpl implements NoduleService {
                 .eq(ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
         AppAssert.notNull(manualDiagnosisPO, "该序列对应诊断不存在！");
 
-        TextReportVO textReportVO = new TextReportVO();
-        textReportVO.setComputeSeriesId(computeSeriesId);
-        textReportVO.setPatientId(studyPO.getPatientId());
-        textReportVO.setAccessionNumber(studyPO.getAccessionNumber());
-        textReportVO.setStudyDate(studyPO.getStudyDateAndTime());
-        textReportVO.setPatientName(studyPO.getPatientName());
+        ReportCommon reportCommon = new ReportCommon();
+        reportCommon.setComputeSeriesId(computeSeriesId);
+        reportCommon.setPatientId(studyPO.getPatientId());
+        reportCommon.setAccessionNumber(studyPO.getAccessionNumber());
+        reportCommon.setStudyDate(studyPO.getStudyDateAndTime());
+        reportCommon.setPatientName(studyPO.getPatientName());
         String patientSex = studyPO.getPatientSex();
         if (StrUtil.equals(patientSex, "M")) {
-            textReportVO.setPatientSex("男");
+            reportCommon.setPatientSex("男");
         } else if (StrUtil.equals(patientSex, "F")) {
-            textReportVO.setPatientSex("女");
+            reportCommon.setPatientSex("女");
         } else {
-            textReportVO.setPatientSex("");
+            reportCommon.setPatientSex("");
         }
-        textReportVO.setFinding(manualDiagnosisPO.getFinding());
-        textReportVO.setDiagnosis(manualDiagnosisPO.getDiagnosis());
-        textReportVO.setReportDate(MapperKit.executeForDate());
-        textReportVO.setReportDoctor("");
-        textReportVO.setAuditDoctor("");
-
-        TextReportPO reportPO = BeanUtil.copyProperties(textReportVO, TextReportPO.class);
-        reportPO.setReportType("nodule");
-        textReportMapper.insert(reportPO);
-        textReportVO.setId(reportPO.getId());
-
-        return textReportVO;
+        reportCommon.setPatientAge(studyPO.getPatientAge());
+        reportCommon.setExaminedName("胸部CT平扫");
+        reportCommon.setFinding(manualDiagnosisPO.getFinding());
+        reportCommon.setDiagnosis(manualDiagnosisPO.getDiagnosis());
+        reportCommon.setReportDate(MapperKit.executeForDate());
+        reportCommon.setReportDoctor("");
+        reportCommon.setAuditDoctor("");
+        return reportCommon;
     }
 
     /**
@@ -340,5 +384,6 @@ public class NoduleServiceImpl implements NoduleService {
      */
     private void clearNoduleReport(String computeSeriesId) {
         textReportMapper.delete(Wrappers.<TextReportPO>lambdaQuery().eq(TextReportPO::getComputeSeriesId, computeSeriesId));
+        graphicReportMapper.delete(Wrappers.<GraphicReportPO>lambdaQuery().eq(GraphicReportPO::getComputeSeriesId, computeSeriesId));
     }
 }

@@ -104,7 +104,6 @@ public class ImageServiceImpl implements ImageService {
                 .eq(VtiPO::getViewName, viewName)
                 .eq(VtiPO::getViewIndex, viewIndex));
         AppAssert.notNull(vtiPO, "未找到切片");
-
         try (InputStream in = fileStoreService.download(vtiPO.getAccessPath())) {
             ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, viewName, viewIndex, "slice"));
         } catch (IOException e) {

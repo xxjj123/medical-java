@@ -1,10 +1,7 @@
 package com.yinhai.mids.business.service;
 
 import com.yinhai.mids.business.entity.dto.ManualDiagnosisParam;
-import com.yinhai.mids.business.entity.vo.NoduleLesionVO;
-import com.yinhai.mids.business.entity.vo.NoduleOperateVO;
-import com.yinhai.mids.business.entity.vo.NoduleVO;
-import com.yinhai.mids.business.entity.vo.TextReportVO;
+import com.yinhai.mids.business.entity.vo.*;
 
 /**
  * @author zhuhs
@@ -79,4 +76,22 @@ public interface NoduleService {
      * @author zhuhs 2024/08/22
      */
     void updateTextReport(TextReportVO textReportVO);
+
+    /**
+     * 查询图文报告
+     *
+     * @param computeSeriesId computeSeriesId
+     * @param reset           是否重置
+     * @return {@link GraphicReportVO }
+     * @author zhuhs 2024/08/29
+     */
+    GraphicReportVO queryGraphicReport(String computeSeriesId, Boolean reset);
+
+    /**
+     * 更新图文报告
+     *
+     * @param graphicReportVO graphicReportVO
+     * @author zhuhs 2024/08/29
+     */
+    void updateGraphicReport(GraphicReportVO graphicReportVO);
 }
