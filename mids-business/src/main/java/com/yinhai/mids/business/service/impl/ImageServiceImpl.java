@@ -120,13 +120,13 @@ public class ImageServiceImpl implements ImageService {
                 .select(Model3dPO::getAccessPath)
                 .eq(Model3dPO::getSeriesId, seriesId)
                 .eq(Model3dPO::getType, "bone"));
-        AppAssert.notNull(model3dPO, "未找到3d模型");
+        AppAssert.notNull(model3dPO, "未找到3D模型");
 
         try (InputStream in = fileStoreService.download(model3dPO.getAccessPath())) {
             ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, "bone", "3d"));
         } catch (IOException e) {
             log.error(e, "下载3D模型异常，seriesId = {}, ", seriesId);
-            throw new AppException("下载切片异常");
+            throw new AppException("下载3D模型异常");
         }
     }
 }
