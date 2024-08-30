@@ -88,6 +88,7 @@ public class ImageServiceImpl implements ImageService {
         result.setPixelSpacing(studyPO.getPixelSpacing());
         result.setInstitutionName(studyPO.getInstitutionName());
         result.setManufacturer(studyPO.getManufacturer());
+        result.setPatientName(studyPO.getPatientName());
         result.setPatientSex(studyPO.getPatientSex());
         result.setPatientAge(studyPO.getPatientAge());
         result.setPatientId(studyPO.getPatientId());

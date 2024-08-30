@@ -86,6 +86,12 @@ public class ImageInitInfoVO {
     private String manufacturer;
 
     /**
+     * PatientName 患者姓名
+     */
+    @Schema(description = "PatientName 患者姓名")
+    private String patientName;
+
+    /**
      * 患者性别
      */
     @Schema(description = "患者性别")
