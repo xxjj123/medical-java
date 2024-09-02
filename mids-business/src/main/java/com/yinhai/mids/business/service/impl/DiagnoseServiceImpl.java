@@ -59,9 +59,6 @@ public class DiagnoseServiceImpl implements DiagnoseService {
     private VolumeDetailMapper volumeDetailMapper;
 
     @Resource
-    private InstanceMapper instanceMapper;
-
-    @Resource
     private VtiMapper vtiMapper;
 
     @Resource
@@ -69,9 +66,6 @@ public class DiagnoseServiceImpl implements DiagnoseService {
 
     @Resource
     private DetailAnnotationMapper detailAnnotationMapper;
-
-//    @Resource(name = "uploadThreadPool")
-//    private ThreadPoolTaskExecutor uploadThreadPool;
 
     @Resource
     private FileStoreService fileStoreService;
@@ -296,45 +290,6 @@ public class DiagnoseServiceImpl implements DiagnoseService {
 
         }
     }
-
-
-
-//        private <T> List<VtiPO> upload(List<ContextFSObject<T>> fsObjects, SeriesPO seriesPO) {
-//        List<VtiPO> vtiPOList = new CopyOnWriteArrayList<>();
-//        CompletionService<Void> completionService = new ExecutorCompletionService<>(uploadThreadPool);
-//        for (ContextFSObject<T> fsObject : fsObjects) {
-//            completionService.submit(() -> {
-//                TaFSObject taFSObject = fsManager.putObject("mids", fsObject);
-//                fsObject.setKeyId(taFSObject.getKeyId());
-//                VtiPO vtiPO = new VtiPO();
-//                vtiPO.setStudyId(seriesPO.getStudyId());
-//                vtiPO.setSeriesId(seriesPO.getId());
-//                vtiPO.setStudyInstanceUid(seriesPO.getStudyInstanceUid());
-//                vtiPO.setSeriesInstanceUid(seriesPO.getSeriesInstanceUid());
-//                String fileName = (String) fsObject.getContext();
-//                String withoutExtension = fileName.substring(0, fileName.lastIndexOf('.'));
-//                String[] parts = withoutExtension.split("_");
-//                String viewName = parts[0];
-//                int viewIndex = Integer.parseInt(parts[1]);
-//                vtiPO.setViewName(viewName);
-//                vtiPO.setViewIndex(viewIndex);
-//                vtiPO.setAccessPath(fsObject.getKeyId());
-//                vtiPOList.add(vtiPO);
-//                return null;
-//            });
-//        }
-//        for (ContextFSObject<T> fsObject : fsObjects) {
-//            try {
-//                completionService.take().get();
-//            } catch (Exception e) {
-//                log.error(e);
-//                throw new AppException("文件上传失败！");
-//            }
-//        }
-//        return vtiPOList;
-//
-//    }
-
 
     private File unzipFile(MultipartFile zipFile) {
         File tempDir;

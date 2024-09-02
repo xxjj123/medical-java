@@ -1,6 +1,7 @@
 package com.yinhai.mids.business.job;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import com.yinhai.mids.business.constant.ComputeStatus;
@@ -9,6 +10,7 @@ import com.yinhai.mids.business.mapper.ComputeSeriesMapper;
 import com.yinhai.mids.business.mapper.SeriesMapper;
 import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.common.core.PageRequest;
+import com.yinhai.mids.common.util.MapperKit;
 import com.yinhai.mids.common.util.PageKit;
 import org.springframework.stereotype.Component;
 
@@ -55,6 +57,7 @@ public class ComputeJob {
         List<ComputeSeriesPO> computeSeriesPOList = computeSeriesMapper.selectList(
                 Wrappers.<ComputeSeriesPO>lambdaQuery()
                         .eq(ComputeSeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE)
+                        .lt(ComputeSeriesPO::getComputeStartTime, DateUtil.offsetMinute(MapperKit.executeForDate(), -5))
                         .orderByAsc(ComputeSeriesPO::getComputeStartTime)
         );
         if (CollUtil.isEmpty(computeSeriesPOList)) {

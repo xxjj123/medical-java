@@ -10,12 +10,10 @@ import com.yinhai.mids.business.mapper.FileStoreMapper;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.MapperKit;
-import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
 import com.yinhai.ta404.module.storage.core.TaFSObject;
 import com.yinhai.ta404.storage.ta.core.FSManager;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,9 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorCompletionService;
 
 /**
  * @author zhuhs
@@ -43,9 +38,6 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     @Resource
     private ITaFSManager<FSManager> fsManager;
-
-    @Resource(name = "uploadThreadPool")
-    private ThreadPoolTaskExecutor uploadThreadPool;
 
     @Override
     public UploadResult upload(MultipartFile mf) throws IOException {
@@ -71,32 +63,18 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     @Override
     public <T> List<ContextUploadResult<T>> upload(List<ContextFSObject<T>> fsObjects) {
-        List<FileStorePO> fileStorePOList = new CopyOnWriteArrayList<>();
-
-        CompletionService<Void> completionService = new ExecutorCompletionService<>(uploadThreadPool);
+        List<FileStorePO> fileStorePOList = new ArrayList<>();
         for (ContextFSObject<T> fsObject : fsObjects) {
-            completionService.submit(() -> {
-                TaFSObject taFSObject = fsManager.putObject("mids", fsObject);
-                fsObject.setKeyId(taFSObject.getKeyId());
-                FileStorePO fileStorePO = new FileStorePO();
-                fileStorePO.setSize(fsObject.getSize());
-                fileStorePO.setContentType(fsObject.getContentType());
-                fileStorePO.setOriginalName(fsObject.getName());
-                fileStorePO.setAccessPath(fsObject.getKeyId());
-                fileStorePO.setUploadTime(MapperKit.executeForDate());
-                fileStorePOList.add(fileStorePO);
-                return null;
-            });
+            TaFSObject taFSObject = fsManager.putObject("mids", fsObject);
+            fsObject.setKeyId(taFSObject.getKeyId());
+            FileStorePO fileStorePO = new FileStorePO();
+            fileStorePO.setSize(fsObject.getSize());
+            fileStorePO.setContentType(fsObject.getContentType());
+            fileStorePO.setOriginalName(fsObject.getName());
+            fileStorePO.setAccessPath(fsObject.getKeyId());
+            fileStorePO.setUploadTime(MapperKit.executeForDate());
+            fileStorePOList.add(fileStorePO);
         }
-        for (ContextFSObject<T> fsObject : fsObjects) {
-            try {
-                completionService.take().get();
-            } catch (Exception e) {
-                log.error(e);
-                throw new AppException("文件上传失败！");
-            }
-        }
-
         fileStoreMapper.insertBatch(fileStorePOList);
         List<ContextUploadResult<T>> contextUploadResultList = new ArrayList<>();
         for (int i = 0; i < fileStorePOList.size(); i++) {
