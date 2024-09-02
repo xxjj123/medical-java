@@ -275,7 +275,7 @@ public class ComputeServiceImpl implements ComputeService {
                 .eq(InstancePO::getSeriesId, computeSeries.getSeriesId()));
         Map<String, Integer> imMap = new HashMap<>();
         for (InstancePO instancePO : instancePOList) {
-            imMap.put(instancePO.getSopInstanceUid(), Integer.valueOf(StrUtil.subAfter(instancePO.getSopInstanceUid(), ".", true)));
+            imMap.put(instancePO.getSopInstanceUid(), instancePO.getInstanceNumber());
         }
         for (NoduleLesionPO noduleLesionPO : noduleLesionPOList) {
             noduleLesionPO.setIm(imMap.get(noduleLesionPO.getSopInstanceUid()));
