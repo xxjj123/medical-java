@@ -3,6 +3,7 @@ package com.yinhai.mids.common.module.mybatis;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.core.toolkit.GlobalConfigUtils;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -22,15 +23,22 @@ public class MybatisRunner implements ApplicationRunner {
 
     private final MetaObjectHandler metaObjectHandler;
 
-    public MybatisRunner(List<SqlSessionFactory> sqlSessionFactoryList, MetaObjectHandler metaObjectHandler) {
+    private final List<MybatisPlusInterceptor> mybatisPlusInterceptorList;
+
+    public MybatisRunner(List<SqlSessionFactory> sqlSessionFactoryList, MetaObjectHandler metaObjectHandler,
+                         List<MybatisPlusInterceptor> mybatisPlusInterceptorList) {
         this.sqlSessionFactoryList = sqlSessionFactoryList;
         this.metaObjectHandler = metaObjectHandler;
+        this.mybatisPlusInterceptorList = mybatisPlusInterceptorList;
     }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
         for (SqlSessionFactory sqlSessionFactory : sqlSessionFactoryList) {
             Configuration configuration = sqlSessionFactory.getConfiguration();
+            for (MybatisPlusInterceptor mybatisPlusInterceptor : mybatisPlusInterceptorList) {
+                configuration.addInterceptor(mybatisPlusInterceptor);
+            }
             GlobalConfig globalConfig = GlobalConfigUtils.getGlobalConfig(configuration);
             globalConfig.setMetaObjectHandler(metaObjectHandler);
         }

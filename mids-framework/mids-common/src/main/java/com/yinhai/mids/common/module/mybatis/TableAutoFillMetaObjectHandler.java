@@ -10,6 +10,8 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * @author zhuhs
@@ -39,5 +41,16 @@ public class TableAutoFillMetaObjectHandler implements MetaObjectHandler {
         // 用户
         String loginId = StrUtil.isBlank(SecurityKit.currentUserId()) ? Constants.UNKNOWN : SecurityKit.currentUserId();
         this.strictUpdateFill(metaObject, "updateUser", String.class, loginId);
+    }
+
+    @Override
+    public MetaObjectHandler strictFillStrategy(MetaObject metaObject, String fieldName, Supplier<?> fieldVal) {
+        if (StrUtil.equals("updateTime", fieldName) || metaObject.getValue(fieldName) == null) {
+            Object obj = fieldVal.get();
+            if (Objects.nonNull(obj)) {
+                metaObject.setValue(fieldName, obj);
+            }
+        }
+        return this;
     }
 }

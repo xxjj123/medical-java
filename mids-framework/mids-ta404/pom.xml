@@ -80,10 +80,10 @@
 
         <!-- 定时任务模块 -->
         <!-- 定时任务-xxljob -->
-        <dependency>
-            <groupId>com.yinhai.ta404</groupId>
-            <artifactId>ta404-module-xxljob</artifactId>
-        </dependency>
+        <!-- <dependency> -->
+        <!--     <groupId>com.yinhai.ta404</groupId> -->
+        <!--     <artifactId>ta404-module-xxljob</artifactId> -->
+        <!-- </dependency> -->
 
         <!-- 审核审计模块 -->
         <!-- 审核模块-examine -->
