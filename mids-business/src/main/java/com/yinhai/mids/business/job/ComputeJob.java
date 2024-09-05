@@ -3,7 +3,6 @@ package com.yinhai.mids.business.job;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.xxl.job.core.handler.annotation.XxlJob;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.ComputeSeriesPO;
 import com.yinhai.mids.business.mapper.ComputeSeriesMapper;
@@ -33,7 +32,6 @@ public class ComputeJob {
     @Resource
     private ComputeService computeService;
 
-    @XxlJob("register")
     public void register() {
         // 控制每次发起的数量
         PageKit.startPage(PageRequest.of(1, 2));
@@ -50,7 +48,6 @@ public class ComputeJob {
         }
     }
 
-    @XxlJob("result")
     public void result() {
         // 控制每次发起的数量
         PageKit.startPage(PageRequest.of(1, 2));
