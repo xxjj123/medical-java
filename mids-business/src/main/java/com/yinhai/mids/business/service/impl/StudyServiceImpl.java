@@ -27,7 +27,7 @@ import com.yinhai.mids.business.service.StudyService;
 import com.yinhai.mids.business.util.DicomUtil;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.exception.AppAssert;
-import com.yinhai.mids.common.util.MapperKit;
+import com.yinhai.mids.common.util.DbKit;
 import com.yinhai.mids.common.util.PageKit;
 import com.yinhai.mids.common.util.SecurityKit;
 import com.yinhai.ta404.core.exception.AppException;
@@ -126,7 +126,7 @@ public class StudyServiceImpl implements StudyService {
             BeanUtil.copyProperties(dicomInfo, studyPO);
             studyPO.setPrintStatus(PrintStatus.NOT_PRINT);
             studyPO.setPushStatus(PushStatus.NOT_PUSH);
-            studyPO.setUploadTime(MapperKit.executeForDate());
+            studyPO.setUploadTime(DbKit.now());
             studyPO.setUploadUserId(SecurityKit.currentUserId());
             studyPOList.add(studyPO);
         }

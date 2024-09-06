@@ -20,7 +20,7 @@ import com.yinhai.mids.business.mpr.MprResponse;
 import com.yinhai.mids.business.mpr.RegisterParam;
 import com.yinhai.mids.business.service.MprService;
 import com.yinhai.mids.common.util.JsonKit;
-import com.yinhai.mids.common.util.MapperKit;
+import com.yinhai.mids.common.util.DbKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
@@ -84,7 +84,7 @@ public class MprServiceImpl implements MprService {
             log.error("序列对应实例不存在", seriesId);
             seriesMapper.updateById(new SeriesPO().setId(seriesId)
                     .setMprStatus(ComputeStatus.COMPUTE_ERROR)
-                    .setMprStartTime(MapperKit.executeForDate())
+                    .setMprStartTime(DbKit.now())
                     .setMprErrorMessage(StrUtil.format("序列对应实例不存在", seriesId)));
             throw new AppException("序列对应实例不存在");
         }
@@ -102,13 +102,13 @@ public class MprServiceImpl implements MprService {
             if (response.getCode() == 1) {
                 seriesMapper.updateById(new SeriesPO().setId(seriesId)
                         .setMprStatus(ComputeStatus.IN_COMPUTE)
-                        .setMprStartTime(MapperKit.executeForDate())
+                        .setMprStartTime(DbKit.now())
                         .setMprResponse(JsonKit.toJsonString(response)));
 
             } else {
                 seriesMapper.updateById(new SeriesPO().setId(seriesId)
                         .setMprErrorMessage("申请Mpr分析失败")
-                        .setMprStartTime(MapperKit.executeForDate())
+                        .setMprStartTime(DbKit.now())
                         .setMprStatus(ComputeStatus.COMPUTE_ERROR)
                         .setMprResponse(JsonKit.toJsonString(response)));
             }
@@ -122,7 +122,7 @@ public class MprServiceImpl implements MprService {
             }
             seriesMapper.updateById(new SeriesPO().setId(seriesId)
                     .setMprErrorMessage(errorMsg)
-                    .setMprStartTime(MapperKit.executeForDate())
+                    .setMprStartTime(DbKit.now())
                     .setMprStatus(ComputeStatus.COMPUTE_ERROR)
                     .setMprResponse(response != null ? JsonKit.toJsonString(response) : null));
         }

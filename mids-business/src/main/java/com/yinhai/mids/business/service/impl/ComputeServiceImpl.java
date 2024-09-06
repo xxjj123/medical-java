@@ -21,7 +21,7 @@ import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.common.util.JsonKit;
-import com.yinhai.mids.common.util.MapperKit;
+import com.yinhai.mids.common.util.DbKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
@@ -136,7 +136,7 @@ public class ComputeServiceImpl implements ComputeService {
                 computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
                         .setApplyId(applyId)
                         .setComputeStatus(ComputeStatus.IN_COMPUTE)
-                        .setComputeStartTime(MapperKit.executeForDate())
+                        .setComputeStartTime(DbKit.now())
                         .setComputeResponse(JsonKit.toJsonString(response)));
             } else {
                 updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, response, "申请AI分析失败");

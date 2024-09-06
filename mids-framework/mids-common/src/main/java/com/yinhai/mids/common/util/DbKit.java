@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @author zhuhs
  * @date 2024/7/1 16:42
  */
-public class MapperKit {
+public class DbKit {
 
     private static final LoadingCache<String, Long> TIME_DIFF_CACHE = CacheBuilder.newBuilder()
             .maximumSize(1)
@@ -26,6 +26,10 @@ public class MapperKit {
                     return ServiceLocator.getService(DictReadMapper.class).executeForTimestamp().getTime() - new Date().getTime();
                 }
             });
+
+    public static Date now() {
+        return executeForDate();
+    }
 
     public static Date executeForDate() {
         try {

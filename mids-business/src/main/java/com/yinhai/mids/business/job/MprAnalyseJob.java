@@ -7,7 +7,7 @@ import com.yinhai.mids.business.entity.po.SeriesPO;
 import com.yinhai.mids.business.event.EventConstants;
 import com.yinhai.mids.business.mapper.SeriesMapper;
 import com.yinhai.mids.common.core.PageRequest;
-import com.yinhai.mids.common.util.MapperKit;
+import com.yinhai.mids.common.util.DbKit;
 import com.yinhai.mids.common.util.PageKit;
 import com.yinhai.ta404.core.event.EventPublish;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -36,7 +36,7 @@ public class MprAnalyseJob {
         List<SeriesPO> seriesPOList = seriesMapper.selectList(Wrappers.<SeriesPO>lambdaQuery().select(SeriesPO::getId)
                 .and(q -> q.eq(SeriesPO::getMprStatus, ComputeStatus.WAIT_COMPUTE).or(w -> w
                         .eq(SeriesPO::getMprStatus, ComputeStatus.IN_COMPUTE)
-                        .lt(SeriesPO::getMprStartTime, DateUtil.offsetMinute(MapperKit.executeForDate(), -5))))
+                        .lt(SeriesPO::getMprStartTime, DateUtil.offsetMinute(DbKit.now(), -5))))
                 .orderByAsc(SeriesPO::getCreateTime));
         seriesPOList.forEach(e -> eventPublish.publish(e.getId(), EventConstants.MPR_EVENT));
     }
