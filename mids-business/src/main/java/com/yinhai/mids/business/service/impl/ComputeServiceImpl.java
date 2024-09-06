@@ -3,6 +3,7 @@ package com.yinhai.mids.business.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
+import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.io.FileUtil;
@@ -20,8 +21,8 @@ import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeService;
-import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
@@ -211,9 +212,9 @@ public class ComputeServiceImpl implements ComputeService {
             return;
         }
         KeyaResponse keyaResponse = resp.getResult();
-        if (keyaResponse.getCode() == 2 && StrUtil.equalsAny(keyaResponse.getMessage(),
-                "当前申请尚未开始分析，等待中。",
-                "正在分析中。",
+        if (keyaResponse.getCode() == 2
+            && DateUtil.between(computeSeries.getComputeStartTime(), DbKit.now(), DateUnit.MINUTE) < 10
+            && StrUtil.equalsAny(keyaResponse.getMessage(), "当前申请尚未开始分析，等待中。", "正在分析中。",
                 "创建分析任务成功，正在分析中。")) {
             return;
         }

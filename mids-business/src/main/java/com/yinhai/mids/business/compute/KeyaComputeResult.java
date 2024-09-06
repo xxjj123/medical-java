@@ -73,7 +73,7 @@ public class KeyaComputeResult {
                     public static class Point {
                         private int x;
                         private int y;
-                        int z;
+                        private int z;
                     }
                 }
 
