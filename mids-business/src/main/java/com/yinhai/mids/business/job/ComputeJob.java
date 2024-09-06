@@ -1,16 +1,16 @@
 package com.yinhai.mids.business.job;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.ComputeSeriesPO;
+import com.yinhai.mids.business.event.EventConstants;
 import com.yinhai.mids.business.mapper.ComputeSeriesMapper;
-import com.yinhai.mids.business.mapper.SeriesMapper;
-import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.util.MapperKit;
 import com.yinhai.mids.common.util.PageKit;
+import com.yinhai.ta404.core.event.EventPublish;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -24,45 +24,31 @@ import java.util.List;
 public class ComputeJob {
 
     @Resource
-    private SeriesMapper seriesMapper;
-
-    @Resource
     private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
-    private ComputeService computeService;
+    private EventPublish eventPublish;
 
-    public void register() {
+    @Scheduled(fixedRate = 30000)
+    @SuppressWarnings("unchecked")
+    public void compute() {
         // 控制每次发起的数量
         PageKit.startPage(PageRequest.of(1, 2));
-        List<ComputeSeriesPO> computeSeriesPOList = computeSeriesMapper.selectList(
-                Wrappers.<ComputeSeriesPO>lambdaQuery()
-                        .eq(ComputeSeriesPO::getComputeStatus, ComputeStatus.WAIT_COMPUTE)
-                        .orderByAsc(ComputeSeriesPO::getCreateTime)
-        );
-        if (CollUtil.isEmpty(computeSeriesPOList)) {
-            return;
-        }
-        for (ComputeSeriesPO computeSeriesPO : computeSeriesPOList) {
-            computeService.register(computeSeriesPO.getId());
-        }
+        List<ComputeSeriesPO> seriesList = computeSeriesMapper.selectList(Wrappers.<ComputeSeriesPO>lambdaQuery()
+                        .select(ComputeSeriesPO::getId).eq(ComputeSeriesPO::getComputeStatus, ComputeStatus.WAIT_COMPUTE)
+                        .orderByAsc(ComputeSeriesPO::getCreateTime));
+        seriesList.forEach(e -> eventPublish.publish(e.getId(), EventConstants.COMPUTE_EVENT));
     }
 
-    public void result() {
+    @Scheduled(fixedRate = 30000)
+    @SuppressWarnings("unchecked")
+    public void computeResult() {
         // 控制每次发起的数量
         PageKit.startPage(PageRequest.of(1, 2));
-        List<ComputeSeriesPO> computeSeriesPOList = computeSeriesMapper.selectList(
-                Wrappers.<ComputeSeriesPO>lambdaQuery()
-                        .eq(ComputeSeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE)
+        List<ComputeSeriesPO> seriesList = computeSeriesMapper.selectList(Wrappers.<ComputeSeriesPO>lambdaQuery()
+                        .select(ComputeSeriesPO::getApplyId).eq(ComputeSeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE)
                         .lt(ComputeSeriesPO::getComputeStartTime, DateUtil.offsetMinute(MapperKit.executeForDate(), -5))
-                        .orderByAsc(ComputeSeriesPO::getComputeStartTime)
-        );
-        if (CollUtil.isEmpty(computeSeriesPOList)) {
-            return;
-        }
-        for (ComputeSeriesPO computeSeriesPO : computeSeriesPOList) {
-            computeService.result(computeSeriesPO.getApplyId());
-        }
+                        .orderByAsc(ComputeSeriesPO::getComputeStartTime));
+        seriesList.forEach(e -> eventPublish.publish(e.getApplyId(), EventConstants.COMPUTE_RESULT_EVENT));
     }
-
 }

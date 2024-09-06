@@ -18,8 +18,12 @@ public enum TaskType {
     /**
      * 查询AI计算结果
      */
-    QUERY_COMPUTE_RESULT(2),
-    ;
+    COMPUTE_RESULT(2),
+
+    /**
+     * MPR建模
+     */
+    MPR(3);
 
     private final int type;
 

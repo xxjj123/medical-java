@@ -58,7 +58,7 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
             return;
         }
         if (StrUtil.equals(code, "1")) {
-            eventPublisher.publish(applyId, EventConstants.COMPUTE_FINISH_EVENT);
+            eventPublisher.publish(applyId, EventConstants.COMPUTE_RESULT_EVENT);
         }
         if (StrUtil.equalsAny(code, "2", "3")) {
             computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesPO.getId())

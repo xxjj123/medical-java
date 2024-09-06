@@ -8,19 +8,17 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.dtflys.forest.http.ForestResponse;
 import com.yinhai.mids.business.constant.ComputeStatus;
-import com.yinhai.mids.business.entity.model.ContextFSObject;
-import com.yinhai.mids.business.entity.model.UploadResult;
 import com.yinhai.mids.business.entity.po.InstancePO;
 import com.yinhai.mids.business.entity.po.SeriesPO;
-import com.yinhai.mids.business.entity.po.VtiPO;
-import com.yinhai.mids.business.mapper.*;
+import com.yinhai.mids.business.mapper.InstanceMapper;
+import com.yinhai.mids.business.mapper.SeriesMapper;
 import com.yinhai.mids.business.mpr.MprClient;
 import com.yinhai.mids.business.mpr.MprProperties;
 import com.yinhai.mids.business.mpr.MprResponse;
 import com.yinhai.mids.business.mpr.RegisterParam;
-import com.yinhai.mids.business.service.AnalyseService;
-import com.yinhai.mids.business.service.FileStoreService;
+import com.yinhai.mids.business.service.MprService;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.mids.common.util.MapperKit;
 import com.yinhai.ta404.core.exception.AppException;
@@ -31,8 +29,10 @@ import com.yinhai.ta404.storage.ta.core.FSManager;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -43,25 +43,12 @@ import java.util.zip.ZipOutputStream;
  */
 @Service
 @TaTransactional
-public class AnalyseServiceImpl implements AnalyseService {
+public class MprServiceImpl implements MprService {
 
     private static final Log log = LogFactory.get();
 
     @Resource
-    private VtiMapper vtiMapper;
-
-
-    @Resource
-    private FileStoreService fileStoreService;
-
-    @Resource
-    private ComputeSeriesMapper computeSeriesMapper;
-
-    @Resource
     private SeriesMapper seriesMapper;
-
-    @Resource
-    private StudyMapper studyMapper;
 
     @Resource
     private InstanceMapper instanceMapper;
@@ -75,42 +62,15 @@ public class AnalyseServiceImpl implements AnalyseService {
     @Resource
     private ITaFSManager<FSManager> fsManager;
 
-
     @Override
-    public void uploadVti(String viewName, int viewIndex, File vtiFile) {
-        VtiPO vtiPO = new VtiPO();
-        vtiPO.setStudyId("1813835186748583938");
-        vtiPO.setSeriesId("1813835186798915586");
-        vtiPO.setStudyInstanceUid("1.2.392.200036.9125.2.138612190166.20210407000133");
-        vtiPO.setSeriesInstanceUid("1.2.840.113619.2.289.3.168430441.447.1617294423.131.3");
-        vtiPO.setViewName(viewName);
-        vtiPO.setViewIndex(viewIndex);
-        try {
-            ContextFSObject<File> fsObject = new ContextFSObject<>(vtiFile);
-            fsObject.setContentType("application/octet-stream");
-            UploadResult uploadResult = fileStoreService.upload(fsObject);
-            vtiPO.setAccessPath(uploadResult.getAccessPath());
-        } catch (IOException e) {
-            throw new AppException("上传文件异常");
-        }
-        vtiMapper.insert(vtiPO);
-    }
-
-    @Override
-    public void view(String id, HttpServletResponse response) {
-        VtiPO vtiPO = vtiMapper.selectById(id);
-        try (InputStream inputStream = fileStoreService.download(vtiPO.getAccessPath());
-             OutputStream outputStream = response.getOutputStream()) {
-            response.setContentType("application/octet-stream");
-            IoUtil.copy(inputStream, outputStream);
-        } catch (IOException e) {
-            log.error(e, "下载vti文件异常");
-            throw new AppException("文件服务异常");
-        }
-    }
-
-    @Override
+    @SuppressWarnings("unchecked")
     public void doMprAnalyse(String seriesId) {
+        ForestResponse<MprResponse> connectResponse = mprClient.testConnect(mprProperties.getRegisterUrl());
+        if (connectResponse.isError()) {
+            log.error("连接MPR服务失败，请检查网络配置或MPR服务是否正常");
+            return;
+        }
+
         SeriesPO seriesPO = seriesMapper.selectById(seriesId);
         if (seriesPO == null) {
             log.error("序列不存在", seriesId);
@@ -133,8 +93,12 @@ public class AnalyseServiceImpl implements AnalyseService {
         registerParam.setCallbackUrl(mprProperties.getPushCallbackUrl());
         MprResponse response = null;
         try (InputStream inputStream = readDicomFromFSAndZip(instancePOList)) {
-            System.out.println(registerParam);
-            response = mprClient.register(mprProperties.getRegisterUrl(), inputStream, registerParam);
+            ForestResponse<MprResponse> resp = mprClient.register(mprProperties.getRegisterUrl(), inputStream, registerParam);
+            if (resp.isError()) {
+                log.error("连接MPR服务失败，请检查网络配置或MPR服务是否正常");
+                return;
+            }
+            response = resp.getResult();
             if (response.getCode() == 1) {
                 seriesMapper.updateById(new SeriesPO().setId(seriesId)
                         .setMprStatus(ComputeStatus.IN_COMPUTE)

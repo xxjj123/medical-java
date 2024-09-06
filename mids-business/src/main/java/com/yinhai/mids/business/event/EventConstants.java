@@ -6,10 +6,19 @@ package com.yinhai.mids.business.event;
  */
 public class EventConstants {
 
+    /**
+     * AI计算
+     */
     public static final String COMPUTE_EVENT = "compute_event";
 
-    public static final String COMPUTE_FINISH_EVENT = "compute_finish_event";
+    /**
+     * 查询AI计算结果
+     */
+    public static final String COMPUTE_RESULT_EVENT = "compute_result_event";
 
-    public static final String ANALYSE_EVENT = "analyse_event";
+    /**
+     * MPR三维重建
+     */
+    public static final String MPR_EVENT = "mpr_event";
 
 }

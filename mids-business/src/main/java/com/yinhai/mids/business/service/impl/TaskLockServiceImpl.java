@@ -54,4 +54,13 @@ public class TaskLockServiceImpl implements TaskLockService {
         int updated = taskLockMapper.updateById(taskLockPO);
         return updated > 0;
     }
+
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void unlock(TaskType taskType, String itemId) {
+        taskLockMapper.update(new TaskLockPO(), Wrappers.<TaskLockPO>lambdaUpdate()
+                .eq(TaskLockPO::getTaskType, taskType.getType())
+                .eq(TaskLockPO::getItemId, itemId)
+                .set(TaskLockPO::getEffective, false));
+    }
 }

@@ -8,13 +8,13 @@ import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.text.StrPool;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.dtflys.forest.http.ForestResponse;
 import com.yinhai.mids.business.compute.*;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.*;
@@ -77,7 +77,13 @@ public class ComputeServiceImpl implements ComputeService {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void register(String computeSeriesId) {
+    public void applyCompute(String computeSeriesId) {
+        ForestResponse<KeyaResponse> connectResponse = keyaClient.testConnect(keyaProperties.getRegisterUrl());
+        if (connectResponse.isError()) {
+            log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
+            return;
+        }
+
         ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
         if (computeSeriesPO == null) {
             log.error("计算序列{}不存在", computeSeriesId);
@@ -116,10 +122,16 @@ public class ComputeServiceImpl implements ComputeService {
         registerParam.setStudyDate(DateUtil.formatDateTime(studyPO.getStudyDateAndTime()));
         registerParam.setCallbackUrl(keyaProperties.getPushCallbackUrl());
 
+        File tempZip = null;
         KeyaResponse response = null;
-        File tempZip = readDicomFromFSAndZip(instancePOList);
         try {
-            response = keyaClient.register(keyaProperties.getRegisterUrl(), tempZip, registerParam);
+            tempZip = readDicomFromFSAndZip(instancePOList);
+            ForestResponse<KeyaResponse> resp = keyaClient.applyCompute(keyaProperties.getRegisterUrl(), tempZip, registerParam);
+            if (resp.isError()) {
+                log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
+                return;
+            }
+            response = resp.getResult();
             if (response.getCode() == 1) {
                 computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
                         .setApplyId(applyId)
@@ -178,7 +190,13 @@ public class ComputeServiceImpl implements ComputeService {
     }
 
     @Override
-    public void result(String applyId) {
+    public void queryComputeResult(String applyId) {
+        ForestResponse<KeyaResponse> connectResponse = keyaClient.testConnect(keyaProperties.getRegisterUrl());
+        if (connectResponse.isError()) {
+            log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
+            return;
+        }
+
         ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(
                 Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
         if (computeSeries == null) {
@@ -187,13 +205,17 @@ public class ComputeServiceImpl implements ComputeService {
         }
         String computeSeriesId = computeSeries.getId();
 
-        KeyaResponse keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
-        int count = 0;
-        while (keyaResponse.getCode() == 2 && count < 6) {
-            // 如果返回码是2，表示结果还在处理中，等待一段时间后重试
-            ThreadUtil.safeSleep(10000);
-            keyaResponse = keyaClient.result(keyaProperties.getResultUrl(), applyId);
-            count += 1;
+        ForestResponse<KeyaResponse> resp = keyaClient.queryComputeResult(keyaProperties.getResultUrl(), applyId);
+        if (resp.isError()) {
+            log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
+            return;
+        }
+        KeyaResponse keyaResponse = resp.getResult();
+        if (keyaResponse.getCode() == 2 && StrUtil.equalsAny(keyaResponse.getMessage(),
+                "当前申请尚未开始分析，等待中。",
+                "正在分析中。",
+                "创建分析任务成功，正在分析中。")) {
+            return;
         }
 
         if (keyaResponse.getCode() != 1) {

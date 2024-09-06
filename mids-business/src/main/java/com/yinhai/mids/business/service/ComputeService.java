@@ -6,7 +6,7 @@ package com.yinhai.mids.business.service;
  */
 public interface ComputeService {
 
-    void register(String computeSeriesId);
+    void applyCompute(String computeSeriesId);
 
-    void result(String applyId);
+    void queryComputeResult(String applyId);
 }

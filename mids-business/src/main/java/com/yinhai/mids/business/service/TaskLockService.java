@@ -17,4 +17,12 @@ public interface TaskLockService {
      * @return boolean
      */
     boolean tryLock(TaskType taskType, String itemId, int expireSeconds);
+
+    /**
+     * 解锁指定任务
+     *
+     * @param taskType 任务类型
+     * @param itemId   任务对象ID
+     */
+    void unlock(TaskType taskType, String itemId);
 }

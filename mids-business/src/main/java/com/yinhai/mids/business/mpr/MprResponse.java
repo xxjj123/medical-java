@@ -12,6 +12,4 @@ public class MprResponse {
     private Integer code;
 
     private String message;
-
-
 }

@@ -1,6 +1,7 @@
 package com.yinhai.mids.business.compute;
 
 import com.dtflys.forest.annotation.*;
+import com.dtflys.forest.http.ForestResponse;
 
 import java.io.File;
 
@@ -10,10 +11,12 @@ import java.io.File;
  */
 public interface KeyaClient {
 
-    @Post(url = "{url}", dataType = "json")
-    KeyaResponse register(@Var("url") String url, @DataFile(value = "files") File file, @Body RegisterParam other);
+    @Post(url = "{url}")
+    ForestResponse<KeyaResponse> applyCompute(@Var("url") String url, @DataFile(value = "files") File file, @Body RegisterParam other);
 
-    @Get(url = "{url}", dataType = "json", readTimeout = 30000)
-    KeyaResponse result(@Var("url") String url, @Query("applyId") String applyId);
+    @Get(url = "{url}", readTimeout = 30000)
+    ForestResponse<KeyaResponse> queryComputeResult(@Var("url") String url, @Query("applyId") String applyId);
 
+    @Post(url = "{url}")
+    ForestResponse<KeyaResponse> testConnect(@Var("url") String url);
 }

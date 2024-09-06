@@ -54,32 +54,32 @@ public class CallbackController {
 
     @Operation(summary = "MPR解析结果推送")
     @PostMapping("mprAnalysePush")
-    public ResponseEntity<Map<String, Object>> uploadFile (
-            @RequestParam(value="vti_file",required = false) MultipartFile vti_file,
-            @RequestParam(value="glb_file",required = false) MultipartFile glb_file,
-            @RequestParam(value="seriesId" ) @NotNull(message = "计算序列不能为空")  String seriesId,
-            @RequestParam(value="code") @NotNull(message = "code不能为空")  String code,
-            @RequestParam(value="message" )String message) throws IOException {
+    public ResponseEntity<Map<String, Object>> uploadFile(
+            @RequestParam(value = "vti_file", required = false) MultipartFile vtiFile,
+            @RequestParam(value = "glb_file", required = false) MultipartFile glbFile,
+            @RequestParam(value = "seriesId") @NotNull(message = "计算序列不能为空") String seriesId,
+            @RequestParam(value = "code") @NotNull(message = "code不能为空") String code,
+            @RequestParam(value = "message") String message) throws IOException {
 
         Map<String, Object> response = new HashMap<>();
 
         response.put("redirectUrl", null);
 
         try {
-            if (vti_file == null || vti_file.isEmpty()) {
+            if (vtiFile == null || vtiFile.isEmpty()) {
                 response.put("code", 300);  // 操作失败
                 response.put("message", "vti文件为空");
                 response.put("serviceSuccess", false);
                 return ResponseEntity.ok(response);
             }
-            if (glb_file == null || glb_file.isEmpty()) {
+            if (glbFile == null || glbFile.isEmpty()) {
                 response.put("code", 300);  // 操作失败
                 response.put("message", "glb文件为空");
                 response.put("serviceSuccess", false);
                 return ResponseEntity.ok(response);
             }
 
-            diagnoseService.onMprPush(vti_file,glb_file,seriesId,code,message);
+            diagnoseService.onMprPush(vtiFile, glbFile, seriesId, code, message);
 
             response.put("code", 200);  // 操作成功
             response.put("message", "文件处理成功");
