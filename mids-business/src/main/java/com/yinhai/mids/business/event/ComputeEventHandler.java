@@ -33,8 +33,10 @@ public class ComputeEventHandler implements AbstractEventHandler {
     public void onEvent(IEventDisruptor eventDisruptor, long sequence, boolean endOfBatch) throws Exception {
         IEventMessage eventMessage = eventDisruptor.getEventMessage();
         String computeSeriesId = (String) eventMessage.getEventSource();
-        taskLockService.tryLock(TaskType.COMPUTE, computeSeriesId, 2 * 60);
-        computeService.applyCompute(computeSeriesId);
-        taskLockService.unlock(TaskType.COMPUTE, computeSeriesId);
+        boolean locked = taskLockService.tryLock(TaskType.COMPUTE, computeSeriesId, 2 * 60);
+        if (locked) {
+            computeService.applyCompute(computeSeriesId);
+            taskLockService.unlock(TaskType.COMPUTE, computeSeriesId);
+        }
     }
 }

@@ -33,8 +33,10 @@ public class MprEventHandler implements AbstractEventHandler {
     public void onEvent(IEventDisruptor eventDisruptor, long sequence, boolean endOfBatch) throws Exception {
         IEventMessage eventMessage = eventDisruptor.getEventMessage();
         String seriesId = (String) eventMessage.getEventSource();
-        taskLockService.tryLock(TaskType.MPR, seriesId, 2 * 60);
-        mprService.doMprAnalyse(seriesId);
-        taskLockService.unlock(TaskType.MPR, seriesId);
+        boolean locked = taskLockService.tryLock(TaskType.MPR, seriesId, 2 * 60);
+        if (locked) {
+            mprService.doMprAnalyse(seriesId);
+            taskLockService.unlock(TaskType.MPR, seriesId);
+        }
     }
 }
