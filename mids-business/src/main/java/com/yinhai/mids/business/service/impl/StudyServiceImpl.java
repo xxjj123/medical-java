@@ -20,6 +20,7 @@ import com.yinhai.mids.business.entity.model.ContextUploadResult;
 import com.yinhai.mids.business.entity.model.DicomInfo;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.StudyPageVO;
+import com.yinhai.mids.business.event.EventConstants;
 import com.yinhai.mids.business.event.TxEventPublisher;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.FileStoreService;
@@ -105,8 +106,8 @@ public class StudyServiceImpl implements StudyService {
             List<SeriesPO> seriesPOList = saveSeries(dicomInfoList, studyPOList);
             saveInstance(dicomInfoList, seriesPOList);
             List<ComputeSeriesPO> computeSeriesPOList = saveComputeSeries(seriesPOList, algorithmParamList);
-            // computeSeriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.COMPUTE_EVENT));
-            // seriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.MPR_EVENT));
+            computeSeriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.COMPUTE_EVENT));
+            seriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.MPR_EVENT));
         } finally {
             FileUtil.del(unzippedDicomDir);
         }
