@@ -237,14 +237,12 @@ public class ComputeServiceImpl implements ComputeService {
         updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_SUCCESS, keyaResponse, null);
     }
 
-    @SuppressWarnings("unchecked")
     private void saveNodule(ComputeSeriesPO computeSeries, KeyaComputeResult.Result.Nodule nodule) {
         String computeSeriesId = computeSeries.getId();
         diagnosisMapper.delete(Wrappers.<DiagnosisPO>lambdaQuery().eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
         noduleLesionMapper.delete(Wrappers.<NoduleLesionPO>lambdaQuery().eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
 
         SeriesPO seriesPO = seriesMapper.selectById(computeSeries.getSeriesId());
-
 
         // 主要诊断信息
         DiagnosisPO diagnosisPO = new DiagnosisPO();
@@ -295,30 +293,23 @@ public class ComputeServiceImpl implements ComputeService {
                 int minZ = point1.getZ();
                 int maxZ = point2.getZ();
                 Integer imageCount = seriesPO.getImageCount();
-                if(minZ > imageCount){
-                    minZ = 2*imageCount - point2.getZ();
+                if (minZ > imageCount) {
+                    minZ = 2 * imageCount - point2.getZ();
                 }
-                if(maxZ > imageCount){
-                    maxZ = 2*imageCount - point1.getZ();
+                if (maxZ > imageCount) {
+                    maxZ = 2 * imageCount - point1.getZ();
                 }
                 noduleLesionPO.setPoints(StrUtil.join(StrPool.COMMA, ListUtil.of(
-                        point1.getX(), point2.getX(), point1.getY(), point2.getY(), minZ,maxZ)));
+                        point1.getX(), point2.getX(), point1.getY(), point2.getY(), minZ, maxZ)));
             }
             noduleLesionPOList.add(noduleLesionPO);
         }
 
         // 设置IM
-//        List<InstancePO> instancePOList = instanceMapper.selectList(Wrappers.<InstancePO>lambdaQuery()
-//                .select(InstancePO::getInstanceNumber, InstancePO::getSopInstanceUid)
-//                .eq(InstancePO::getSeriesId, computeSeries.getSeriesId()));
-//        Map<String, Integer> imMap = new HashMap<>();
-//        for (InstancePO instancePO : instancePOList) {
-//            imMap.put(instancePO.getSopInstanceUid(), instancePO.getInstanceNumber());
-//        }
         for (NoduleLesionPO noduleLesionPO : noduleLesionPOList) {
-            List<Integer> points = StrUtil.split(noduleLesionPO.getPoints(),',').stream()
+            List<Integer> points = StrUtil.split(noduleLesionPO.getPoints(), ',').stream()
                     .map(Integer::parseInt)
-                    .collect(Collectors.toList());;
+                    .collect(Collectors.toList());
             noduleLesionPO.setIm((points.get(4) + points.get(5)) / 2);
         }
 
