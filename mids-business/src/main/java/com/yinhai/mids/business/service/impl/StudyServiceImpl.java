@@ -155,6 +155,7 @@ public class StudyServiceImpl implements StudyService {
                     e -> StrUtil.equals(e.getStudyInstanceUid(), dicomInfo.getStudyInstanceUid())).getId());
             seriesPO.setImageCount(CollUtil.count(dicomInfoList,
                     e -> StrUtil.equals(e.getSeriesInstanceUid(), dicomInfo.getSeriesInstanceUid())));
+            seriesPO.setMprStatus(ComputeStatus.WAIT_COMPUTE);
             seriesPOList.add(seriesPO);
         }
         if (CollUtil.size(seriesPOList) == 1) {
