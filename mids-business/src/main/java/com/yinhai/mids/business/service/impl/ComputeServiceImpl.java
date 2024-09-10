@@ -36,9 +36,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -60,6 +59,9 @@ public class ComputeServiceImpl implements ComputeService {
 
     @Resource
     private StudyMapper studyMapper;
+
+    @Resource
+    private SeriesMapper seriesMapper;
 
     @Resource
     private DiagnosisMapper diagnosisMapper;
@@ -241,6 +243,9 @@ public class ComputeServiceImpl implements ComputeService {
         diagnosisMapper.delete(Wrappers.<DiagnosisPO>lambdaQuery().eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
         noduleLesionMapper.delete(Wrappers.<NoduleLesionPO>lambdaQuery().eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
 
+        SeriesPO seriesPO = seriesMapper.selectById(computeSeries.getSeriesId());
+
+
         // 主要诊断信息
         DiagnosisPO diagnosisPO = new DiagnosisPO();
         diagnosisPO.setComputeSeriesId(computeSeriesId);
@@ -286,22 +291,35 @@ public class ComputeServiceImpl implements ComputeService {
                 KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation annotation = annotationList.get(0);
                 KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point1 = annotation.getPoints().get(0);
                 KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point2 = annotation.getPoints().get(1);
+
+                int minZ = point1.getZ();
+                int maxZ = point2.getZ();
+                Integer imageCount = seriesPO.getImageCount();
+                if(minZ > imageCount){
+                    minZ = 2*imageCount - point2.getZ();
+                }
+                if(maxZ > imageCount){
+                    maxZ = 2*imageCount - point1.getZ();
+                }
                 noduleLesionPO.setPoints(StrUtil.join(StrPool.COMMA, ListUtil.of(
-                        point1.getX(), point2.getX(), point1.getY(), point2.getY(), point1.getZ(), point2.getZ())));
+                        point1.getX(), point2.getX(), point1.getY(), point2.getY(), minZ,maxZ)));
             }
             noduleLesionPOList.add(noduleLesionPO);
         }
 
         // 设置IM
-        List<InstancePO> instancePOList = instanceMapper.selectList(Wrappers.<InstancePO>lambdaQuery()
-                .select(InstancePO::getInstanceNumber, InstancePO::getSopInstanceUid)
-                .eq(InstancePO::getSeriesId, computeSeries.getSeriesId()));
-        Map<String, Integer> imMap = new HashMap<>();
-        for (InstancePO instancePO : instancePOList) {
-            imMap.put(instancePO.getSopInstanceUid(), instancePO.getInstanceNumber());
-        }
+//        List<InstancePO> instancePOList = instanceMapper.selectList(Wrappers.<InstancePO>lambdaQuery()
+//                .select(InstancePO::getInstanceNumber, InstancePO::getSopInstanceUid)
+//                .eq(InstancePO::getSeriesId, computeSeries.getSeriesId()));
+//        Map<String, Integer> imMap = new HashMap<>();
+//        for (InstancePO instancePO : instancePOList) {
+//            imMap.put(instancePO.getSopInstanceUid(), instancePO.getInstanceNumber());
+//        }
         for (NoduleLesionPO noduleLesionPO : noduleLesionPOList) {
-            noduleLesionPO.setIm(imMap.get(noduleLesionPO.getSopInstanceUid()));
+            List<Integer> points = StrUtil.split(noduleLesionPO.getPoints(),',').stream()
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList());;
+            noduleLesionPO.setIm((points.get(4) + points.get(5)) / 2);
         }
 
         noduleLesionMapper.insertBatch(noduleLesionPOList);
