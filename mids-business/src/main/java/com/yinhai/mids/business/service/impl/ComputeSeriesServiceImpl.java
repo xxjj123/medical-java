@@ -5,11 +5,13 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.yinhai.mids.business.constant.ComputeStatus;
+import com.yinhai.mids.business.constant.TaskType;
 import com.yinhai.mids.business.entity.po.ComputeSeriesPO;
-import com.yinhai.mids.business.event.EventConstants;
-import com.yinhai.mids.business.event.TxEventPublisher;
 import com.yinhai.mids.business.mapper.ComputeSeriesMapper;
 import com.yinhai.mids.business.service.ComputeSeriesService;
+import com.yinhai.mids.business.service.ComputeService;
+import com.yinhai.mids.business.service.TaskLockService;
+import com.yinhai.mids.business.util.TransactionKit;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
@@ -32,17 +34,22 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
     private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
-    private TxEventPublisher eventPublisher;
+    private ComputeService computeService;
+
+    @Resource
+    private TaskLockService taskLockService;
 
     @Override
     public void reCompute(String computeSeriesId) {
         AppAssert.notBlank(computeSeriesId, "计算序列ID不能为空");
         AppAssert.notNull(computeSeriesMapper.selectById(computeSeriesId), "计算序列不存在！");
-        computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
-                .setComputeStatus(ComputeStatus.WAIT_COMPUTE)
-                .setErrorMessage(null)
-                .setComputeResponse(null));
-        eventPublisher.publish(computeSeriesId, EventConstants.COMPUTE_EVENT);
+        computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
+                .eq(ComputeSeriesPO::getId, computeSeriesId)
+                .set(ComputeSeriesPO::getComputeStatus, ComputeStatus.WAIT_COMPUTE)
+                .set(ComputeSeriesPO::getErrorMessage, null)
+                .set(ComputeSeriesPO::getComputeResponse, null));
+        taskLockService.unlock(TaskType.COMPUTE, computeSeriesId);
+        TransactionKit.doAfterTxCommit(() -> computeService.lockedAsyncApplyCompute(computeSeriesId));
     }
 
     @Override
@@ -58,13 +65,14 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
             return;
         }
         if (StrUtil.equals(code, "1")) {
-            eventPublisher.publish(applyId, EventConstants.COMPUTE_RESULT_EVENT);
+            TransactionKit.doAfterTxCommit(() -> computeService.lockedAsyncQueryComputeResult(applyId));
         }
         if (StrUtil.equalsAny(code, "2", "3")) {
-            computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesPO.getId())
-                    .setComputeStatus(ComputeStatus.COMPUTE_FAILED)
-                    .setErrorMessage((String) pushParamMap.get("message"))
-                    .setComputeResponse(JsonKit.toJsonString(pushParamMap)));
+            computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
+                    .eq(ComputeSeriesPO::getId, computeSeriesPO.getId())
+                    .set(ComputeSeriesPO::getComputeStatus, ComputeStatus.COMPUTE_FAILED)
+                    .set(ComputeSeriesPO::getComputeResponse, JsonKit.toJsonString(pushParamMap))
+                    .set(ComputeSeriesPO::getErrorMessage, pushParamMap.get("message")));
         }
     }
 }

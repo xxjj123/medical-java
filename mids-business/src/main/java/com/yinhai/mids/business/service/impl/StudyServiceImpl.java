@@ -20,12 +20,13 @@ import com.yinhai.mids.business.entity.model.ContextUploadResult;
 import com.yinhai.mids.business.entity.model.DicomInfo;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.StudyPageVO;
-import com.yinhai.mids.business.event.EventConstants;
-import com.yinhai.mids.business.event.TxEventPublisher;
 import com.yinhai.mids.business.mapper.*;
+import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.business.service.FileStoreService;
+import com.yinhai.mids.business.service.MprService;
 import com.yinhai.mids.business.service.StudyService;
 import com.yinhai.mids.business.util.DicomUtil;
+import com.yinhai.mids.business.util.TransactionKit;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.DbKit;
@@ -34,8 +35,6 @@ import com.yinhai.mids.common.util.SecurityKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.restservice.resultbean.Page;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
-import com.yinhai.ta404.module.storage.core.ITaFSManager;
-import com.yinhai.ta404.storage.ta.core.FSManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -77,20 +76,10 @@ public class StudyServiceImpl implements StudyService {
     private FileStoreService fileStoreService;
 
     @Resource
-    private DiagMapper diagMapper;
+    private ComputeService computeService;
 
     @Resource
-    private VolumeDetailMapper volumeDetailMapper;
-
-    @Resource
-    private DetailAnnotationMapper detailAnnotationMapper;
-
-    @Resource
-    private TxEventPublisher eventPublisher;
-
-
-    @Resource
-    private ITaFSManager<FSManager> fsManager;
+    private MprService mprService;
 
     @Override
     public void uploadDicom(MultipartFile dicomZip, List<AlgorithmParam> algorithmParamList) throws IOException {
@@ -106,8 +95,10 @@ public class StudyServiceImpl implements StudyService {
             List<SeriesPO> seriesPOList = saveSeries(dicomInfoList, studyPOList);
             saveInstance(dicomInfoList, seriesPOList);
             List<ComputeSeriesPO> computeSeriesPOList = saveComputeSeries(seriesPOList, algorithmParamList);
-            computeSeriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.COMPUTE_EVENT));
-            seriesPOList.forEach(e -> eventPublisher.publish(e.getId(), EventConstants.MPR_EVENT));
+            TransactionKit.doAfterTxCommit(() -> {
+                computeSeriesPOList.forEach(e -> computeService.lockedAsyncApplyCompute(e.getId()));
+                seriesPOList.forEach(e -> mprService.lockedAsyncDoMprAnalyse(e.getId()));
+            });
         } finally {
             FileUtil.del(unzippedDicomDir);
         }

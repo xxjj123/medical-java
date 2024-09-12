@@ -18,9 +18,11 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.dtflys.forest.http.ForestResponse;
 import com.yinhai.mids.business.compute.*;
 import com.yinhai.mids.business.constant.ComputeStatus;
+import com.yinhai.mids.business.constant.TaskType;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeService;
+import com.yinhai.mids.business.service.TaskLockService;
 import com.yinhai.mids.common.util.DbKit;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
@@ -28,6 +30,7 @@ import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
 import com.yinhai.ta404.module.storage.core.TaFSObject;
 import com.yinhai.ta404.storage.ta.core.FSManager;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -78,21 +81,26 @@ public class ComputeServiceImpl implements ComputeService {
     @Resource
     private KeyaProperties keyaProperties;
 
+    @Resource
+    private TaskLockService taskLockService;
+
     @SuppressWarnings("unchecked")
     @Override
     public void applyCompute(String computeSeriesId) {
-        ForestResponse<KeyaResponse> connectResponse = keyaClient.testConnect(keyaProperties.getRegisterUrl());
-        if (connectResponse.isError()) {
-            log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
-            return;
-        }
-
         ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
         if (computeSeriesPO == null) {
             log.error("计算序列{}不存在", computeSeriesId);
             return;
         }
-        computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId).setComputeResponse(null).setErrorMessage(null));
+        if (!StrUtil.equals(computeSeriesPO.getComputeStatus(), ComputeStatus.WAIT_COMPUTE)) {
+            return;
+        }
+
+        ForestResponse<KeyaResponse> connectResponse = keyaClient.testConnect(keyaProperties.getRegisterUrl());
+        if (connectResponse.isError()) {
+            log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
+            return;
+        }
 
         StudyPO studyPO = studyMapper.selectById(computeSeriesPO.getStudyId());
         if (studyPO == null) {
@@ -107,7 +115,7 @@ public class ComputeServiceImpl implements ComputeService {
                 .eq(InstancePO::getSeriesId, computeSeriesPO.getSeriesId());
         List<InstancePO> instancePOList = instanceMapper.selectList(queryWrapper);
         if (CollUtil.isEmpty(instancePOList)) {
-            String errorMsg = StrUtil.format("计算序列{}对应检查不存在", computeSeriesId);
+            String errorMsg = StrUtil.format("计算序列{}对应实例不存在", computeSeriesId);
             log.error(errorMsg);
             updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, null, errorMsg);
             return;
@@ -136,11 +144,13 @@ public class ComputeServiceImpl implements ComputeService {
             }
             response = resp.getResult();
             if (response.getCode() == 1) {
-                computeSeriesMapper.updateById(new ComputeSeriesPO().setId(computeSeriesId)
-                        .setApplyId(applyId)
-                        .setComputeStatus(ComputeStatus.IN_COMPUTE)
-                        .setComputeStartTime(DbKit.now())
-                        .setComputeResponse(JsonKit.toJsonString(response)));
+                computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
+                        .eq(ComputeSeriesPO::getId, computeSeriesId)
+                        .set(ComputeSeriesPO::getApplyId, applyId)
+                        .set(ComputeSeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE)
+                        .set(ComputeSeriesPO::getComputeStartTime, DbKit.now())
+                        .set(ComputeSeriesPO::getComputeResponse, JsonKit.toJsonString(response))
+                        .set(ComputeSeriesPO::getErrorMessage, null));
             } else {
                 updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, response, "申请AI分析失败");
             }
@@ -155,6 +165,16 @@ public class ComputeServiceImpl implements ComputeService {
             updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, response, errorMsg);
         } finally {
             FileUtil.del(tempZip);
+        }
+    }
+
+    @Async
+    @Override
+    public void lockedAsyncApplyCompute(String computeSeriesId) {
+        boolean locked = taskLockService.tryLock(TaskType.COMPUTE, computeSeriesId, 2 * 60);
+        if (locked) {
+            applyCompute(computeSeriesId);
+            taskLockService.unlock(TaskType.COMPUTE, computeSeriesId);
         }
     }
 
@@ -194,18 +214,22 @@ public class ComputeServiceImpl implements ComputeService {
 
     @Override
     public void queryComputeResult(String applyId) {
-        ForestResponse<KeyaResponse> connectResponse = keyaClient.testConnect(keyaProperties.getRegisterUrl());
-        if (connectResponse.isError()) {
-            log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
-            return;
-        }
-
         ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(
                 Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
         if (computeSeries == null) {
             log.error("applyId {} 对应计算序列不存在", applyId);
             return;
         }
+        if (!StrUtil.equals(computeSeries.getComputeStatus(), ComputeStatus.IN_COMPUTE)) {
+            return;
+        }
+
+        ForestResponse<KeyaResponse> connectResponse = keyaClient.testConnect(keyaProperties.getRegisterUrl());
+        if (connectResponse.isError()) {
+            log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
+            return;
+        }
+
         String computeSeriesId = computeSeries.getId();
 
         ForestResponse<KeyaResponse> resp = keyaClient.queryComputeResult(keyaProperties.getResultUrl(), applyId);
@@ -235,6 +259,16 @@ public class ComputeServiceImpl implements ComputeService {
         }
         saveNodule(computeSeries, computeResult.getResult().getNodule());
         updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_SUCCESS, keyaResponse, null);
+    }
+
+    @Async
+    @Override
+    public void lockedAsyncQueryComputeResult(String applyId) {
+        boolean locked = taskLockService.tryLock(TaskType.COMPUTE_RESULT, applyId, 2 * 60);
+        if (locked) {
+            queryComputeResult(applyId);
+            taskLockService.unlock(TaskType.COMPUTE_RESULT, applyId);
+        }
     }
 
     private void saveNodule(ComputeSeriesPO computeSeries, KeyaComputeResult.Result.Nodule nodule) {
@@ -317,11 +351,10 @@ public class ComputeServiceImpl implements ComputeService {
     }
 
     private void updateComputeStatus(String computeSeriesId, String computeStatus, KeyaResponse computeResponse, String errorMsg) {
-        ComputeSeriesPO computeSeriesPO = new ComputeSeriesPO();
-        computeSeriesPO.setId(computeSeriesId);
-        computeSeriesPO.setComputeStatus(computeStatus);
-        computeSeriesPO.setComputeResponse(JsonKit.toJsonString(computeResponse));
-        computeSeriesPO.setErrorMessage(errorMsg);
-        computeSeriesMapper.updateById(computeSeriesPO);
+        computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
+                .eq(ComputeSeriesPO::getId, computeSeriesId)
+                .set(ComputeSeriesPO::getComputeStatus, computeStatus)
+                .set(ComputeSeriesPO::getComputeResponse, computeResponse == null ? null : JsonKit.toJsonString(computeResponse))
+                .set(ComputeSeriesPO::getErrorMessage, errorMsg));
     }
 }
