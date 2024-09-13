@@ -4,10 +4,10 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.mids.business.service.DiagnoseService;
+import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -54,7 +54,7 @@ public class CallbackController {
 
     @Operation(summary = "MPR解析结果推送")
     @PostMapping("mprAnalysePush")
-    public ResponseEntity<Map<String, Object>> uploadFile(
+    public void uploadFile(
             @RequestParam(value = "vti_file", required = false) MultipartFile vtiFile,
             @RequestParam(value = "glb_file", required = false) MultipartFile glbFile,
             @RequestParam(value = "seriesId") @NotNull(message = "计算序列不能为空") String seriesId,
@@ -64,34 +64,10 @@ public class CallbackController {
         Map<String, Object> response = new HashMap<>();
 
         response.put("redirectUrl", null);
+        AppAssert.notNull(vtiFile, "vti文件为空！");
+        AppAssert.notNull(glbFile, "glb文件为空！");
+        diagnoseService.onMprPush(vtiFile, glbFile, seriesId, code, message);
 
-        try {
-            if (vtiFile == null || vtiFile.isEmpty()) {
-                response.put("code", 300);  // 操作失败
-                response.put("message", "vti文件为空");
-                response.put("serviceSuccess", false);
-                return ResponseEntity.ok(response);
-            }
-            if (glbFile == null || glbFile.isEmpty()) {
-                response.put("code", 300);  // 操作失败
-                response.put("message", "glb文件为空");
-                response.put("serviceSuccess", false);
-                return ResponseEntity.ok(response);
-            }
-
-            diagnoseService.onMprPush(vtiFile, glbFile, seriesId, code, message);
-
-            response.put("code", 200);  // 操作成功
-            response.put("message", "文件处理成功");
-            response.put("serviceSuccess", true);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.put("code", 500);  // 系统错误
-            response.put("message", "系统错误"+e);
-            response.put("serviceSuccess", false);
-            return ResponseEntity.status(500).body(response);
-        }
 
     }
 }

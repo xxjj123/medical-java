@@ -2,7 +2,6 @@ package com.yinhai.mids.business.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
-import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.util.ZipUtil;
@@ -16,7 +15,9 @@ import com.yinhai.mids.business.entity.model.UploadResult;
 import com.yinhai.mids.business.entity.po.Model3dPO;
 import com.yinhai.mids.business.entity.po.SeriesPO;
 import com.yinhai.mids.business.entity.po.VtiPO;
-import com.yinhai.mids.business.mapper.*;
+import com.yinhai.mids.business.mapper.Model3dMapper;
+import com.yinhai.mids.business.mapper.SeriesMapper;
+import com.yinhai.mids.business.mapper.VtiMapper;
 import com.yinhai.mids.business.service.DiagnoseService;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.common.exception.AppAssert;
@@ -77,14 +78,6 @@ public class DiagnoseServiceImpl implements DiagnoseService {
     public void onMprPush(MultipartFile vtiZip, MultipartFile glbZip, @NotBlank(message = "序列id不能为空") String seriesId, String code, String message) throws IOException {
         SeriesPO seriesPO = seriesMapper.selectById(seriesId);
         AppAssert.notNull(seriesPO, "该序列不存在!");
-
-        try (InputStream inputStream = vtiZip.getInputStream()) {
-            AppAssert.equals("zip", FileTypeUtil.getType(inputStream), "只允许上传vti zip文件");
-        }
-
-        try (InputStream inputStream = glbZip.getInputStream()) {
-            AppAssert.equals("zip", FileTypeUtil.getType(inputStream), "只允许上传glb zip文件");
-        }
 
         List<ContextFSObject<String>> contextFSObjects = new ArrayList<>();
 
