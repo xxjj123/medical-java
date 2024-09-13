@@ -88,7 +88,7 @@ public class CallbackController {
         } catch (Exception e) {
             e.printStackTrace();
             response.put("code", 500);  // 系统错误
-            response.put("message", "系统错误");
+            response.put("message", "系统错误"+e);
             response.put("serviceSuccess", false);
             return ResponseEntity.status(500).body(response);
         }
