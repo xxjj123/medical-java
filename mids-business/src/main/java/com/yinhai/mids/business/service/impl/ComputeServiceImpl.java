@@ -175,6 +175,8 @@ public class ComputeServiceImpl implements ComputeService {
         if (locked) {
             applyCompute(computeSeriesId);
             taskLockService.unlock(TaskType.COMPUTE, computeSeriesId);
+        } else {
+            log.debug("{} 未获取到锁，忽略执行", computeSeriesId);
         }
     }
 
@@ -268,6 +270,8 @@ public class ComputeServiceImpl implements ComputeService {
         if (locked) {
             queryComputeResult(applyId);
             taskLockService.unlock(TaskType.COMPUTE_RESULT, applyId);
+        } else {
+            log.debug("{} 未获取到锁，忽略执行", applyId);
         }
     }
 

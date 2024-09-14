@@ -36,7 +36,6 @@ public class MprAnalyseJob {
     @Scheduled(fixedRate = 10, timeUnit = TimeUnit.SECONDS)
     @SuppressWarnings("unchecked")
     public void mpr() {
-        log.warn("定时任务开始：{}", DateUtil.now());
         PageKit.startPage(PageRequest.of(1, 3));
         List<SeriesPO> seriesPOList = seriesMapper.selectList(Wrappers.<SeriesPO>lambdaQuery().select(SeriesPO::getId)
                 .and(q -> q.eq(SeriesPO::getMprStatus, ComputeStatus.WAIT_COMPUTE).or(w -> w
@@ -45,6 +44,5 @@ public class MprAnalyseJob {
                 .orderByAsc(SeriesPO::getCreateTime));
         seriesPOList.forEach(e -> log.warn(e.getId()));
         seriesPOList.forEach(e -> mprService.lockedAsyncDoMprAnalyse(e.getId()));
-        log.warn("定时任务结束：{}", DateUtil.now());
     }
 }

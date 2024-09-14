@@ -141,6 +141,8 @@ public class MprServiceImpl implements MprService {
         if (locked) {
             doMprAnalyse(seriesId);
             taskLockService.unlock(TaskType.MPR, seriesId);
+        } else {
+            log.debug("{} 未获取到锁，忽略执行", seriesId);
         }
     }
 

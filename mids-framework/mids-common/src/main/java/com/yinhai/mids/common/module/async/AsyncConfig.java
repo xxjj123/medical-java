@@ -1,7 +1,6 @@
 package com.yinhai.mids.common.module.async;
 
 import cn.hutool.core.util.ArrayUtil;
-import cn.hutool.core.util.RuntimeUtil;
 import com.yinhai.ta404.core.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
@@ -23,15 +22,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 public class AsyncConfig extends AsyncConfigurerSupport {
 
-    /**
-     * 核心线程数 = cpu 核心数 + 1
-     */
-    private final int corePoolSize = RuntimeUtil.getProcessorCount() + 1;
-
     @Override
     public Executor getAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(Math.max(corePoolSize, 8));
+        executor.setCorePoolSize(8);
         executor.setMaxPoolSize(16);
         executor.setQueueCapacity(999);
         executor.setKeepAliveSeconds(60);
