@@ -29,7 +29,7 @@ public class ComputeJob {
     @Resource
     private ComputeService computeService;
 
-    @Scheduled(fixedRate = 10, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRate = 10, initialDelay = 30, timeUnit = TimeUnit.SECONDS)
     @SuppressWarnings("unchecked")
     public void compute() {
         // 控制每次发起的数量
@@ -40,7 +40,7 @@ public class ComputeJob {
         seriesList.forEach(e -> computeService.lockedAsyncApplyCompute(e.getId()));
     }
 
-    @Scheduled(fixedRate = 10, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRate = 10, initialDelay = 30, timeUnit = TimeUnit.SECONDS)
     @SuppressWarnings("unchecked")
     public void computeResult() {
         // 控制每次发起的数量

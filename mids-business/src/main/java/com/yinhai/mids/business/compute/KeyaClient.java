@@ -18,5 +18,6 @@ public interface KeyaClient {
     ForestResponse<KeyaResponse> queryComputeResult(@Var("url") String url, @Query("applyId") String applyId);
 
     @Post(url = "{url}")
+    @LogEnabled(value = false)
     ForestResponse<KeyaResponse> testConnect(@Var("url") String url);
 }

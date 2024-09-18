@@ -12,8 +12,10 @@ import java.io.InputStream;
 public interface MprClient {
     @Post(url = "{url}")
     ForestResponse<MprResponse> register(@Var("url") String url,
-                         @DataFile(value = "file", fileName = "dicom.zip") InputStream in, @Body RegisterParam other);
+                                         @DataFile(value = "file", fileName = "dicom.zip") InputStream in,
+                                         @Body RegisterParam other);
 
     @Post(url = "{url}")
-    ForestResponse<MprResponse> testConnect(@Var("url") String url);
+    @LogEnabled(value = false)
+    ForestResponse<MprResponse> health(@Var("url") String url);
 }

@@ -84,9 +84,13 @@ public class MprServiceImpl implements MprService {
             return;
         }
 
-        ForestResponse<MprResponse> connectResponse = mprClient.testConnect(mprProperties.getRegisterUrl());
+        ForestResponse<MprResponse> connectResponse = mprClient.health(mprProperties.getHealthUrl());
         if (connectResponse.isError()) {
             log.error("连接MPR服务失败，请检查网络配置或MPR服务是否正常");
+            return;
+        }
+        if (connectResponse.getResult().getCode() == 2) {
+            log.error("MPR服务繁忙");
             return;
         }
 
@@ -110,6 +114,14 @@ public class MprServiceImpl implements MprService {
                 return;
             }
             response = resp.getResult();
+            if (response.getCode() == 4) {
+                log.error("{} 正在MPR", seriesId);
+                return;
+            }
+            if (response.getCode() == 5) {
+                log.error("MPR服务繁忙");
+                return;
+            }
             if (response.getCode() == 1) {
                 seriesMapper.update(new SeriesPO(), Wrappers.<SeriesPO>lambdaUpdate()
                         .eq(SeriesPO::getId, seriesId)

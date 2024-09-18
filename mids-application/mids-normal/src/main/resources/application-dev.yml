@@ -52,4 +52,5 @@ keya:
 # mpr配置
 mpr:
   register-url: http://192.168.1.4:35000/mpr/analyse
+  health-url: http://192.168.1.4:35000/mpr/health
   push-callback-url: http://192.168.1.4:39625/mids-api/callback/mprAnalysePush

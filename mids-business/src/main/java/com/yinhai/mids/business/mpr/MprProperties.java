@@ -17,4 +17,6 @@ public class MprProperties {
 
     private String pushCallbackUrl;
 
+    private String healthUrl;
+
 }
