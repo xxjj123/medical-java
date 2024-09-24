@@ -93,7 +93,7 @@ public class DicomUtil {
 
     private static final String DICOM_HEADER = "DICM";
 
-    private static boolean isDicom(File file) {
+    public static boolean isDicom(File file) {
         try (FileInputStream fis = new FileInputStream(file)) {
             fis.read(new byte[128]);
             byte[] header = new byte[4];

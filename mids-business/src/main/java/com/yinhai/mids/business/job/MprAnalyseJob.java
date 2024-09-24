@@ -40,7 +40,7 @@ public class MprAnalyseJob {
         List<SeriesPO> seriesPOList = seriesMapper.selectList(Wrappers.<SeriesPO>lambdaQuery().select(SeriesPO::getId)
                 .and(q -> q.eq(SeriesPO::getMprStatus, ComputeStatus.WAIT_COMPUTE).or(w -> w
                         .eq(SeriesPO::getMprStatus, ComputeStatus.IN_COMPUTE)
-                        .lt(SeriesPO::getMprStartTime, DateUtil.offsetMinute(DbKit.now(), -5))))
+                        .lt(SeriesPO::getMprStartTime, DateUtil.offsetMinute(DbKit.now(), -8))))
                 .orderByAsc(SeriesPO::getCreateTime));
         seriesPOList.forEach(e -> log.warn(e.getId()));
         seriesPOList.forEach(e -> mprService.lockedAsyncDoMprAnalyse(e.getId()));
