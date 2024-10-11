@@ -23,6 +23,7 @@ import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.business.service.TaskLockService;
+import com.yinhai.mids.common.module.mybatis.UpdateEntity;
 import com.yinhai.mids.common.util.DbKit;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
@@ -355,10 +356,12 @@ public class ComputeServiceImpl implements ComputeService {
     }
 
     private void updateComputeStatus(String computeSeriesId, String computeStatus, KeyaResponse computeResponse, String errorMsg) {
-        computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
-                .eq(ComputeSeriesPO::getId, computeSeriesId)
-                .set(ComputeSeriesPO::getComputeStatus, computeStatus)
-                .set(ComputeSeriesPO::getComputeResponse, computeResponse == null ? null : JsonKit.toJsonString(computeResponse))
-                .set(ComputeSeriesPO::getErrorMessage, errorMsg));
+        ComputeSeriesPO computeSeriesPO = UpdateEntity.of(ComputeSeriesPO.class);
+        computeSeriesPO.setComputeStatus(computeStatus);
+        computeSeriesPO.setComputeResponse(computeResponse == null ? null : JsonKit.toJsonString(computeResponse));
+        computeSeriesPO.setErrorMessage(errorMsg);
+
+        computeSeriesMapper.update(computeSeriesPO, Wrappers.<ComputeSeriesPO>lambdaQuery()
+                .eq(ComputeSeriesPO::getId, computeSeriesId));
     }
 }

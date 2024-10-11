@@ -29,7 +29,7 @@ public class ComputeJob {
     @Resource
     private ComputeService computeService;
 
-    @Scheduled(fixedRate = 10, initialDelay = 30, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRate = 30, initialDelay = 30, timeUnit = TimeUnit.SECONDS)
     @SuppressWarnings("unchecked")
     public void compute() {
         // 控制每次发起的数量

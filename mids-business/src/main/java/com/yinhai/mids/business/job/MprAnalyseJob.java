@@ -33,7 +33,7 @@ public class MprAnalyseJob {
     @Resource
     private MprService mprService;
 
-    @Scheduled(fixedRate = 10, initialDelay = 30, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRate = 30, initialDelay = 30, timeUnit = TimeUnit.SECONDS)
     @SuppressWarnings("unchecked")
     public void mpr() {
         PageKit.startPage(PageRequest.of(1, 3));

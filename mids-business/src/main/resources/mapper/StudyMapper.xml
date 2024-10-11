@@ -65,11 +65,11 @@
               AND b.deleted = 0
               AND c.deleted = 0
             <if test="query.startDate != null">
-                AND a.study_date_and_time > #{query.startDate, jdbcType=DATE}
+                AND a.study_date_and_time >= #{query.startDate, jdbcType=DATE}
             </if>
             <if test="query.endDate != null">
                 AND a.study_date_and_time
-                    &lt; #{query.endDate,jdbcType=TIMESTAMP}
+                    &lt;= #{query.endDate,jdbcType=TIMESTAMP}
             </if>
             <if test="query.accessionNumber != null and query.accessionNumber != ''">
                 AND a.accession_number = #{query.accessionNumber,jdbcType=VARCHAR}
