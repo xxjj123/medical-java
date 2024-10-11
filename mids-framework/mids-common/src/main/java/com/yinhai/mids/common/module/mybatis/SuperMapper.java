@@ -3,6 +3,7 @@ package com.yinhai.mids.common.module.mybatis;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ReflectUtil;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.enums.SqlMethod;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
@@ -15,6 +16,7 @@ import com.yinhai.mids.common.util.PageKit;
 import com.yinhai.ta404.core.restservice.requestbean.PageParam;
 import com.yinhai.ta404.core.restservice.resultbean.Page;
 import com.yinhai.ta404.module.mybatis.mapper.Ta404SupportMapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.binding.MapperMethod;
 import org.apache.ibatis.logging.Log;
 import org.apache.ibatis.logging.LogFactory;
@@ -184,4 +186,12 @@ public interface SuperMapper<T> extends BaseMapper<T>, Ta404SupportMapper {
     static Log getLog(Class<?> clazz) {
         return LOG_MAP.computeIfAbsent(clazz, LogFactory::getLog);
     }
+
+    /**
+     * 根据 whereEntity 条件，更新 entity 调用了 setter 的字段，无论值是否为 null。entity 对象应通过 {@link UpdateEntity} 生成，否则无效
+     *
+     * @param entity        实体对象 (set 条件值,可以为 null,当entity为null时,无法进行自动填充)
+     * @param updateWrapper 实体对象封装操作类（可以为 null,里面的 entity 用于生成 where 语句）
+     */
+    int updateSetterInvoked(@Param(Constants.ENTITY) T entity, @Param(Constants.WRAPPER) Wrapper<T> updateWrapper);
 }

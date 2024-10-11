@@ -1,5 +1,6 @@
 package com.yinhai.mids.common.module.mybatis;
 
+import com.baomidou.mybatisplus.core.injector.ISqlInjector;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import org.springframework.context.annotation.Bean;
@@ -17,5 +18,10 @@ public class MybatisPlusConfig {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         return interceptor;
+    }
+
+    @Bean
+    public ISqlInjector iSqlInjector() {
+        return new CustomSqlInjector();
     }
 }

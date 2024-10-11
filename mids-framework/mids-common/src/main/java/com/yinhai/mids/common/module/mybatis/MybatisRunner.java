@@ -1,8 +1,5 @@
 package com.yinhai.mids.common.module.mybatis;
 
-import com.baomidou.mybatisplus.core.config.GlobalConfig;
-import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
-import com.baomidou.mybatisplus.core.toolkit.GlobalConfigUtils;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -21,14 +18,11 @@ public class MybatisRunner implements ApplicationRunner {
 
     private final List<SqlSessionFactory> sqlSessionFactoryList;
 
-    private final MetaObjectHandler metaObjectHandler;
-
     private final List<MybatisPlusInterceptor> mybatisPlusInterceptorList;
 
-    public MybatisRunner(List<SqlSessionFactory> sqlSessionFactoryList, MetaObjectHandler metaObjectHandler,
+    public MybatisRunner(List<SqlSessionFactory> sqlSessionFactoryList,
                          List<MybatisPlusInterceptor> mybatisPlusInterceptorList) {
         this.sqlSessionFactoryList = sqlSessionFactoryList;
-        this.metaObjectHandler = metaObjectHandler;
         this.mybatisPlusInterceptorList = mybatisPlusInterceptorList;
     }
 
@@ -39,8 +33,6 @@ public class MybatisRunner implements ApplicationRunner {
             for (MybatisPlusInterceptor mybatisPlusInterceptor : mybatisPlusInterceptorList) {
                 configuration.addInterceptor(mybatisPlusInterceptor);
             }
-            GlobalConfig globalConfig = GlobalConfigUtils.getGlobalConfig(configuration);
-            globalConfig.setMetaObjectHandler(metaObjectHandler);
         }
     }
 }

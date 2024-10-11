@@ -18,7 +18,7 @@ import java.util.function.Supplier;
  * @date 2022/08/27 17:35
  */
 @Slf4j
-@Component
+@Component("metaObjectHandler")
 public class TableAutoFillMetaObjectHandler implements MetaObjectHandler {
 
     @Override
