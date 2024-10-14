@@ -17,7 +17,7 @@ import com.yinhai.mids.business.entity.vo.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.NoduleService;
 import com.yinhai.mids.common.exception.AppAssert;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import org.springframework.stereotype.Service;
 
@@ -138,7 +138,7 @@ public class NoduleServiceImpl implements NoduleService {
         if (noduleOperatePO.getMajorAxisScopeFilter() != null) {
             noduleOperatePO.setMajorAxisSelectFilter(null);
         }
-        noduleOperatePO.setOperateTime(DbKit.now());
+        noduleOperatePO.setOperateTime(DbClock.now());
         NoduleOperatePO one = noduleOperateMapper.selectOne(Wrappers.<NoduleOperatePO>lambdaQuery()
                 .select(NoduleOperatePO::getId)
                 .eq(NoduleOperatePO::getComputeSeriesId, noduleOperateVO.getComputeSeriesId()));
@@ -230,14 +230,14 @@ public class NoduleServiceImpl implements NoduleService {
                     .eq(ManualDiagnosisPO::getId, one.getId())
                     .set(ManualDiagnosisPO::getDiagnosis, manualDiagnosisParam.getDiagnosis())
                     .set(ManualDiagnosisPO::getFinding, manualDiagnosisParam.getFinding())
-                    .set(ManualDiagnosisPO::getDiagnoseTime, DbKit.now()));
+                    .set(ManualDiagnosisPO::getDiagnoseTime, DbClock.now()));
         } else {
             ManualDiagnosisPO manualDiagnosisPO = new ManualDiagnosisPO();
             manualDiagnosisPO.setComputeSeriesId(computeSeriesId);
             manualDiagnosisPO.setType("nodule");
             manualDiagnosisPO.setDiagnosis(manualDiagnosisParam.getDiagnosis());
             manualDiagnosisPO.setFinding(manualDiagnosisParam.getFinding());
-            manualDiagnosisPO.setDiagnoseTime(DbKit.now());
+            manualDiagnosisPO.setDiagnoseTime(DbClock.now());
             manualDiagnosisMapper.insert(manualDiagnosisPO);
         }
     }
@@ -370,7 +370,7 @@ public class NoduleServiceImpl implements NoduleService {
         reportCommon.setExaminedName("胸部CT平扫");
         reportCommon.setFinding(manualDiagnosisPO.getFinding());
         reportCommon.setDiagnosis(manualDiagnosisPO.getDiagnosis());
-        reportCommon.setReportDate(DbKit.now());
+        reportCommon.setReportDate(DbClock.now());
         reportCommon.setReportDoctor("");
         reportCommon.setAuditDoctor("");
         return reportCommon;

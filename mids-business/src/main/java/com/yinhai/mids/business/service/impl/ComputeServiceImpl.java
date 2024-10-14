@@ -24,7 +24,7 @@ import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.business.service.TaskLockService;
 import com.yinhai.mids.common.module.mybatis.UpdateEntity;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
@@ -149,7 +149,7 @@ public class ComputeServiceImpl implements ComputeService {
                         .eq(ComputeSeriesPO::getId, computeSeriesId)
                         .set(ComputeSeriesPO::getApplyId, applyId)
                         .set(ComputeSeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE)
-                        .set(ComputeSeriesPO::getComputeStartTime, DbKit.now())
+                        .set(ComputeSeriesPO::getComputeStartTime, DbClock.now())
                         .set(ComputeSeriesPO::getComputeResponse, JsonKit.toJsonString(response))
                         .set(ComputeSeriesPO::getErrorMessage, null));
             } else {
@@ -242,7 +242,7 @@ public class ComputeServiceImpl implements ComputeService {
         }
         KeyaResponse keyaResponse = resp.getResult();
         if (keyaResponse.getCode() == 2
-            && DateUtil.between(computeSeries.getComputeStartTime(), DbKit.now(), DateUnit.MINUTE) < 10
+            && DateUtil.between(computeSeries.getComputeStartTime(), DbClock.now(), DateUnit.MINUTE) < 10
             && StrUtil.equalsAny(keyaResponse.getMessage(), "当前申请尚未开始分析，等待中。", "正在分析中。",
                 "创建分析任务成功，正在分析中。")) {
             return;

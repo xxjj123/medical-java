@@ -22,7 +22,7 @@ import com.yinhai.mids.business.mpr.MprResponse;
 import com.yinhai.mids.business.mpr.RegisterParam;
 import com.yinhai.mids.business.service.MprService;
 import com.yinhai.mids.business.service.TaskLockService;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
@@ -79,7 +79,7 @@ public class MprServiceImpl implements MprService {
         }
         boolean waitCompute = StrUtil.equals(seriesPO.getMprStatus(), ComputeStatus.WAIT_COMPUTE);
         boolean computeTimeout = StrUtil.equals(seriesPO.getMprStatus(), ComputeStatus.IN_COMPUTE)
-                                 && seriesPO.getMprStartTime().before(DateUtil.offsetMinute(DbKit.now(), -5));
+                                 && seriesPO.getMprStartTime().before(DateUtil.offsetMinute(DbClock.now(), -5));
         if (!(waitCompute || computeTimeout)) {
             return;
         }
@@ -126,7 +126,7 @@ public class MprServiceImpl implements MprService {
                 seriesMapper.update(new SeriesPO(), Wrappers.<SeriesPO>lambdaUpdate()
                         .eq(SeriesPO::getId, seriesId)
                         .set(SeriesPO::getMprStatus, ComputeStatus.IN_COMPUTE)
-                        .set(SeriesPO::getMprStartTime, DbKit.now())
+                        .set(SeriesPO::getMprStartTime, DbClock.now())
                         .set(SeriesPO::getMprResponse, JsonKit.toJsonString(response)).
                         set(SeriesPO::getMprErrorMessage, null));
 

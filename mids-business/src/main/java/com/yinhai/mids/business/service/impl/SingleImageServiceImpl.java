@@ -16,7 +16,7 @@ import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.service.SingleImageService;
 import com.yinhai.mids.business.util.DicomUtil;
 import com.yinhai.mids.common.exception.AppAssert;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.SecurityKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
@@ -63,7 +63,7 @@ public class SingleImageServiceImpl implements SingleImageService {
 
             SingleImageStudyPO singleImageStudyPO = new SingleImageStudyPO();
             BeanUtil.copyProperties(dicomInfo, singleImageStudyPO);
-            singleImageStudyPO.setUploadTime(DbKit.now());
+            singleImageStudyPO.setUploadTime(DbClock.now());
             singleImageStudyPO.setUploadUserId(SecurityKit.currentUserId());
 
             String access_path = fileStoreService.upload(new ContextFSObject<>(dicomZip)).getAccessPath();

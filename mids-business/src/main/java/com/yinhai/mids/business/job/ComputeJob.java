@@ -7,7 +7,7 @@ import com.yinhai.mids.business.entity.po.ComputeSeriesPO;
 import com.yinhai.mids.business.mapper.ComputeSeriesMapper;
 import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.common.core.PageRequest;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.PageKit;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -47,7 +47,7 @@ public class ComputeJob {
         PageKit.startPage(PageRequest.of(1, 2));
         List<ComputeSeriesPO> seriesList = computeSeriesMapper.selectList(Wrappers.<ComputeSeriesPO>lambdaQuery()
                         .select(ComputeSeriesPO::getApplyId).eq(ComputeSeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE)
-                        .lt(ComputeSeriesPO::getComputeStartTime, DateUtil.offsetMinute(DbKit.now(), -5))
+                        .lt(ComputeSeriesPO::getComputeStartTime, DateUtil.offsetMinute(DbClock.now(), -5))
                         .orderByAsc(ComputeSeriesPO::getComputeStartTime));
         seriesList.forEach(e -> computeService.lockedAsyncQueryComputeResult(e.getApplyId()));
     }

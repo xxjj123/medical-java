@@ -8,7 +8,7 @@ import com.yinhai.mids.business.entity.po.TaskLockPO;
 import com.yinhai.mids.business.mapper.TaskLockMapper;
 import com.yinhai.mids.business.service.TaskLockService;
 import com.yinhai.mids.business.constant.TaskType;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -40,7 +40,7 @@ public class TaskLockServiceImpl implements TaskLockService {
                     .eq(TaskLockPO::getTaskType, taskType.getType())
                     .eq(TaskLockPO::getItemId, itemId));
         }
-        Date now = DbKit.now();
+        Date now = DbClock.now();
 
         // 已锁住并且未失效
         if (BooleanUtil.isTrue(taskLockPO.getEffective())
