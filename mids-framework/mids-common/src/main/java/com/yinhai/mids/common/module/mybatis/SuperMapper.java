@@ -87,6 +87,9 @@ public interface SuperMapper<T> extends BaseMapper<T>, Ta404SupportMapper {
         if (CollUtil.isEmpty(entityList)) {
             return false;
         }
+        if (entityList.size() == 1) {
+            return insert(CollUtil.getFirst(entityList)) == 1;
+        }
         Optional<T> optional = entityList.stream().findFirst();
         return optional.filter(t -> SqlHelper.executeBatch(
                 t.getClass(),
