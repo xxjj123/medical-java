@@ -39,7 +39,7 @@ public class UpdateEntity {
         return (T) enhancer.create();
     }
 
-    private interface SetToNullMonitor {
+    public interface SetToNullMonitor {
 
         Set<String> getUpdateNullColumns();
     }
