@@ -24,7 +24,7 @@ import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeService;
 import com.yinhai.mids.business.service.TaskLockService;
 import com.yinhai.mids.common.module.mybatis.UpdateEntity;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
@@ -56,7 +56,7 @@ public class ComputeServiceImpl implements ComputeService {
     private static final Log log = LogFactory.get();
 
     @Resource
-    private ComputeSeriesMapper computeSeriesMapper;
+    private OldComputeSeriesMapper oldComputeSeriesMapper;
 
     @Resource
     private InstanceMapper instanceMapper;
@@ -88,12 +88,12 @@ public class ComputeServiceImpl implements ComputeService {
     @SuppressWarnings("unchecked")
     @Override
     public void applyCompute(String computeSeriesId) {
-        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
-        if (computeSeriesPO == null) {
+        OldComputeSeriesPO oldComputeSeriesPO = oldComputeSeriesMapper.selectById(computeSeriesId);
+        if (oldComputeSeriesPO == null) {
             log.error("计算序列{}不存在", computeSeriesId);
             return;
         }
-        if (!StrUtil.equals(computeSeriesPO.getComputeStatus(), ComputeStatus.WAIT_COMPUTE)) {
+        if (!StrUtil.equals(oldComputeSeriesPO.getComputeStatus(), ComputeStatus.WAIT_COMPUTE)) {
             return;
         }
 
@@ -103,7 +103,7 @@ public class ComputeServiceImpl implements ComputeService {
             return;
         }
 
-        StudyPO studyPO = studyMapper.selectById(computeSeriesPO.getStudyId());
+        StudyPO studyPO = studyMapper.selectById(oldComputeSeriesPO.getStudyId());
         if (studyPO == null) {
             String errorMsg = StrUtil.format("计算序列{}对应检查不存在", computeSeriesId);
             log.error(errorMsg);
@@ -113,7 +113,7 @@ public class ComputeServiceImpl implements ComputeService {
 
         LambdaQueryWrapper<InstancePO> queryWrapper = Wrappers.<InstancePO>lambdaQuery()
                 .select(InstancePO::getAccessPath, InstancePO::getSopInstanceUid)
-                .eq(InstancePO::getSeriesId, computeSeriesPO.getSeriesId());
+                .eq(InstancePO::getSeriesId, oldComputeSeriesPO.getSeriesId());
         List<InstancePO> instancePOList = instanceMapper.selectList(queryWrapper);
         if (CollUtil.isEmpty(instancePOList)) {
             String errorMsg = StrUtil.format("计算序列{}对应实例不存在", computeSeriesId);
@@ -145,13 +145,13 @@ public class ComputeServiceImpl implements ComputeService {
             }
             response = resp.getResult();
             if (response.getCode() == 1) {
-                computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
-                        .eq(ComputeSeriesPO::getId, computeSeriesId)
-                        .set(ComputeSeriesPO::getApplyId, applyId)
-                        .set(ComputeSeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE)
-                        .set(ComputeSeriesPO::getComputeStartTime, DbKit.now())
-                        .set(ComputeSeriesPO::getComputeResponse, JsonKit.toJsonString(response))
-                        .set(ComputeSeriesPO::getErrorMessage, null));
+                oldComputeSeriesMapper.update(new OldComputeSeriesPO(), Wrappers.<OldComputeSeriesPO>lambdaUpdate()
+                        .eq(OldComputeSeriesPO::getId, computeSeriesId)
+                        .set(OldComputeSeriesPO::getApplyId, applyId)
+                        .set(OldComputeSeriesPO::getComputeStatus, ComputeStatus.IN_COMPUTE)
+                        .set(OldComputeSeriesPO::getComputeStartTime, DbClock.now())
+                        .set(OldComputeSeriesPO::getComputeResponse, JsonKit.toJsonString(response))
+                        .set(OldComputeSeriesPO::getErrorMessage, null));
             } else {
                 updateComputeStatus(computeSeriesId, ComputeStatus.COMPUTE_ERROR, response, "申请AI分析失败");
             }
@@ -217,8 +217,8 @@ public class ComputeServiceImpl implements ComputeService {
 
     @Override
     public void queryComputeResult(String applyId) {
-        ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(
-                Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
+        OldComputeSeriesPO computeSeries = oldComputeSeriesMapper.selectOne(
+                Wrappers.<OldComputeSeriesPO>lambdaQuery().eq(OldComputeSeriesPO::getApplyId, applyId));
         if (computeSeries == null) {
             log.error("applyId {} 对应计算序列不存在", applyId);
             return;
@@ -242,7 +242,7 @@ public class ComputeServiceImpl implements ComputeService {
         }
         KeyaResponse keyaResponse = resp.getResult();
         if (keyaResponse.getCode() == 2
-            && DateUtil.between(computeSeries.getComputeStartTime(), DbKit.now(), DateUnit.MINUTE) < 10
+            && DateUtil.between(computeSeries.getComputeStartTime(), DbClock.now(), DateUnit.MINUTE) < 10
             && StrUtil.equalsAny(keyaResponse.getMessage(), "当前申请尚未开始分析，等待中。", "正在分析中。",
                 "创建分析任务成功，正在分析中。")) {
             return;
@@ -276,7 +276,7 @@ public class ComputeServiceImpl implements ComputeService {
         }
     }
 
-    private void saveNodule(ComputeSeriesPO computeSeries, KeyaComputeResult.Result.Nodule nodule) {
+    private void saveNodule(OldComputeSeriesPO computeSeries, KeyaComputeResult.Result.Nodule nodule) {
         String computeSeriesId = computeSeries.getId();
         diagnosisMapper.delete(Wrappers.<DiagnosisPO>lambdaQuery().eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
         noduleLesionMapper.delete(Wrappers.<NoduleLesionPO>lambdaQuery().eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
@@ -356,12 +356,12 @@ public class ComputeServiceImpl implements ComputeService {
     }
 
     private void updateComputeStatus(String computeSeriesId, String computeStatus, KeyaResponse computeResponse, String errorMsg) {
-        ComputeSeriesPO computeSeriesPO = UpdateEntity.of(ComputeSeriesPO.class);
-        computeSeriesPO.setComputeStatus(computeStatus);
-        computeSeriesPO.setComputeResponse(computeResponse == null ? null : JsonKit.toJsonString(computeResponse));
-        computeSeriesPO.setErrorMessage(errorMsg);
+        OldComputeSeriesPO oldComputeSeriesPO = UpdateEntity.of(OldComputeSeriesPO.class);
+        oldComputeSeriesPO.setComputeStatus(computeStatus);
+        oldComputeSeriesPO.setComputeResponse(computeResponse == null ? null : JsonKit.toJsonString(computeResponse));
+        oldComputeSeriesPO.setErrorMessage(errorMsg);
 
-        computeSeriesMapper.update(computeSeriesPO, Wrappers.<ComputeSeriesPO>lambdaQuery()
-                .eq(ComputeSeriesPO::getId, computeSeriesId));
+        oldComputeSeriesMapper.update(oldComputeSeriesPO, Wrappers.<OldComputeSeriesPO>lambdaQuery()
+                .eq(OldComputeSeriesPO::getId, computeSeriesId));
     }
 }

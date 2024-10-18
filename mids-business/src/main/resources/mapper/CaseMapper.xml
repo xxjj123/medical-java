@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yinhai.mids.business.mapper.CaseMapper">
+    <resultMap id="CaseStudyVO" type="com.yinhai.mids.business.entity.vo.CaseStudyVO">
+        <id column="study_id" jdbcType="VARCHAR" property="studyId"/>
+        <result column="study_instance_uid" jdbcType="VARCHAR" property="studyInstanceUid"/>
+        <result column="accession_number" jdbcType="VARCHAR" property="accessionNumber"/>
+        <result column="patient_id" jdbcType="VARCHAR" property="patientId"/>
+        <result column="patient_name" jdbcType="VARCHAR" property="patientName"/>
+        <result column="patient_age" jdbcType="VARCHAR" property="patientAge"/>
+        <result column="study_date_and_time" jdbcType="DATE" property="studyDateAndTime"/>
+        <result column="study_description" jdbcType="VARCHAR" property="studyDescription"/>
+        <result column="my_favorite" jdbcType="BOOLEAN" property="myFavorite"/>
+    </resultMap>
+
+    <resultMap id="CaseSeriesVO" type="com.yinhai.mids.business.entity.vo.CaseSeriesVO">
+        <id column="compute_series_id" jdbcType="VARCHAR" property="computeSeriesId"/>
+        <result column="series_id" jdbcType="VARCHAR" property="seriesId"/>
+        <result column="study_id" jdbcType="VARCHAR" property="studyId"/>
+        <result column="series_number" jdbcType="VARCHAR" property="seriesNumber"/>
+        <result column="series_description" jdbcType="VARCHAR" property="seriesDescription"/>
+        <result column="image_count" jdbcType="INTEGER" property="imageCount"/>
+        <result column="compute_type" jdbcType="INTEGER" property="computeType"/>
+        <result column="compute_status" jdbcType="INTEGER" property="computeStatus"/>
+        <result column="operate_status" jdbcType="INTEGER" property="operateStatus"/>
+        <result column="operate_doctor_user_id" jdbcType="VARCHAR" property="operateDoctorUserId"/>
+    </resultMap>
+
+    <select id="queryCaseStudies" resultMap="CaseStudyVO">
+        SELECT a.study_id,
+               a.study_instance_uid,
+               a.accession_number,
+               a.patient_id,
+               a.patient_name,
+               a.patient_age,
+               a.study_date_and_time,
+        <choose>
+            <when test="query.myFavorite != null and query.myFavorite == true">
+                1 AS my_favorite,
+            </when>
+            <when test="query.myFavorite != null and query.myFavorite == false">
+                0 AS my_favorite,
+            </when>
+            <otherwise>
+                b.user_id IS NOT NULL AS my_favorite,
+            </otherwise>
+        </choose>
+        a.study_description
+        FROM tb_study_info a
+        <if test="query.myFavorite == null">
+            LEFT JOIN tb_favorite b
+                      ON a.study_id = b.study_id AND b.user_id = #{userId,jdbcType=VARCHAR}
+        </if>
+        <where>
+            EXISTS(SELECT 1 FROM tb_compute_series_info WHERE study_id = a.study_id)
+            <if test="query.startDate != null">
+                AND a.study_date_and_time >= #{query.startDate, jdbcType=DATE}
+            </if>
+            <if test="query.endDate != null">
+                AND a.study_date_and_time &lt;= #{query.endDate,jdbcType=DATE}
+            </if>
+            <if test="query.accessionNumber != null and query.accessionNumber != ''">
+                AND a.accession_number = #{query.accessionNumber,jdbcType=VARCHAR}
+            </if>
+            <if test="query.patientId != null and query.patientId != ''">
+                AND a.patient_id = #{query.patientId,jdbcType=VARCHAR}
+            </if>
+            <if test="query.patientName != null and query.patientName != ''">
+                AND a.patient_name = #{query.patientName,jdbcType=VARCHAR}
+            </if>
+            <if test="query.computeType != null or query.computeStatus != null">
+                AND EXISTS (SELECT 1
+                            FROM tb_compute_series_info
+                WHERE study_id = a.study_id
+                <if test="query.computeType != null">
+                    AND compute_type = #{query.computeType,jdbcType=INTEGER}
+                </if>
+                <if test="query.computeStatus != null">
+                    AND compute_status = #{query.computeStatus,jdbcType=INTEGER}
+                </if>)
+            </if>
+            <choose>
+                <when test="query.myFavorite != null and query.myFavorite == true">
+                    AND EXISTS (SELECT 1
+                                FROM tb_favorite
+                                WHERE study_id = a.study_id
+                                  AND user_id = #{userId,jdbcType=VARCHAR})
+                </when>
+                <when test="query.myFavorite != null and query.myFavorite == false">
+                    AND NOT EXISTS (SELECT 1
+                                    FROM tb_favorite
+                                    WHERE study_id = a.study_id
+                                      AND user_id = #{userId,jdbcType=VARCHAR})
+                </when>
+            </choose>
+        </where>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <select id="queryCaseSeries" resultMap="CaseSeriesVO">
+        SELECT a.compute_series_id,
+               a.series_id,
+               a.study_id,
+               b.series_number,
+               b.series_description,
+               b.image_count,
+               a.compute_type,
+               a.compute_status,
+               a.operate_status,
+               a.operate_doctor_user_id
+        FROM tb_compute_series_info a
+                 JOIN tb_series_info b ON a.series_id = b.series_id
+        <where>
+            a.study_id IN
+            <foreach item="studyId" collection="studyIds" open="(" separator="," close=")">
+                #{studyId,jdbcType=VARCHAR}
+            </foreach>
+            <if test="computeStatus != null">
+                AND a.compute_status = #{computeStatus,jdbcType=INTEGER}
+            </if>
+            <if test="computeType != null">
+                AND a.compute_type = #{computeType,jdbcType=INTEGER}
+            </if>
+        </where>
+    </select>
+</mapper>

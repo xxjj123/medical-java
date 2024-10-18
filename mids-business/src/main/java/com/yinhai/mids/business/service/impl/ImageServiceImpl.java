@@ -39,7 +39,7 @@ public class ImageServiceImpl implements ImageService {
     private SeriesMapper seriesMapper;
 
     @Resource
-    private ComputeSeriesMapper computeSeriesMapper;
+    private OldComputeSeriesMapper oldComputeSeriesMapper;
 
     @Resource
     private VtiMapper vtiMapper;
@@ -53,13 +53,13 @@ public class ImageServiceImpl implements ImageService {
     @Override
     @SuppressWarnings("unchecked")
     public ImageInitInfoVO queryInitInfo(String computeSeriesId) {
-        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
-                .select(ComputeSeriesPO::getStudyId, ComputeSeriesPO::getSeriesId)
-                .eq(ComputeSeriesPO::getId, computeSeriesId));
-        AppAssert.notNull(computeSeriesPO, "该序列不存在！");
-        SeriesPO seriesPO = seriesMapper.selectById(computeSeriesPO.getSeriesId());
+        OldComputeSeriesPO oldComputeSeriesPO = oldComputeSeriesMapper.selectOne(Wrappers.<OldComputeSeriesPO>lambdaQuery()
+                .select(OldComputeSeriesPO::getStudyId, OldComputeSeriesPO::getSeriesId)
+                .eq(OldComputeSeriesPO::getId, computeSeriesId));
+        AppAssert.notNull(oldComputeSeriesPO, "该序列不存在！");
+        SeriesPO seriesPO = seriesMapper.selectById(oldComputeSeriesPO.getSeriesId());
         AppAssert.notNull(seriesPO, "该序列不存在");
-        StudyPO studyPO = studyMapper.selectById(computeSeriesPO.getStudyId());
+        StudyPO studyPO = studyMapper.selectById(oldComputeSeriesPO.getStudyId());
         AppAssert.notNull(studyPO, "该序列对应检查不存在！");
 
         String mprStatus = seriesPO.getMprStatus();

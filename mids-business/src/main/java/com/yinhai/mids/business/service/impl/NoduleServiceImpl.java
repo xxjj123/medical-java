@@ -17,7 +17,7 @@ import com.yinhai.mids.business.entity.vo.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.NoduleService;
 import com.yinhai.mids.common.exception.AppAssert;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +40,7 @@ public class NoduleServiceImpl implements NoduleService {
     private SeriesMapper seriesMapper;
 
     @Resource
-    private ComputeSeriesMapper computeSeriesMapper;
+    private OldComputeSeriesMapper oldComputeSeriesMapper;
 
     @Resource
     private DiagnosisMapper diagnosisMapper;
@@ -138,7 +138,7 @@ public class NoduleServiceImpl implements NoduleService {
         if (noduleOperatePO.getMajorAxisScopeFilter() != null) {
             noduleOperatePO.setMajorAxisSelectFilter(null);
         }
-        noduleOperatePO.setOperateTime(DbKit.now());
+        noduleOperatePO.setOperateTime(DbClock.now());
         NoduleOperatePO one = noduleOperateMapper.selectOne(Wrappers.<NoduleOperatePO>lambdaQuery()
                 .select(NoduleOperatePO::getId)
                 .eq(NoduleOperatePO::getComputeSeriesId, noduleOperateVO.getComputeSeriesId()));
@@ -169,10 +169,10 @@ public class NoduleServiceImpl implements NoduleService {
     @Override
     @SuppressWarnings("unchecked")
     public NoduleVO queryNodule(String computeSeriesId) {
-        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectById(computeSeriesId);
-        AppAssert.notNull(computeSeriesPO, "该序列不存在！");
-        AppAssert.equals(computeSeriesPO.getComputeStatus(), ComputeStatus.COMPUTE_SUCCESS, "当前序列计算状态非成功状态，无法查看结节情况");
-        SeriesPO seriesPO = seriesMapper.selectById(computeSeriesPO.getSeriesId());
+        OldComputeSeriesPO oldComputeSeriesPO = oldComputeSeriesMapper.selectById(computeSeriesId);
+        AppAssert.notNull(oldComputeSeriesPO, "该序列不存在！");
+        AppAssert.equals(oldComputeSeriesPO.getComputeStatus(), ComputeStatus.COMPUTE_SUCCESS, "当前序列计算状态非成功状态，无法查看结节情况");
+        SeriesPO seriesPO = seriesMapper.selectById(oldComputeSeriesPO.getSeriesId());
         AppAssert.notNull(seriesPO, "该序列不存在！");
 
         DiagnosisPO diagnosisPO = diagnosisMapper.selectOne(
@@ -230,14 +230,14 @@ public class NoduleServiceImpl implements NoduleService {
                     .eq(ManualDiagnosisPO::getId, one.getId())
                     .set(ManualDiagnosisPO::getDiagnosis, manualDiagnosisParam.getDiagnosis())
                     .set(ManualDiagnosisPO::getFinding, manualDiagnosisParam.getFinding())
-                    .set(ManualDiagnosisPO::getDiagnoseTime, DbKit.now()));
+                    .set(ManualDiagnosisPO::getDiagnoseTime, DbClock.now()));
         } else {
             ManualDiagnosisPO manualDiagnosisPO = new ManualDiagnosisPO();
             manualDiagnosisPO.setComputeSeriesId(computeSeriesId);
             manualDiagnosisPO.setType("nodule");
             manualDiagnosisPO.setDiagnosis(manualDiagnosisParam.getDiagnosis());
             manualDiagnosisPO.setFinding(manualDiagnosisParam.getFinding());
-            manualDiagnosisPO.setDiagnoseTime(DbKit.now());
+            manualDiagnosisPO.setDiagnoseTime(DbClock.now());
             manualDiagnosisMapper.insert(manualDiagnosisPO);
         }
     }
@@ -341,11 +341,11 @@ public class NoduleServiceImpl implements NoduleService {
 
     @SuppressWarnings("unchecked")
     private ReportCommon queryReportCommon(String computeSeriesId) {
-        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
-                .select(ComputeSeriesPO::getStudyId)
-                .eq(ComputeSeriesPO::getId, computeSeriesId));
-        AppAssert.notNull(computeSeriesPO, "该序列不存在！");
-        StudyPO studyPO = studyMapper.selectById(computeSeriesPO.getStudyId());
+        OldComputeSeriesPO oldComputeSeriesPO = oldComputeSeriesMapper.selectOne(Wrappers.<OldComputeSeriesPO>lambdaQuery()
+                .select(OldComputeSeriesPO::getStudyId)
+                .eq(OldComputeSeriesPO::getId, computeSeriesId));
+        AppAssert.notNull(oldComputeSeriesPO, "该序列不存在！");
+        StudyPO studyPO = studyMapper.selectById(oldComputeSeriesPO.getStudyId());
         AppAssert.notNull(studyPO, "该序列对应检查不存在！");
 
         ManualDiagnosisPO manualDiagnosisPO = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()
@@ -370,7 +370,7 @@ public class NoduleServiceImpl implements NoduleService {
         reportCommon.setExaminedName("胸部CT平扫");
         reportCommon.setFinding(manualDiagnosisPO.getFinding());
         reportCommon.setDiagnosis(manualDiagnosisPO.getDiagnosis());
-        reportCommon.setReportDate(DbKit.now());
+        reportCommon.setReportDate(DbClock.now());
         reportCommon.setReportDoctor("");
         reportCommon.setAuditDoctor("");
         return reportCommon;

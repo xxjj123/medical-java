@@ -23,31 +23,31 @@ public class SingleImageInfoVO {
     /**
      * 切片厚度 SliceThickness
      */
-    @Schema(description="切片厚度 SliceThickness")
+    @Schema(description = "切片厚度 SliceThickness")
     private String sliceThickness;
 
     /**
      * KVP
      */
-    @Schema(description="KVP")
+    @Schema(description = "KVP")
     private String kvp;
 
     /**
      * PixelSpacing
      */
-    @Schema(description="PixelSpacing 俩值逗号拼接")
+    @Schema(description = "PixelSpacing 俩值逗号拼接")
     private String pixelSpacing;
 
     /**
      * InstitutionName
      */
-    @Schema(description="InstitutionName")
+    @Schema(description = "InstitutionName")
     private String institutionName;
 
     /**
      * Manufacturer
      */
-    @Schema(description="Manufacturer")
+    @Schema(description = "Manufacturer")
     private String manufacturer;
 
     /**

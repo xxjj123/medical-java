@@ -29,7 +29,7 @@ import com.yinhai.mids.business.util.DicomUtil;
 import com.yinhai.mids.business.util.TransactionKit;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.exception.AppAssert;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.PageKit;
 import com.yinhai.mids.common.util.SecurityKit;
 import com.yinhai.ta404.core.exception.AppException;
@@ -67,7 +67,7 @@ public class StudyServiceImpl implements StudyService {
     private InstanceMapper instanceMapper;
 
     @Resource
-    private ComputeSeriesMapper computeSeriesMapper;
+    private OldComputeSeriesMapper oldComputeSeriesMapper;
 
     @Resource
     private FavoriteMapper favoriteMapper;
@@ -94,9 +94,9 @@ public class StudyServiceImpl implements StudyService {
             List<StudyPO> studyPOList = saveStudy(dicomInfoList);
             List<SeriesPO> seriesPOList = saveSeries(dicomInfoList, studyPOList);
             saveInstance(dicomInfoList, seriesPOList);
-            List<ComputeSeriesPO> computeSeriesPOList = saveComputeSeries(seriesPOList, algorithmParamList);
+            List<OldComputeSeriesPO> oldComputeSeriesPOList = saveComputeSeries(seriesPOList, algorithmParamList);
             TransactionKit.doAfterTxCommit(() -> {
-                computeSeriesPOList.forEach(e -> computeService.lockedAsyncApplyCompute(e.getId()));
+                oldComputeSeriesPOList.forEach(e -> computeService.lockedAsyncApplyCompute(e.getId()));
                 seriesPOList.forEach(e -> mprService.lockedAsyncDoMprAnalyse(e.getId()));
             });
         } finally {
@@ -118,7 +118,7 @@ public class StudyServiceImpl implements StudyService {
             BeanUtil.copyProperties(dicomInfo, studyPO);
             studyPO.setPrintStatus(PrintStatus.NOT_PRINT);
             studyPO.setPushStatus(PushStatus.NOT_PUSH);
-            studyPO.setUploadTime(DbKit.now());
+            studyPO.setUploadTime(DbClock.now());
             studyPO.setUploadUserId(SecurityKit.currentUserId());
             studyPOList.add(studyPO);
         }
@@ -199,22 +199,22 @@ public class StudyServiceImpl implements StudyService {
      *
      * @param seriesPOList       序列列表
      * @param algorithmParamList 算法配置
-     * @return {@link List }<{@link ComputeSeriesPO }>
+     * @return {@link List }<{@link OldComputeSeriesPO }>
      * @author zhuhs 2024/07/11 10:56
      */
-    private List<ComputeSeriesPO> saveComputeSeries(List<SeriesPO> seriesPOList, List<AlgorithmParam> algorithmParamList) {
-        List<ComputeSeriesPO> computeSeriesPOList = new ArrayList<>();
+    private List<OldComputeSeriesPO> saveComputeSeries(List<SeriesPO> seriesPOList, List<AlgorithmParam> algorithmParamList) {
+        List<OldComputeSeriesPO> oldComputeSeriesPOList = new ArrayList<>();
 
         if (CollUtil.isEmpty(algorithmParamList) || CollUtil.isEmpty(algorithmParamList.get(0).getAlgorithmTypeList())) {
             for (SeriesPO seriesPO : seriesPOList) {
-                ComputeSeriesPO computeSeriesPO = new ComputeSeriesPO();
-                computeSeriesPO.setStudyId(seriesPO.getStudyId());
-                computeSeriesPO.setSeriesId(seriesPO.getId());
-                computeSeriesPO.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
-                computeSeriesPOList.add(computeSeriesPO);
+                OldComputeSeriesPO oldComputeSeriesPO = new OldComputeSeriesPO();
+                oldComputeSeriesPO.setStudyId(seriesPO.getStudyId());
+                oldComputeSeriesPO.setSeriesId(seriesPO.getId());
+                oldComputeSeriesPO.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
+                oldComputeSeriesPOList.add(oldComputeSeriesPO);
             }
-            computeSeriesMapper.insertBatch(computeSeriesPOList);
-            return computeSeriesPOList;
+            oldComputeSeriesMapper.insertBatch(oldComputeSeriesPOList);
+            return oldComputeSeriesPOList;
         }
 
         for (SeriesPO seriesPO : seriesPOList) {
@@ -223,18 +223,18 @@ public class StudyServiceImpl implements StudyService {
                     continue;
                 }
                 for (String algorithmType : algorithmParam.getAlgorithmTypeList()) {
-                    ComputeSeriesPO computeSeriesPO = new ComputeSeriesPO();
-                    computeSeriesPO.setStudyId(seriesPO.getStudyId());
-                    computeSeriesPO.setSeriesId(seriesPO.getId());
-                    computeSeriesPO.setAlgorithmType(algorithmType);
-                    computeSeriesPO.setApplyId(IdUtil.fastSimpleUUID());
-                    computeSeriesPO.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
-                    computeSeriesPOList.add(computeSeriesPO);
+                    OldComputeSeriesPO oldComputeSeriesPO = new OldComputeSeriesPO();
+                    oldComputeSeriesPO.setStudyId(seriesPO.getStudyId());
+                    oldComputeSeriesPO.setSeriesId(seriesPO.getId());
+                    oldComputeSeriesPO.setAlgorithmType(algorithmType);
+                    oldComputeSeriesPO.setApplyId(IdUtil.fastSimpleUUID());
+                    oldComputeSeriesPO.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
+                    oldComputeSeriesPOList.add(oldComputeSeriesPO);
                 }
             }
         }
-        computeSeriesMapper.insertBatch(computeSeriesPOList);
-        return computeSeriesPOList;
+        oldComputeSeriesMapper.insertBatch(oldComputeSeriesPOList);
+        return oldComputeSeriesPOList;
     }
 
     /**
@@ -312,10 +312,10 @@ public class StudyServiceImpl implements StudyService {
 
     @Override
     public void deleteComputeSeries(String computeSeriesId) {
-        boolean seriesExists = computeSeriesMapper.exists(
-                Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getId, computeSeriesId));
+        boolean seriesExists = oldComputeSeriesMapper.exists(
+                Wrappers.<OldComputeSeriesPO>lambdaQuery().eq(OldComputeSeriesPO::getId, computeSeriesId));
         AppAssert.isTrue(seriesExists, "该序列不存在！");
-        int deleted = computeSeriesMapper.deleteById(computeSeriesId);
+        int deleted = oldComputeSeriesMapper.deleteById(computeSeriesId);
         AppAssert.isTrue(deleted == 1, "删除序列失败");
     }
 

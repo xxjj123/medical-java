@@ -9,10 +9,9 @@ import com.yinhai.mids.business.entity.po.SeriesPO;
 import com.yinhai.mids.business.mapper.SeriesMapper;
 import com.yinhai.mids.business.service.MprService;
 import com.yinhai.mids.common.core.PageRequest;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.PageKit;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -22,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @author zhuhs
  * @date 2024/9/6
  */
-@Component
+// @Component
 public class MprAnalyseJob {
 
     private static final Log log = LogFactory.get();
@@ -40,7 +39,7 @@ public class MprAnalyseJob {
         List<SeriesPO> seriesPOList = seriesMapper.selectList(Wrappers.<SeriesPO>lambdaQuery().select(SeriesPO::getId)
                 .and(q -> q.eq(SeriesPO::getMprStatus, ComputeStatus.WAIT_COMPUTE).or(w -> w
                         .eq(SeriesPO::getMprStatus, ComputeStatus.IN_COMPUTE)
-                        .lt(SeriesPO::getMprStartTime, DateUtil.offsetMinute(DbKit.now(), -8))))
+                        .lt(SeriesPO::getMprStartTime, DateUtil.offsetMinute(DbClock.now(), -8))))
                 .orderByAsc(SeriesPO::getCreateTime));
         seriesPOList.forEach(e -> log.warn(e.getId()));
         seriesPOList.forEach(e -> mprService.lockedAsyncDoMprAnalyse(e.getId()));

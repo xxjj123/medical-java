@@ -9,8 +9,8 @@ import com.yinhai.mids.business.entity.dto.StudyPageQuery;
 import com.yinhai.mids.business.entity.vo.StudyPageVO;
 import com.yinhai.mids.business.service.StudyService;
 import com.yinhai.mids.common.core.PageRequest;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.JsonKit;
-import com.yinhai.mids.common.util.DbKit;
 import com.yinhai.mids.common.util.RestServiceKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
@@ -59,7 +59,7 @@ public class StudyController {
             throw new AppException("解析算法设置异常！");
         }
         studyService.uploadDicom(dicom, algorithmParamList);
-        RestServiceKit.setData("uploadTime", DateUtil.formatDateTime(DbKit.now()));
+        RestServiceKit.setData("uploadTime", DateUtil.formatDateTime(DbClock.now()));
     }
 
     @Operation(summary = "分页查询检查")

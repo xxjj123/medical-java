@@ -11,4 +11,6 @@ public interface ComputeSeriesService {
     void reCompute(String computeSeriesId);
 
     void onComputePush(Map<String, Object> pushParamMap);
+
+    void refreshComputeStatus(String computeSeriesId);
 }

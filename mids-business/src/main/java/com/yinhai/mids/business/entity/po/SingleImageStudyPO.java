@@ -7,7 +7,6 @@ import lombok.Data;
 import java.util.Date;
 
 
-
 /**
  * 检查
  *
@@ -85,35 +84,35 @@ public class SingleImageStudyPO {
      * 切片厚度 SliceThickness
      */
     @TableField(value = "slice_thickness")
-    @Schema(description="切片厚度 SliceThickness")
+    @Schema(description = "切片厚度 SliceThickness")
     private String sliceThickness;
 
     /**
      * KVP
      */
     @TableField(value = "kvp")
-    @Schema(description="KVP")
+    @Schema(description = "KVP")
     private String kvp;
 
     /**
      * PixelSpacing
      */
     @TableField(value = "pixel_spacing")
-    @Schema(description="PixelSpacing")
+    @Schema(description = "PixelSpacing")
     private String pixelSpacing;
 
     /**
      * InstitutionName
      */
     @TableField(value = "institution_name")
-    @Schema(description="InstitutionName")
+    @Schema(description = "InstitutionName")
     private String institutionName;
 
     /**
      * Manufacturer
      */
     @TableField(value = "manufacturer")
-    @Schema(description="Manufacturer")
+    @Schema(description = "Manufacturer")
     private String manufacturer;
 
     /**
