@@ -40,24 +40,25 @@ public class SingleImageServiceImpl implements SingleImageService {
     private static final Log log = LogFactory.get();
 
     @Resource
-    private FileStoreService  fileStoreService;
+    private FileStoreService fileStoreService;
 
     @Resource
     private SingleImageStudyMapper singleImageStudyMapper;
+
     @Override
     public void uploadDicom(MultipartFile dicomZip) throws IOException {
         File unzippedDicomFiles = unzipDicomZip(dicomZip);
         List<File> files = FileUtil.loopFiles(unzippedDicomFiles.getAbsolutePath());
 
-        if(files.size() != 1){
+        if (files.size() != 1) {
             throw new AppException("上传的不是单张文件");
         }
-        File unzippedDicomFile =  files.get(0);
+        File unzippedDicomFile = files.get(0);
 
-        AppAssert.isTrue(DicomUtil.isDicom(unzippedDicomFile),"上传的不是dicom文件");
+        AppAssert.isTrue(DicomUtil.isDicom(unzippedDicomFile), "上传的不是dicom文件");
 
-        try{
-            DicomInfo dicomInfo  = DicomUtil.readDicomInfo(unzippedDicomFile);
+        try {
+            DicomInfo dicomInfo = DicomUtil.readDicomInfo(unzippedDicomFile);
             System.out.println(dicomInfo);
             AppAssert.notNull(dicomInfo, "未读取到dicom文件信息");
 
@@ -68,16 +69,16 @@ public class SingleImageServiceImpl implements SingleImageService {
 
             String access_path = fileStoreService.upload(new ContextFSObject<>(dicomZip)).getAccessPath();
             singleImageStudyPO.setAccessPath(access_path);
-            singleImageStudyMapper.insert( singleImageStudyPO);
+            singleImageStudyMapper.insert(singleImageStudyPO);
 
-        }finally{
+        } finally {
             FileUtil.del(unzippedDicomFile);
         }
     }
 
     @Override
     public SingleImageInfoVO queryInitInfo(String studyid) {
-        SingleImageStudyPO singleImageStudyPO=  singleImageStudyMapper.selectOne(Wrappers.<SingleImageStudyPO>lambdaQuery()
+        SingleImageStudyPO singleImageStudyPO = singleImageStudyMapper.selectOne(Wrappers.<SingleImageStudyPO>lambdaQuery()
                 .eq(SingleImageStudyPO::getId, studyid));
         SingleImageInfoVO singleImageInfoVO = new SingleImageInfoVO();
         singleImageInfoVO.setSeriesInstanceUid(singleImageStudyPO.getStudyInstanceUid());
@@ -97,7 +98,7 @@ public class SingleImageServiceImpl implements SingleImageService {
 
     @Override
     public void downloadSlice(String studyId, HttpServletResponse response) {
-        SingleImageStudyPO singleImageStudyPO=  singleImageStudyMapper.selectOne(Wrappers.<SingleImageStudyPO>lambdaQuery()
+        SingleImageStudyPO singleImageStudyPO = singleImageStudyMapper.selectOne(Wrappers.<SingleImageStudyPO>lambdaQuery()
                 .eq(SingleImageStudyPO::getId, studyId));
         AppAssert.notNull(singleImageStudyPO, "未找到影像");
         try (InputStream in = fileStoreService.download(singleImageStudyPO.getAccessPath())) {

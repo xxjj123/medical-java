@@ -24,11 +24,11 @@ public class MprTaskPO {
     private String mprTaskId;
 
     /**
-     * 计算任务ID
+     * 计算序列ID
      */
-    @TableField(value = "compute_task_id")
-    @Schema(description = "计算任务ID")
-    private String computeTaskId;
+    @TableField(value = "compute_series_id")
+    @Schema(description = "计算序列ID")
+    private String computeSeriesId;
 
     /**
      * 任务状态 0:等待发起 1:等待推送 2:完成 -1:异常

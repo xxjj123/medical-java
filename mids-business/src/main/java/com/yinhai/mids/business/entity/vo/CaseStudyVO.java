@@ -12,12 +12,11 @@ import java.util.List;
  */
 @Data
 public class CaseStudyVO {
-
     /**
      * 检查研究主键
      */
-    @Schema(description = "检查信息ID")
-    private String studyInfoId;
+    @Schema(description = "检查ID")
+    private String studyId;
 
     /**
      * StudyInstanceUID 研究实例UID
@@ -97,5 +96,5 @@ public class CaseStudyVO {
     @Schema(description = "操作医师")
     private String operateDoctorUserId;
 
-    List<CaseSeriesVO> caseSeriesList;
+    private List<CaseSeriesVO> caseSeriesList;
 }

@@ -19,16 +19,16 @@ public class KeyaApplyToDoTask {
     private String applyTaskId;
 
     /**
-     * 计算任务ID
+     * 计算序列ID
      */
-    @Schema(description = "计算任务ID")
-    private String computeTaskId;
+    @Schema(description = "计算序列ID")
+    private String computeSeriesId;
 
     /**
-     * 序列信息ID
+     * 序列ID
      */
-    @Schema(description = "序列信息ID")
-    private String seriesInfoId;
+    @Schema(description = "序列ID")
+    private String seriesId;
 
     /**
      * StudyInstanceUID 研究实例UID

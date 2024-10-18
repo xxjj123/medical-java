@@ -24,11 +24,11 @@ public class KeyaQueryTaskPO {
     private String queryTaskId;
 
     /**
-     * 计算任务ID
+     * 计算序列ID
      */
-    @TableField(value = "compute_task_id")
-    @Schema(description = "计算任务ID")
-    private String computeTaskId;
+    @TableField(value = "compute_series_id")
+    @Schema(description = "计算序列ID")
+    private String computeSeriesId;
 
     /**
      * 申请任务ID

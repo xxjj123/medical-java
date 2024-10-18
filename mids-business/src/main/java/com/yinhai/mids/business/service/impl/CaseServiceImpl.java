@@ -70,7 +70,7 @@ public class CaseServiceImpl implements CaseService {
     private InstanceInfoMapper instanceInfoMapper;
 
     @Resource
-    private ComputeTaskMapper computeTaskMapper;
+    private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
     private KeyaApplyTaskMapper keyaApplyTaskMapper;
@@ -101,7 +101,7 @@ public class CaseServiceImpl implements CaseService {
             saveStudyInfo(dicomInstanceList);
             saveSeriesInfo(dicomInstanceList);
             saveInstanceInfo(dicomInstanceList);
-            createSubTask(createComputeTask(dicomInstanceList));
+            createSubTask(createComputeSeries(dicomInstanceList));
         } finally {
             FileUtil.del(caseFileTempDir);
         }
@@ -119,7 +119,7 @@ public class CaseServiceImpl implements CaseService {
     }
 
     /**
-     * 保存检查信息
+     * 保存检查
      */
     private void saveStudyInfo(List<DicomInstance> dicomInstanceList) {
         List<StudyInfoPO> studyInfoList = new ArrayList<>();
@@ -134,12 +134,12 @@ public class CaseServiceImpl implements CaseService {
             studyInfoMapper.insertBatch(studyInfoList);
         }
         for (StudyInfoPO studyInfo : studyInfoList) {
-            group.get(studyInfo.getStudyInstanceUid()).forEach(e -> e.setStudyInfoId(studyInfo.getStudyInfoId()));
+            group.get(studyInfo.getStudyInstanceUid()).forEach(e -> e.setStudyId(studyInfo.getStudyId()));
         }
     }
 
     /**
-     * 保存序列信息
+     * 保存序列
      */
     private void saveSeriesInfo(List<DicomInstance> dicomInstanceList) {
         List<SeriesInfoPO> seriesInfoList = new ArrayList<>();
@@ -156,7 +156,7 @@ public class CaseServiceImpl implements CaseService {
             seriesInfoMapper.insertBatch(seriesInfoList);
         }
         for (SeriesInfoPO seriesInfo : seriesInfoList) {
-            group.get(seriesInfo.getSeriesInstanceUid()).forEach(e -> e.setSeriesInfoId(seriesInfo.getSeriesInfoId()));
+            group.get(seriesInfo.getSeriesInstanceUid()).forEach(e -> e.setSeriesId(seriesInfo.getSeriesId()));
         }
     }
 
@@ -188,55 +188,55 @@ public class CaseServiceImpl implements CaseService {
     }
 
     /**
-     * 创建计算任务
+     * 创建计算序列
      */
-    private List<ComputeTaskPO> createComputeTask(List<DicomInstance> dicomInstanceList) {
+    private List<ComputeSeriesPO> createComputeSeries(List<DicomInstance> dicomInstanceList) {
         // 判断计算类型，该判断应用独立的模块根据DICOM信息自动分析出当前影像能够使用哪些诊断
         // 目前暂时以只有1个dicom为脊柱侧弯，否则为肺部诊断
-        List<ComputeTaskPO> computeTaskList = new ArrayList<>();
+        List<ComputeSeriesPO> computeSeriesList = new ArrayList<>();
         if (dicomInstanceList.size() == 1) {
             DicomInstance dicomInstance = dicomInstanceList.get(0);
-            ComputeTaskPO computeTask = new ComputeTaskPO();
-            computeTask.setCaseId(dicomInstance.getCaseId());
-            computeTask.setStudyInfoId(dicomInstance.getStudyInfoId());
-            computeTask.setSeriesInfoId(dicomInstance.getSeriesInfoId());
-            computeTask.setComputeType(ComputeType.SPINE);
-            computeTask.setComputeStatus(Integer.valueOf(ComputeStatus.WAIT_COMPUTE));
-            computeTaskMapper.insert(computeTask);
-            computeTaskList.add(computeTask);
+            ComputeSeriesPO computeSeries = new ComputeSeriesPO();
+            computeSeries.setCaseId(dicomInstance.getCaseId());
+            computeSeries.setStudyId(dicomInstance.getStudyId());
+            computeSeries.setSeriesId(dicomInstance.getSeriesId());
+            computeSeries.setComputeType(ComputeType.SPINE);
+            computeSeries.setComputeStatus(Integer.valueOf(ComputeStatus.WAIT_COMPUTE));
+            computeSeriesMapper.insert(computeSeries);
+            computeSeriesList.add(computeSeries);
         } else {
             Map<String, List<DicomInstance>> group = dicomInstanceList
                     .stream().collect(groupingBy(DicomInstance::getSeriesInstanceUid));
             for (List<DicomInstance> dicomInstances : group.values()) {
                 DicomInstance dicomInstance = dicomInstances.get(0);
-                ComputeTaskPO computeTask = new ComputeTaskPO();
-                computeTask.setCaseId(dicomInstance.getCaseId());
-                computeTask.setStudyInfoId(dicomInstance.getStudyInfoId());
-                computeTask.setSeriesInfoId(dicomInstance.getSeriesInfoId());
-                computeTask.setComputeType(ComputeType.LUNG);
-                computeTask.setComputeStatus(Integer.valueOf(ComputeStatus.WAIT_COMPUTE));
-                computeTaskList.add(computeTask);
+                ComputeSeriesPO computeSeries = new ComputeSeriesPO();
+                computeSeries.setCaseId(dicomInstance.getCaseId());
+                computeSeries.setStudyId(dicomInstance.getStudyId());
+                computeSeries.setSeriesId(dicomInstance.getSeriesId());
+                computeSeries.setComputeType(ComputeType.LUNG);
+                computeSeries.setComputeStatus(Integer.valueOf(ComputeStatus.WAIT_COMPUTE));
+                computeSeriesList.add(computeSeries);
             }
-            computeTaskMapper.insertBatch(computeTaskList);
+            computeSeriesMapper.insertBatch(computeSeriesList);
         }
-        return computeTaskList;
+        return computeSeriesList;
     }
 
     /**
      * 创建子任务
      */
-    private void createSubTask(List<ComputeTaskPO> computeTaskList) {
+    private void createSubTask(List<ComputeSeriesPO> computeSeriesList) {
         List<KeyaApplyTaskPO> keyaApplyTaskList = new ArrayList<>();
         List<MprTaskPO> mprTaskList = new ArrayList<>();
-        for (ComputeTaskPO computeTask : computeTaskList) {
-            if (computeTask.getComputeType() == 1) {
+        for (ComputeSeriesPO computeSeries : computeSeriesList) {
+            if (computeSeries.getComputeType() == 1) {
                 KeyaApplyTaskPO applyTask = new KeyaApplyTaskPO();
-                applyTask.setComputeTaskId(computeTask.getComputeTaskId());
+                applyTask.setComputeSeriesId(computeSeries.getComputeSeriesId());
                 applyTask.setTaskStatus(0);
                 keyaApplyTaskList.add(applyTask);
 
                 MprTaskPO mprTask = new MprTaskPO();
-                mprTask.setComputeTaskId(computeTask.getComputeTaskId());
+                mprTask.setComputeSeriesId(computeSeries.getComputeSeriesId());
                 mprTask.setTaskStatus(0);
                 mprTaskList.add(mprTask);
             }
@@ -268,13 +268,13 @@ public class CaseServiceImpl implements CaseService {
             return PageKit.finishPage(caseStudies);
         }
         // 先根据条件查询出检查，再由检查查询序列
-        List<String> studyInfoIds = caseStudies.stream().map(CaseStudyVO::getStudyInfoId).collect(toList());
+        List<String> studyIds = caseStudies.stream().map(CaseStudyVO::getStudyId).collect(toList());
         List<CaseSeriesVO> caseSeriesList = caseMapper.queryCaseSeries(
-                studyInfoIds, caseStudyQuery.getComputeType(), caseStudyQuery.getComputeStatus());
+                studyIds, caseStudyQuery.getComputeType(), caseStudyQuery.getComputeStatus());
         Map<String, List<CaseSeriesVO>> group = caseSeriesList
-                .stream().collect(groupingBy(CaseSeriesVO::getStudyInfoId));
+                .stream().collect(groupingBy(CaseSeriesVO::getStudyId));
         for (CaseStudyVO caseStudy : caseStudies) {
-            List<CaseSeriesVO> caseSeriesGroupList = group.get(caseStudy.getStudyInfoId());
+            List<CaseSeriesVO> caseSeriesGroupList = group.get(caseStudy.getStudyId());
             caseSeriesGroupList.forEach(caseSeries -> caseSeries.setMyFavorite(caseStudy.getMyFavorite()));
             caseStudy.setCaseSeriesList(caseSeriesGroupList);
             caseStudy.setSeriesCount(caseSeriesGroupList.size());
@@ -287,85 +287,85 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public void addFavorite(String studyInfoId) {
-        checkStudyInfoExists(studyInfoId);
+    public void addFavorite(String studyId) {
+        checkStudyInfoExists(studyId);
         String currentUserId = SecurityKit.currentUserId();
         boolean favoriteExists = favoriteMapper.exists(Wrappers.<FavoritePO>lambdaQuery()
-                .eq(FavoritePO::getStudyId, studyInfoId).eq(FavoritePO::getUserId, currentUserId));
+                .eq(FavoritePO::getStudyId, studyId).eq(FavoritePO::getUserId, currentUserId));
         AppAssert.isFalse(favoriteExists, "该检查已经收藏，无需重复收藏");
         FavoritePO favoritePO = new FavoritePO();
         favoritePO.setUserId(currentUserId);
-        favoritePO.setStudyId(studyInfoId);
+        favoritePO.setStudyId(studyId);
         int inserted = favoriteMapper.insert(favoritePO);
         AppAssert.isTrue(inserted == 1, "收藏失败");
     }
 
     @Override
-    public void removeFavorite(String studyInfoId) {
-        checkStudyInfoExists(studyInfoId);
+    public void removeFavorite(String studyId) {
+        checkStudyInfoExists(studyId);
         String currentUserId = SecurityKit.currentUserId();
         boolean favoriteExists = favoriteMapper.exists(Wrappers.<FavoritePO>lambdaQuery()
-                .eq(FavoritePO::getStudyId, studyInfoId).eq(FavoritePO::getUserId, currentUserId));
+                .eq(FavoritePO::getStudyId, studyId).eq(FavoritePO::getUserId, currentUserId));
         AppAssert.isTrue(favoriteExists, "该检查没有被收藏，不需要取消收藏");
         int deleted = favoriteMapper.delete(Wrappers.<FavoritePO>lambdaQuery()
-                .eq(FavoritePO::getStudyId, studyInfoId).eq(FavoritePO::getUserId, currentUserId));
+                .eq(FavoritePO::getStudyId, studyId).eq(FavoritePO::getUserId, currentUserId));
         AppAssert.isTrue(deleted > 0, "取消收藏失败");
     }
 
     @Override
-    public void deleteCaseStudy(String studyInfoId) {
-        checkStudyInfoExists(studyInfoId);
-        int deleted = studyInfoMapper.deleteById(studyInfoId);
+    public void deleteCaseStudy(String studyId) {
+        checkStudyInfoExists(studyId);
+        int deleted = studyInfoMapper.deleteById(studyId);
         AppAssert.isTrue(deleted == 1, "删除检查失败");
     }
 
     @Override
-    public void deleteCaseSeries(String computeTaskId) {
-        checkComputeTaskExists(computeTaskId);
-        int deleted = computeTaskMapper.deleteById(computeTaskId);
+    public void deleteCaseSeries(String computeSeriesId) {
+        checkComputeSeriesExists(computeSeriesId);
+        int deleted = computeSeriesMapper.deleteById(computeSeriesId);
         AppAssert.isTrue(deleted == 1, "删除序列失败");
     }
 
     @Override
-    public void reComputeStudy(String studyInfoId) {
-        checkStudyInfoExists(studyInfoId);
-        List<ComputeTaskPO> computeTaskList = computeTaskMapper.selectList(
-                Wrappers.<ComputeTaskPO>lambdaQuery().eq(ComputeTaskPO::getStudyInfoId, studyInfoId));
-        for (ComputeTaskPO computeTask : computeTaskList) {
-            if (computeTask.getComputeStatus() == 2) {
+    public void reComputeStudy(String studyId) {
+        checkStudyInfoExists(studyId);
+        List<ComputeSeriesPO> computeSeriesList = computeSeriesMapper.selectList(
+                Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getStudyId, studyId));
+        for (ComputeSeriesPO computeSeries : computeSeriesList) {
+            if (computeSeries.getComputeStatus() == 2) {
                 throw new AppException("存在计算中的序列，无法发起重新分析");
             }
         }
-        List<String> computeTaskIds = computeTaskList.stream().map(ComputeTaskPO::getComputeTaskId).collect(toList());
-        resetSubTasks(computeTaskIds);
+        List<String> computeSeriesIds = computeSeriesList.stream().map(ComputeSeriesPO::getComputeSeriesId).collect(toList());
+        resetSubTasks(computeSeriesIds);
     }
 
     @Override
-    public void reComputeSeries(String computeTaskId) {
-        checkComputeTaskExists(computeTaskId);
-        resetSubTasks(ListUtil.of(computeTaskId));
+    public void reComputeSeries(String computeSeriesId) {
+        checkComputeSeriesExists(computeSeriesId);
+        resetSubTasks(ListUtil.of(computeSeriesId));
     }
 
-    private void checkStudyInfoExists(String studyInfoId) {
+    private void checkStudyInfoExists(String studyId) {
         boolean studyExists = studyInfoMapper.exists(
-                Wrappers.<StudyInfoPO>lambdaQuery().eq(StudyInfoPO::getStudyInfoId, studyInfoId));
+                Wrappers.<StudyInfoPO>lambdaQuery().eq(StudyInfoPO::getStudyId, studyId));
         AppAssert.isTrue(studyExists, "该检查不存在！");
     }
 
-    private void checkComputeTaskExists(String computeTaskId) {
-        boolean taskExists = computeTaskMapper.exists(
-                Wrappers.<ComputeTaskPO>lambdaQuery().eq(ComputeTaskPO::getComputeTaskId, computeTaskId));
+    private void checkComputeSeriesExists(String computeSeriesId) {
+        boolean taskExists = computeSeriesMapper.exists(
+                Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getComputeSeriesId, computeSeriesId));
         AppAssert.isTrue(taskExists, "该序列不存在！");
     }
 
-    private void resetSubTasks(List<String> computeTaskIds) {
+    private void resetSubTasks(List<String> computeSeriesIds) {
         keyaApplyTaskMapper.update(new KeyaApplyTaskPO(), Wrappers.<KeyaApplyTaskPO>lambdaUpdate()
-                .in(KeyaApplyTaskPO::getComputeTaskId, computeTaskIds)
+                .in(KeyaApplyTaskPO::getComputeSeriesId, computeSeriesIds)
                 .set(KeyaApplyTaskPO::getTaskStatus, 0));
         keyaQueryTaskMapper.delete(
-                Wrappers.<KeyaQueryTaskPO>lambdaUpdate().in(KeyaQueryTaskPO::getComputeTaskId, computeTaskIds));
+                Wrappers.<KeyaQueryTaskPO>lambdaUpdate().in(KeyaQueryTaskPO::getComputeSeriesId, computeSeriesIds));
         mprTaskMapper.update(new MprTaskPO(), Wrappers.<MprTaskPO>lambdaUpdate()
-                .in(MprTaskPO::getComputeTaskId, computeTaskIds)
+                .in(MprTaskPO::getComputeSeriesId, computeSeriesIds)
                 .set(MprTaskPO::getTaskStatus, 0));
     }
 }

@@ -17,25 +17,25 @@ import java.util.Date;
 @TableName(value = "tb_instance_info")
 public class InstanceInfoPO {
     /**
-     * 实例信息ID
+     * 实例ID
      */
-    @TableId(value = "instance_info_id", type = IdType.ASSIGN_ID)
-    @Schema(description = "实例信息ID")
-    private String instanceInfoId;
+    @TableId(value = "instance_id", type = IdType.ASSIGN_ID)
+    @Schema(description = "实例ID")
+    private String instanceId;
 
     /**
-     * 检查信息ID
+     * 检查ID
      */
-    @TableField(value = "study_info_id")
-    @Schema(description = "检查信息ID")
-    private String studyInfoId;
+    @TableField(value = "study_id")
+    @Schema(description = "检查ID")
+    private String studyId;
 
     /**
-     * 序列信息ID
+     * 序列ID
      */
-    @TableField(value = "series_info_id")
-    @Schema(description = "序列信息ID")
-    private String seriesInfoId;
+    @TableField(value = "series_id")
+    @Schema(description = "序列ID")
+    private String seriesId;
 
     /**
      * StudyInstanceUID

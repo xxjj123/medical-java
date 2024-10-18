@@ -17,7 +17,7 @@ public interface CaseMapper extends SuperMapper<CasePO> {
 
     List<CaseStudyVO> queryCaseStudies(@Param("query") CaseStudyQuery caseStudyQuery, @Param("userId") String userId);
 
-    List<CaseSeriesVO> queryCaseSeries(@Param("studyInfoIds") List<String> studyInfoIds,
+    List<CaseSeriesVO> queryCaseSeries(@Param("studyIds") List<String> studyIds,
                                        @Param("computeType") Integer computeType,
                                        @Param("computeStatus") Integer computeStatus);
 }

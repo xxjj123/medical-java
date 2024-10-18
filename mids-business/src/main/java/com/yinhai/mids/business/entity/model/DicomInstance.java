@@ -19,20 +19,20 @@ public class DicomInstance extends DicomInfo {
     private String caseId;
 
     /**
-     * 检查信息ID
+     * 检查ID
      */
-    @Schema(description = "检查信息ID")
-    private String studyInfoId;
+    @Schema(description = "检查ID")
+    private String studyId;
 
     /**
-     * 序列信息ID
+     * 序列ID
      */
-    @Schema(description = "序列信息ID")
-    private String seriesInfoId;
+    @Schema(description = "序列ID")
+    private String seriesId;
 
     /**
-     * 实例信息ID
+     * 实例ID
      */
-    @Schema(description = "实例信息ID")
-    private String instanceInfoId;
+    @Schema(description = "实例ID")
+    private String instanceId;
 }

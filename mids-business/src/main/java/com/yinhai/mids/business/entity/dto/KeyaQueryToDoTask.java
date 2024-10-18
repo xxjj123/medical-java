@@ -25,10 +25,10 @@ public class KeyaQueryToDoTask {
     private String applyTaskId;
 
     /**
-     * 计算任务ID
+     * 计算序列ID
      */
-    @Schema(description = "计算任务ID")
-    private String computeTaskId;
+    @Schema(description = "计算序列ID")
+    private String computeSeriesId;
 
     /**
      * 申请编号

@@ -13,5 +13,5 @@ public interface DiagnoseService {
 
     InputStream downModel3d(String seriesId);
 
-    void onMprPush(MultipartFile vtiZip,MultipartFile glbZip,String computeSeriesId,String code,String message)  throws IOException;
+    void onMprPush(MultipartFile vtiZip, MultipartFile glbZip, String computeSeriesId, String code, String message) throws IOException;
 }

@@ -37,50 +37,52 @@ public class CaseController {
 
     @Operation(summary = "案例文件上传")
     @PostMapping("uploadCaseFile")
-    public void uploadCaseFile(@RequestPart("caseFile") @NotNull(message = "上传文件不能为空") MultipartFile caseFile) throws IOException {
+    public void uploadCaseFile(@RequestPart("caseFile")
+                               @NotNull(message = "上传文件不能为空") MultipartFile caseFile) throws IOException {
         caseService.createCase(caseFile);
         RestServiceKit.setData("uploadTime", DateUtil.formatDateTime(DbClock.now()));
     }
 
     @Operation(summary = "分页查询检查")
     @PostMapping("pageStudies")
-    public Page<CaseStudyVO> pageCaseStudies(@ParameterObject CaseStudyQuery caseStudyQuery, @ParameterObject PageRequest pageRequest) {
+    public Page<CaseStudyVO> pageCaseStudies(@ParameterObject CaseStudyQuery caseStudyQuery,
+                                             @ParameterObject PageRequest pageRequest) {
         return caseService.pageCaseStudies(caseStudyQuery, pageRequest);
     }
 
     @Operation(summary = "收藏")
     @PostMapping("addFavorite")
-    public void addFavorite(@RequestParam @NotBlank(message = "检查信息ID不能为空") String studyInfoId) {
-        caseService.addFavorite(studyInfoId);
+    public void addFavorite(@RequestParam @NotBlank(message = "检查ID不能为空") String studyId) {
+        caseService.addFavorite(studyId);
     }
 
     @Operation(summary = "取消收藏")
     @PostMapping("removeFavorite")
-    public void removeFavorite(@RequestParam @NotBlank(message = "检查信息ID不能为空") String studyInfoId) {
-        caseService.removeFavorite(studyInfoId);
+    public void removeFavorite(@RequestParam @NotBlank(message = "检查ID不能为空") String studyId) {
+        caseService.removeFavorite(studyId);
     }
 
     @Operation(summary = "删除检查")
     @PostMapping("deleteStudy")
-    public void deleteCaseStudy(@RequestParam @NotBlank(message = "检查ID不能为空") String studyInfoId) {
-        caseService.deleteCaseStudy(studyInfoId);
+    public void deleteCaseStudy(@RequestParam @NotBlank(message = "检查ID不能为空") String studyId) {
+        caseService.deleteCaseStudy(studyId);
     }
 
     @Operation(summary = "删除序列")
     @PostMapping("deleteSeries")
-    public void deleteCaseSeries(@RequestParam @NotBlank(message = "计算任务ID不能为空") String computeTaskId) {
-        caseService.deleteCaseSeries(computeTaskId);
+    public void deleteCaseSeries(@RequestParam @NotBlank(message = "计算序列ID不能为空") String computeSeriesId) {
+        caseService.deleteCaseSeries(computeSeriesId);
     }
 
     @Operation(summary = "重新分析检查")
     @PostMapping("reComputeStudy")
-    public void reComputeStudy(@RequestParam @NotBlank(message = "检查信息ID不能为空") String studyInfoId) {
-        caseService.reComputeStudy(studyInfoId);
+    public void reComputeStudy(@RequestParam @NotBlank(message = "检查ID不能为空") String studyId) {
+        caseService.reComputeStudy(studyId);
     }
 
     @Operation(summary = "重新分析序列")
     @PostMapping("reComputeSeries")
-    public void reComputeSeries(@RequestParam @NotBlank(message = "计算任务ID不能为空") String computeTaskId) {
-        caseService.reComputeSeries(computeTaskId);
+    public void reComputeSeries(@RequestParam @NotBlank(message = "计算序列ID不能为空") String computeSeriesId) {
+        caseService.reComputeSeries(computeSeriesId);
     }
 }

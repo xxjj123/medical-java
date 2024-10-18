@@ -12,16 +12,16 @@ import java.util.Date;
  * @author zhuhs
  * @date 2024/10/14
  */
-@Schema(description = "检查信息")
+@Schema(description = "检查")
 @Data
 @TableName(value = "tb_study_info")
 public class StudyInfoPO {
     /**
-     * 检查信息ID
+     * 检查ID
      */
-    @TableId(value = "study_info_id", type = IdType.ASSIGN_ID)
-    @Schema(description = "检查信息ID")
-    private String studyInfoId;
+    @TableId(value = "study_id", type = IdType.ASSIGN_ID)
+    @Schema(description = "检查ID")
+    private String studyId;
 
     /**
      * 案例ID

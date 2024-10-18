@@ -94,31 +94,31 @@ public class DicomInfo {
     /**
      * 切片厚度 SliceThickness
      */
-    @Schema(description="切片厚度 SliceThickness")
+    @Schema(description = "切片厚度 SliceThickness")
     private String sliceThickness;
 
     /**
      * KVP
      */
-    @Schema(description="KVP")
+    @Schema(description = "KVP")
     private String kvp;
 
     /**
      * PixelSpacing
      */
-    @Schema(description="PixelSpacing")
+    @Schema(description = "PixelSpacing")
     private String pixelSpacing;
 
     /**
      * InstitutionName
      */
-    @Schema(description="InstitutionName")
+    @Schema(description = "InstitutionName")
     private String institutionName;
 
     /**
      * Manufacturer
      */
-    @Schema(description="Manufacturer")
+    @Schema(description = "Manufacturer")
     private String manufacturer;
 
     /**

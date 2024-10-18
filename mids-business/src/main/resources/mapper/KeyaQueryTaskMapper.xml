@@ -4,7 +4,7 @@
     <resultMap id="toDoTask" type="com.yinhai.mids.business.entity.dto.KeyaQueryToDoTask">
         <id column="query_task_id" jdbcType="VARCHAR" property="queryTaskId"/>
         <result column="apply_task_id" jdbcType="VARCHAR" property="applyTaskId"/>
-        <result column="compute_task_id" jdbcType="VARCHAR" property="computeTaskId"/>
+        <result column="compute_series_id" jdbcType="VARCHAR" property="computeSeriesId"/>
         <result column="apply_id" jdbcType="VARCHAR" property="applyId"/>
         <result column="apply_time" jdbcType="TIMESTAMP" property="applyTime"/>
         <result column="image_count" jdbcType="INTEGER" property="imageCount"/>
@@ -13,14 +13,14 @@
     <select id="queryTodoTasks" resultMap="toDoTask">
         SELECT a.query_task_id,
                a.apply_id,
-               a.compute_task_id,
+               a.compute_series_id,
                a.apply_task_id,
                b.apply_time,
                d.image_count
         FROM tb_keya_query_task a
                  JOIN tb_keya_apply_task b ON a.apply_task_id = b.apply_task_id AND a.apply_id = b.apply_id
-                 JOIN tb_compute_task c ON b.compute_task_id = c.compute_task_id
-                 JOIN tb_series_info d ON c.series_info_id = d.series_info_id
+                 JOIN tb_compute_series_info c ON b.compute_series_id = c.compute_series_id
+                 JOIN tb_series_info d ON c.series_id = d.series_id
         WHERE a.task_status = 0
           AND b.apply_id IS NOT NULL
           AND ((b.task_status = 2 AND b.push_result = 1) OR

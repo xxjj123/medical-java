@@ -27,30 +27,30 @@ public interface CaseService {
     /**
      * 添加收藏
      */
-    void addFavorite(String studyInfoId);
+    void addFavorite(String studyId);
 
     /**
      * 取消收藏
      */
-    void removeFavorite(String studyInfoId);
+    void removeFavorite(String studyId);
 
     /**
      * 删除检查
      */
-    void deleteCaseStudy(String studyInfoId);
+    void deleteCaseStudy(String studyId);
 
     /**
      * 删除序列
      */
-    void deleteCaseSeries(String computeTaskId);
+    void deleteCaseSeries(String computeSeriesId);
 
     /**
      * 重新分析检查
      */
-    void reComputeStudy(String studyInfoId);
+    void reComputeStudy(String studyId);
 
     /**
      * 重新分析序列
      */
-    void reComputeSeries(String computeTaskId);
+    void reComputeSeries(String computeSeriesId);
 }

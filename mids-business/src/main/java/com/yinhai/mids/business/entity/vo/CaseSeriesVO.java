@@ -12,27 +12,26 @@ import lombok.Data;
  */
 @Data
 public class CaseSeriesVO {
+    /**
+     * 计算序列ID
+     */
+    @Schema(description = "计算序列ID")
+    private String computeSeriesId;
 
     /**
-     * 计算任务ID
+     * 序列ID
      */
-    @Schema(description = "计算任务ID")
-    private String computeTaskId;
-
-    /**
-     * 序列信息ID
-     */
-    @TableId(value = "series_info_id", type = IdType.ASSIGN_ID)
-    @Schema(description = "序列信息ID")
-    private String seriesInfoId;
+    @TableId(value = "series_id", type = IdType.ASSIGN_ID)
+    @Schema(description = "序列ID")
+    private String seriesId;
 
 
     /**
-     * 检查信息ID
+     * 检查ID
      */
-    @TableField(value = "study_info_id")
-    @Schema(description = "检查信息ID")
-    private String studyInfoId;
+    @TableField(value = "study_id")
+    @Schema(description = "检查ID")
+    private String studyId;
 
     /**
      * SeriesNumber 序列号

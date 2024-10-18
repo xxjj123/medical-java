@@ -12,16 +12,16 @@ import java.util.Date;
  * @author zhuhs
  * @date 2024/10/14
  */
-@Schema(description = "序列信息")
+@Schema(description = "序列")
 @Data
 @TableName(value = "tb_series_info")
 public class SeriesInfoPO {
     /**
-     * 序列信息ID
+     * 序列ID
      */
-    @TableId(value = "series_info_id", type = IdType.ASSIGN_ID)
-    @Schema(description = "序列信息ID")
-    private String seriesInfoId;
+    @TableId(value = "series_id", type = IdType.ASSIGN_ID)
+    @Schema(description = "序列ID")
+    private String seriesId;
 
     /**
      * 案例ID
@@ -31,11 +31,11 @@ public class SeriesInfoPO {
     private String caseId;
 
     /**
-     * 检查信息ID
+     * 检查ID
      */
-    @TableField(value = "study_info_id")
-    @Schema(description = "检查信息ID")
-    private String studyInfoId;
+    @TableField(value = "study_id")
+    @Schema(description = "检查ID")
+    private String studyId;
 
     /**
      * StudyInstanceUID
