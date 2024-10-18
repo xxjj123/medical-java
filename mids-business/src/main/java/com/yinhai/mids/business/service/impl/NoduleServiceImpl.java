@@ -34,13 +34,13 @@ import java.util.Map;
 public class NoduleServiceImpl implements NoduleService {
 
     @Resource
-    private StudyMapper studyMapper;
+    private StudyInfoMapper studyInfoMapper;
 
     @Resource
-    private SeriesMapper seriesMapper;
+    private SeriesInfoMapper seriesInfoMapper;
 
     @Resource
-    private OldComputeSeriesMapper oldComputeSeriesMapper;
+    private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
     private DiagnosisMapper diagnosisMapper;
@@ -169,11 +169,11 @@ public class NoduleServiceImpl implements NoduleService {
     @Override
     @SuppressWarnings("unchecked")
     public NoduleVO queryNodule(String computeSeriesId) {
-        OldComputeSeriesPO oldComputeSeriesPO = oldComputeSeriesMapper.selectById(computeSeriesId);
-        AppAssert.notNull(oldComputeSeriesPO, "该序列不存在！");
-        AppAssert.equals(oldComputeSeriesPO.getComputeStatus(), ComputeStatus.COMPUTE_SUCCESS, "当前序列计算状态非成功状态，无法查看结节情况");
-        SeriesPO seriesPO = seriesMapper.selectById(oldComputeSeriesPO.getSeriesId());
-        AppAssert.notNull(seriesPO, "该序列不存在！");
+        ComputeSeriesPO computeSeries = computeSeriesMapper.selectById(computeSeriesId);
+        AppAssert.notNull(computeSeries, "该序列不存在！");
+        AppAssert.equals(computeSeries.getComputeStatus(), ComputeStatus.COMPUTE_SUCCESS, "当前序列计算状态非成功状态，无法查看结节情况");
+        SeriesInfoPO seriesInfo = seriesInfoMapper.selectById(computeSeries.getSeriesId());
+        AppAssert.notNull(seriesInfo, "该序列不存在！");
 
         DiagnosisPO diagnosisPO = diagnosisMapper.selectOne(
                 Wrappers.<DiagnosisPO>lambdaQuery().eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
@@ -181,12 +181,12 @@ public class NoduleServiceImpl implements NoduleService {
 
         NoduleVO noduleVO = new NoduleVO();
         noduleVO.setComputeSeriesId(computeSeriesId);
-        noduleVO.setStudyId(seriesPO.getStudyId());
-        noduleVO.setSeriesId(seriesPO.getId());
-        noduleVO.setStudyInstanceUid(seriesPO.getStudyInstanceUid());
-        noduleVO.setSeriesInstanceUid(seriesPO.getSeriesInstanceUid());
+        noduleVO.setStudyId(seriesInfo.getStudyId());
+        noduleVO.setSeriesId(seriesInfo.getSeriesId());
+        noduleVO.setStudyInstanceUid(seriesInfo.getStudyInstanceUid());
+        noduleVO.setSeriesInstanceUid(seriesInfo.getSeriesInstanceUid());
         noduleVO.setHasLesion(diagnosisPO.getHasLesion());
-        noduleVO.setImageCount(seriesPO.getImageCount());
+        noduleVO.setImageCount(seriesInfo.getImageCount());
         List<NoduleLesionPO> manualList = noduleLesionMapper.selectList(Wrappers.<NoduleLesionPO>lambdaQuery()
                 .eq(NoduleLesionPO::getDataType, 1)
                 .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
@@ -341,12 +341,12 @@ public class NoduleServiceImpl implements NoduleService {
 
     @SuppressWarnings("unchecked")
     private ReportCommon queryReportCommon(String computeSeriesId) {
-        OldComputeSeriesPO oldComputeSeriesPO = oldComputeSeriesMapper.selectOne(Wrappers.<OldComputeSeriesPO>lambdaQuery()
-                .select(OldComputeSeriesPO::getStudyId)
-                .eq(OldComputeSeriesPO::getId, computeSeriesId));
-        AppAssert.notNull(oldComputeSeriesPO, "该序列不存在！");
-        StudyPO studyPO = studyMapper.selectById(oldComputeSeriesPO.getStudyId());
-        AppAssert.notNull(studyPO, "该序列对应检查不存在！");
+        ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
+                .select(ComputeSeriesPO::getStudyId)
+                .eq(ComputeSeriesPO::getComputeSeriesId, computeSeriesId));
+        AppAssert.notNull(computeSeries, "该序列不存在！");
+        StudyInfoPO studyInfo = studyInfoMapper.selectById(computeSeries.getStudyId());
+        AppAssert.notNull(studyInfo, "该序列对应检查不存在！");
 
         ManualDiagnosisPO manualDiagnosisPO = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()
                 .eq(ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
@@ -354,11 +354,11 @@ public class NoduleServiceImpl implements NoduleService {
 
         ReportCommon reportCommon = new ReportCommon();
         reportCommon.setComputeSeriesId(computeSeriesId);
-        reportCommon.setPatientId(studyPO.getPatientId());
-        reportCommon.setAccessionNumber(studyPO.getAccessionNumber());
-        reportCommon.setStudyDate(studyPO.getStudyDateAndTime());
-        reportCommon.setPatientName(studyPO.getPatientName());
-        String patientSex = studyPO.getPatientSex();
+        reportCommon.setPatientId(studyInfo.getPatientId());
+        reportCommon.setAccessionNumber(studyInfo.getAccessionNumber());
+        reportCommon.setStudyDate(studyInfo.getStudyDateAndTime());
+        reportCommon.setPatientName(studyInfo.getPatientName());
+        String patientSex = studyInfo.getPatientSex();
         if (StrUtil.equals(patientSex, "M")) {
             reportCommon.setPatientSex("男");
         } else if (StrUtil.equals(patientSex, "F")) {
@@ -366,7 +366,7 @@ public class NoduleServiceImpl implements NoduleService {
         } else {
             reportCommon.setPatientSex("");
         }
-        reportCommon.setPatientAge(studyPO.getPatientAge());
+        reportCommon.setPatientAge(studyInfo.getPatientAge());
         reportCommon.setExaminedName("胸部CT平扫");
         reportCommon.setFinding(manualDiagnosisPO.getFinding());
         reportCommon.setDiagnosis(manualDiagnosisPO.getDiagnosis());

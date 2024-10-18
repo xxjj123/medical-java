@@ -1,11 +1,9 @@
 package com.yinhai.mids.business.service.impl;
 
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.base.Joiner;
-import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.ImageInitInfoVO;
 import com.yinhai.mids.business.mapper.*;
@@ -33,13 +31,13 @@ public class ImageServiceImpl implements ImageService {
     private static final Log log = LogFactory.get();
 
     @Resource
-    private StudyMapper studyMapper;
+    private StudyInfoMapper studyInfoMapper;
 
     @Resource
-    private SeriesMapper seriesMapper;
+    private SeriesInfoMapper seriesInfoMapper;
 
     @Resource
-    private OldComputeSeriesMapper oldComputeSeriesMapper;
+    private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
     private VtiMapper vtiMapper;
@@ -53,46 +51,35 @@ public class ImageServiceImpl implements ImageService {
     @Override
     @SuppressWarnings("unchecked")
     public ImageInitInfoVO queryInitInfo(String computeSeriesId) {
-        OldComputeSeriesPO oldComputeSeriesPO = oldComputeSeriesMapper.selectOne(Wrappers.<OldComputeSeriesPO>lambdaQuery()
-                .select(OldComputeSeriesPO::getStudyId, OldComputeSeriesPO::getSeriesId)
-                .eq(OldComputeSeriesPO::getId, computeSeriesId));
-        AppAssert.notNull(oldComputeSeriesPO, "该序列不存在！");
-        SeriesPO seriesPO = seriesMapper.selectById(oldComputeSeriesPO.getSeriesId());
-        AppAssert.notNull(seriesPO, "该序列不存在");
-        StudyPO studyPO = studyMapper.selectById(oldComputeSeriesPO.getStudyId());
-        AppAssert.notNull(studyPO, "该序列对应检查不存在！");
-
-        String mprStatus = seriesPO.getMprStatus();
-        if (StrUtil.equals(mprStatus, ComputeStatus.WAIT_COMPUTE)) {
-            throw new AppException("mpr等待计算中...");
-        } else if (StrUtil.equals(mprStatus, ComputeStatus.IN_COMPUTE)) {
-            throw new AppException("mpr计算中...");
-        } else if (StrUtil.equals(mprStatus, ComputeStatus.COMPUTE_FAILED)) {
-            throw new AppException("mpr计算失败...");
-        } else if (StrUtil.equals(mprStatus, ComputeStatus.COMPUTE_CANCELED)) {
-            throw new AppException("mpr计算取消...");
-        } else if (StrUtil.equals(mprStatus, ComputeStatus.COMPUTE_ERROR)) {
-            throw new AppException("mpr计算异常...");
-        }
+        ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
+                .select(ComputeSeriesPO::getStudyId, ComputeSeriesPO::getSeriesId, ComputeSeriesPO::getComputeStatus)
+                .eq(ComputeSeriesPO::getComputeSeriesId, computeSeriesId));
+        AppAssert.notNull(computeSeries, "该序列不存在！");
+        SeriesInfoPO seriesInfo = seriesInfoMapper.selectById(computeSeries.getSeriesId());
+        AppAssert.notNull(seriesInfo, "该序列不存在");
+        StudyInfoPO studyInfo = studyInfoMapper.selectById(computeSeries.getStudyId());
+        AppAssert.notNull(studyInfo, "该序列对应检查不存在！");
+        AppAssert.equals(computeSeries.getComputeStatus(), 3, "该序列计算不成功");
 
         ImageInitInfoVO result = new ImageInitInfoVO();
         result.setComputeSeriesId(computeSeriesId);
-        result.setStudyId(studyPO.getId());
-        result.setSeriesId(seriesPO.getId());
-        result.setImageCount(seriesPO.getImageCount());
-        result.setAxialCount(seriesPO.getAxialCount());
-        result.setCoronalCount(seriesPO.getCoronalCount());
-        result.setSagittalCount(seriesPO.getSagittalCount());
-        result.setSliceThickness(studyPO.getSliceThickness());
-        result.setKvp(studyPO.getKvp());
-        result.setPixelSpacing(studyPO.getPixelSpacing());
-        result.setInstitutionName(studyPO.getInstitutionName());
-        result.setManufacturer(studyPO.getManufacturer());
-        result.setPatientName(studyPO.getPatientName());
-        result.setPatientSex(studyPO.getPatientSex());
-        result.setPatientAge(studyPO.getPatientAge());
-        result.setPatientId(studyPO.getPatientId());
-        result.setStudyDateAndTime(studyPO.getStudyDateAndTime());
+        result.setStudyId(studyInfo.getStudyId());
+        result.setSeriesId(seriesInfo.getSeriesId());
+        result.setImageCount(seriesInfo.getImageCount());
+        // TODO MPR相关信息
+        // result.setAxialCount(seriesInfo.getAxialCount());
+        // result.setCoronalCount(seriesInfo.getCoronalCount());
+        // result.setSagittalCount(seriesInfo.getSagittalCount());
+        result.setSliceThickness(studyInfo.getSliceThickness());
+        result.setKvp(studyInfo.getKvp());
+        result.setPixelSpacing(studyInfo.getPixelSpacing());
+        result.setInstitutionName(studyInfo.getInstitutionName());
+        result.setManufacturer(studyInfo.getManufacturer());
+        result.setPatientName(studyInfo.getPatientName());
+        result.setPatientSex(studyInfo.getPatientSex());
+        result.setPatientAge(studyInfo.getPatientAge());
+        result.setPatientId(studyInfo.getPatientId());
+        result.setStudyDateAndTime(studyInfo.getStudyDateAndTime());
         return result;
     }
 
