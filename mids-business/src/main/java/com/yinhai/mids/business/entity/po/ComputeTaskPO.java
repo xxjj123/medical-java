@@ -59,20 +59,6 @@ public class ComputeTaskPO {
     private Integer computeStatus;
 
     /**
-     * 计算开始时间
-     */
-    @TableField(value = "compute_start_time")
-    @Schema(description = "计算开始时间")
-    private Date computeStartTime;
-
-    /**
-     * 计算结束时间
-     */
-    @TableField(value = "compute_end_time")
-    @Schema(description = "计算结束时间")
-    private Date computeEndTime;
-
-    /**
      * 操作状态
      */
     @TableField(value = "operate_status")

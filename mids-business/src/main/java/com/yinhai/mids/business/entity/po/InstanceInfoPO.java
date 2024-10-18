@@ -66,13 +66,6 @@ public class InstanceInfoPO {
     private Integer instanceNumber;
 
     /**
-     * 临时路径
-     */
-    @TableField(value = "temp_path")
-    @Schema(description = "临时路径")
-    private String tempPath;
-
-    /**
      * 访问路径
      */
     @TableField(value = "access_path")

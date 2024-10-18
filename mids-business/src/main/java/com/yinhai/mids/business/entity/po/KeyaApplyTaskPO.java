@@ -45,18 +45,11 @@ public class KeyaApplyTaskPO {
     private String applyId;
 
     /**
-     * 发起时间
+     * 申请时间
      */
     @TableField(value = "apply_time")
-    @Schema(description = "发起时间")
+    @Schema(description = "申请时间")
     private Date applyTime;
-
-    /**
-     * 推送时间
-     */
-    @TableField(value = "push_time")
-    @Schema(description = "推送时间")
-    private Date pushTime;
 
     /**
      * 申请返回
@@ -66,11 +59,32 @@ public class KeyaApplyTaskPO {
     private String applyResponse;
 
     /**
-     * 推送返回
+     * 申请结果 0:失败 1:成功
      */
-    @TableField(value = "push_response")
-    @Schema(description = "推送返回")
-    private String pushResponse;
+    @TableField(value = "apply_result")
+    @Schema(description = "申请结果 0:失败 1:成功")
+    private Integer applyResult;
+
+    /**
+     * 推送时间
+     */
+    @TableField(value = "push_time")
+    @Schema(description = "推送时间")
+    private Date pushTime;
+
+    /**
+     * 推送内容
+     */
+    @TableField(value = "push_content")
+    @Schema(description = "推送内容")
+    private String pushContent;
+
+    /**
+     * 推送结果 0:失败 1:成功
+     */
+    @TableField(value = "push_result")
+    @Schema(description = "推送结果 0:失败 1:成功")
+    private Integer pushResult;
 
     /**
      * 异常信息

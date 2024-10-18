@@ -12,7 +12,6 @@ import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.PageKit;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -22,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @author zhuhs
  * @date 2024/9/6
  */
-@Component
+// @Component
 public class MprAnalyseJob {
 
     private static final Log log = LogFactory.get();

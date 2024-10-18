@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yinhai.mids.business.mapper.ComputeTaskMapper">
+
+    <select id="queryLungTaskInfo" resultType="com.yinhai.mids.business.entity.dto.LungTaskInfo">
+        SELECT a.task_status                    applyTaskStatus,
+               coalesce(a.apply_result, 999999) applyResult,
+               coalesce(a.push_result, 999999)  pushResult,
+               coalesce(b.task_status, 999999)  queryTaskStatus,
+               coalesce(b.query_result, 999999) queryResult,
+               coalesce(c.task_status, 999999)  mprTaskStatus,
+               coalesce(c.mpr_result, 999999)   mprResult
+        FROM tb_keya_apply_task a
+                 LEFT JOIN tb_keya_query_task b ON a.compute_task_id = b.compute_task_id
+                 LEFT JOIN tb_mpr_task c ON a.compute_task_id = c.compute_task_id
+        WHERE a.compute_task_id = #{computeTaskId,jdbcType=VARCHAR}
+    </select>
+</mapper>

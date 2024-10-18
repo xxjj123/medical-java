@@ -23,7 +23,18 @@ public enum TaskType {
     /**
      * MPR建模
      */
-    MPR(3);
+    MPR(3),
+
+    /**
+     * 科亚AI分析申请
+     */
+    KEYA_APPLY(4),
+
+    /**
+     * 科亚AI分析结果查询
+     */
+    KEYA_QUERY(5),
+    ;
 
     private final int type;
 

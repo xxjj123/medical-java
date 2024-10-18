@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yinhai.mids.business.mapper.KeyaQueryTaskMapper">
+    <resultMap id="toDoTask" type="com.yinhai.mids.business.entity.dto.KeyaQueryToDoTask">
+        <id column="query_task_id" jdbcType="VARCHAR" property="queryTaskId"/>
+        <result column="apply_task_id" jdbcType="VARCHAR" property="applyTaskId"/>
+        <result column="compute_task_id" jdbcType="VARCHAR" property="computeTaskId"/>
+        <result column="apply_id" jdbcType="VARCHAR" property="applyId"/>
+        <result column="apply_time" jdbcType="TIMESTAMP" property="applyTime"/>
+        <result column="image_count" jdbcType="INTEGER" property="imageCount"/>
+    </resultMap>
+
+    <select id="queryTodoTasks" resultMap="toDoTask">
+        SELECT a.query_task_id,
+               a.apply_id,
+               a.compute_task_id,
+               a.apply_task_id,
+               b.apply_time,
+               d.image_count
+        FROM tb_keya_query_task a
+                 JOIN tb_keya_apply_task b ON a.apply_task_id = b.apply_task_id AND a.apply_id = b.apply_id
+                 JOIN tb_compute_task c ON b.compute_task_id = c.compute_task_id
+                 JOIN tb_series_info d ON c.series_info_id = d.series_info_id
+        WHERE a.task_status = 0
+          AND b.apply_id IS NOT NULL
+          AND ((b.task_status = 2 AND b.push_result = 1) OR
+               (b.task_status = 1 AND b.apply_time &lt; NOW() - INTERVAL 5 MINUTE))
+          AND NOT EXISTS(SELECT 1
+                         FROM tb_task_lock
+                         WHERE task_type = 5
+                           AND expire_time >= NOW()
+                           AND item_id = a.query_task_id)
+        ORDER BY a.create_time
+    </select>
+</mapper>

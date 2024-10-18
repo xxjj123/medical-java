@@ -4,6 +4,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.mids.business.service.DiagnoseService;
+import com.yinhai.mids.business.service.KeyaService;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,12 +37,16 @@ public class CallbackController {
     private ComputeSeriesService computeSeriesService;
 
     @Resource
+    private KeyaService keyaService;
+
+    @Resource
     private DiagnoseService diagnoseService;
 
     @Operation(summary = "AI结果推送")
     @PostMapping("computePush")
     public void computePush(@RequestParam Map<String, Object> pushParamMap) {
         computeSeriesService.onComputePush(pushParamMap);
+        keyaService.onApplyPush(pushParamMap);
     }
 
     @Operation(summary = "3D解析结果推送")

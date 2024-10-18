@@ -2,6 +2,7 @@ package com.yinhai.mids.business.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -74,16 +75,19 @@ public class CaseServiceImpl implements CaseService {
         AppAssert.isTrue(DicomUtil.isZip(caseFile.getInputStream()), "只允许上传dicom zip压缩包");
 
         File caseFileTempDir = createCaseFileTempDir(caseFile.getInputStream());
-        List<DicomInfo> dicomInfoList = DicomUtil.readDicomInfoFromDir(caseFileTempDir);
-        AppAssert.notEmpty(dicomInfoList, "未读取到dicom文件信息");
-
-        CasePO casePO = saveCase();
-        List<DicomInstance> dicomInstanceList = BeanUtil.copyToList(dicomInfoList, DicomInstance.class);
-        dicomInstanceList.forEach(e -> e.setCaseId(casePO.getCaseId()));
-        saveStudyInfo(dicomInstanceList);
-        saveSeriesInfo(dicomInstanceList);
-        saveInstanceInfo(dicomInstanceList);
-        createSubTask(createComputeTask(dicomInstanceList));
+        try {
+            List<DicomInfo> dicomInfoList = DicomUtil.readDicomInfoFromDir(caseFileTempDir);
+            AppAssert.notEmpty(dicomInfoList, "未读取到dicom文件信息");
+            CasePO casePO = saveCase();
+            List<DicomInstance> dicomInstanceList = BeanUtil.copyToList(dicomInfoList, DicomInstance.class);
+            dicomInstanceList.forEach(e -> e.setCaseId(casePO.getCaseId()));
+            saveStudyInfo(dicomInstanceList);
+            saveSeriesInfo(dicomInstanceList);
+            saveInstanceInfo(dicomInstanceList);
+            createSubTask(createComputeTask(dicomInstanceList));
+        } finally {
+            FileUtil.del(caseFileTempDir);
+        }
     }
 
     /**
@@ -147,7 +151,6 @@ public class CaseServiceImpl implements CaseService {
         List<ContextFSObject<String>> contextFSObjects = new ArrayList<>();
         for (DicomInstance dicomInstance : dicomInstanceList) {
             InstanceInfoPO instanceInfoPO = BeanUtil.copyProperties(dicomInstance, InstanceInfoPO.class);
-            instanceInfoPO.setTempPath(dicomInstance.getFile().getAbsolutePath());
             instanceInfoList.add(instanceInfoPO);
             ContextFSObject<String> contextFSObject;
             try {

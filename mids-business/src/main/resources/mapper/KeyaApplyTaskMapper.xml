@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yinhai.mids.business.mapper.KeyaApplyTaskMapper">
+    <resultMap id="toDoTask" type="com.yinhai.mids.business.entity.dto.KeyaApplyToDoTask">
+        <id column="apply_task_id" jdbcType="VARCHAR" property="applyTaskId"/>
+        <result column="compute_task_id" jdbcType="VARCHAR" property="computeTaskId"/>
+        <result column="series_info_id" jdbcType="VARCHAR" property="seriesInfoId"/>
+        <result column="accession_number" jdbcType="VARCHAR" property="accessionNumber"/>
+        <result column="study_instance_uid" jdbcType="VARCHAR" property="studyInstanceUid"/>
+        <result column="patient_name" jdbcType="VARCHAR" property="patientName"/>
+        <result column="patient_age" jdbcType="VARCHAR" property="patientAge"/>
+        <result column="study_date_and_time" jdbcType="DATE" property="studyDateAndTime"/>
+    </resultMap>
+
+    <select id="queryTodoTasks" resultMap="toDoTask">
+        SELECT a.apply_task_id,
+               b.compute_task_id,
+               b.series_info_id,
+               c.accession_number,
+               c.study_instance_uid,
+               c.patient_name,
+               c.patient_age,
+               c.study_date_and_time
+        FROM tb_keya_apply_task a
+                 JOIN tb_compute_task b ON a.compute_task_id = b.compute_task_id
+                 JOIN tb_study_info c ON b.study_info_id = c.study_info_id
+        WHERE a.task_status = 0
+          AND NOT EXISTS(SELECT 1
+                         FROM tb_task_lock
+                         WHERE task_type = 4
+                           AND expire_time >= NOW()
+                           AND item_id = a.apply_task_id)
+        ORDER BY a.create_time
+    </select>
+</mapper>

@@ -52,6 +52,13 @@ public class MprTaskPO {
     private String mprResponse;
 
     /**
+     * MPR结果 0:失败 1:成功
+     */
+    @TableField(value = "mpt_result")
+    @Schema(description = "MPR结果 0:失败 1:成功")
+    private Integer mprResult;
+
+    /**
      * 异常信息
      */
     @TableField(value = "error_message")

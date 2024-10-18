@@ -52,11 +52,18 @@ public class KeyaQueryTaskPO {
     private Integer taskStatus;
 
     /**
-     * 申请返回
+     * 查询返回
      */
     @TableField(value = "query_response")
-    @Schema(description = "申请返回")
+    @Schema(description = "查询返回")
     private String queryResponse;
+
+    /**
+     * 查询结果 0:失败 1:成功
+     */
+    @TableField(value = "query_result")
+    @Schema(description = "查询结果 0:失败 1:成功")
+    private Integer queryResult;
 
     /**
      * 异常信息

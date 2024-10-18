@@ -56,7 +56,7 @@ public class TaskLockServiceImpl implements TaskLockService {
                     .set(TaskLockPO::getExpireTime, expireTime));
             return updated > 0;
         } catch (Exception e) {
-            log.error("tryLock exception occurred: {}", e.getClass().getName());
+            log.debug("tryLock exception occurred: {}", e.getClass().getName());
             return false;
         }
     }
