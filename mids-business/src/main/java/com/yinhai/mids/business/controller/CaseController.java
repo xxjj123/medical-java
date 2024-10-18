@@ -75,9 +75,9 @@ public class CaseController {
     }
 
     @Operation(summary = "重新分析检查")
-    @PostMapping("reComputeStudy")
-    public void reComputeStudy(@RequestParam @NotBlank(message = "检查ID不能为空") String studyId) {
-        caseService.reComputeStudy(studyId);
+    @PostMapping("recomputeStudy")
+    public void recomputeStudy(@RequestParam @NotBlank(message = "检查ID不能为空") String studyId) {
+        caseService.recomputeStudy(studyId);
     }
 
     @Operation(summary = "重新分析序列")

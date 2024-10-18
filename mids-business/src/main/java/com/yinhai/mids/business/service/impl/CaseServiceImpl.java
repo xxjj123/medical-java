@@ -327,7 +327,7 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public void reComputeStudy(String studyId) {
+    public void recomputeStudy(String studyId) {
         checkStudyInfoExists(studyId);
         List<ComputeSeriesPO> computeSeriesList = computeSeriesMapper.selectList(
                 Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getStudyId, studyId));

@@ -47,7 +47,7 @@ public interface CaseService {
     /**
      * 重新分析检查
      */
-    void reComputeStudy(String studyId);
+    void recomputeStudy(String studyId);
 
     /**
      * 重新分析序列
