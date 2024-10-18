@@ -81,8 +81,8 @@ public class CaseController {
     }
 
     @Operation(summary = "重新分析序列")
-    @PostMapping("reComputeSeries")
-    public void reComputeSeries(@RequestParam @NotBlank(message = "计算序列ID不能为空") String computeSeriesId) {
-        caseService.reComputeSeries(computeSeriesId);
+    @PostMapping("recomputeSeries")
+    public void recomputeSeries(@RequestParam @NotBlank(message = "计算序列ID不能为空") String computeSeriesId) {
+        caseService.recomputeSeries(computeSeriesId);
     }
 }

@@ -52,5 +52,5 @@ public interface CaseService {
     /**
      * 重新分析序列
      */
-    void reComputeSeries(String computeSeriesId);
+    void recomputeSeries(String computeSeriesId);
 }

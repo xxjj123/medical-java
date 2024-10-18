@@ -341,7 +341,7 @@ public class CaseServiceImpl implements CaseService {
     }
 
     @Override
-    public void reComputeSeries(String computeSeriesId) {
+    public void recomputeSeries(String computeSeriesId) {
         checkComputeSeriesExists(computeSeriesId);
         resetSubTasks(ListUtil.of(computeSeriesId));
     }
