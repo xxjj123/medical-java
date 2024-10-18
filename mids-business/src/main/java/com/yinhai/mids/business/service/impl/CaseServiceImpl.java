@@ -2,25 +2,34 @@ package com.yinhai.mids.business.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.google.common.base.Joiner;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.constant.ComputeType;
+import com.yinhai.mids.business.entity.dto.CaseStudyQuery;
 import com.yinhai.mids.business.entity.model.ContextFSObject;
 import com.yinhai.mids.business.entity.model.ContextUploadResult;
 import com.yinhai.mids.business.entity.model.DicomInfo;
 import com.yinhai.mids.business.entity.model.DicomInstance;
 import com.yinhai.mids.business.entity.po.*;
+import com.yinhai.mids.business.entity.vo.CaseSeriesVO;
+import com.yinhai.mids.business.entity.vo.CaseStudyVO;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.CaseService;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.util.DicomUtil;
+import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.util.DbClock;
+import com.yinhai.mids.common.util.PageKit;
 import com.yinhai.mids.common.util.SecurityKit;
 import com.yinhai.ta404.core.exception.AppException;
+import com.yinhai.ta404.core.restservice.resultbean.Page;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,7 +43,9 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
+
+import static java.util.stream.Collectors.*;
 
 /**
  * @author zhuhs
@@ -65,7 +76,13 @@ public class CaseServiceImpl implements CaseService {
     private KeyaApplyTaskMapper keyaApplyTaskMapper;
 
     @Resource
+    private KeyaQueryTaskMapper keyaQueryTaskMapper;
+
+    @Resource
     private MprTaskMapper mprTaskMapper;
+
+    @Resource
+    private FavoriteMapper favoriteMapper;
 
     @Resource
     private FileStoreService fileStoreService;
@@ -107,7 +124,7 @@ public class CaseServiceImpl implements CaseService {
     private void saveStudyInfo(List<DicomInstance> dicomInstanceList) {
         List<StudyInfoPO> studyInfoList = new ArrayList<>();
         Map<String, List<DicomInstance>> group = dicomInstanceList
-                .stream().collect(Collectors.groupingBy(DicomInstance::getStudyInstanceUid));
+                .stream().collect(groupingBy(DicomInstance::getStudyInstanceUid));
         for (String key : group.keySet()) {
             studyInfoList.add(BeanUtil.copyProperties(group.get(key).get(0), StudyInfoPO.class));
         }
@@ -127,7 +144,7 @@ public class CaseServiceImpl implements CaseService {
     private void saveSeriesInfo(List<DicomInstance> dicomInstanceList) {
         List<SeriesInfoPO> seriesInfoList = new ArrayList<>();
         Map<String, List<DicomInstance>> group = dicomInstanceList
-                .stream().collect(Collectors.groupingBy(DicomInstance::getSeriesInstanceUid));
+                .stream().collect(groupingBy(DicomInstance::getSeriesInstanceUid));
         for (String key : group.keySet()) {
             SeriesInfoPO seriesInfoPO = BeanUtil.copyProperties(group.get(key).get(0), SeriesInfoPO.class);
             seriesInfoPO.setImageCount(group.get(key).size());
@@ -189,7 +206,7 @@ public class CaseServiceImpl implements CaseService {
             computeTaskList.add(computeTask);
         } else {
             Map<String, List<DicomInstance>> group = dicomInstanceList
-                    .stream().collect(Collectors.groupingBy(DicomInstance::getSeriesInstanceUid));
+                    .stream().collect(groupingBy(DicomInstance::getSeriesInstanceUid));
             for (List<DicomInstance> dicomInstances : group.values()) {
                 DicomInstance dicomInstance = dicomInstances.get(0);
                 ComputeTaskPO computeTask = new ComputeTaskPO();
@@ -241,5 +258,114 @@ public class CaseServiceImpl implements CaseService {
         }
         ZipUtil.unzip(inputStream, tempDir, Charset.defaultCharset());
         return tempDir;
+    }
+
+    @Override
+    public Page<CaseStudyVO> pageCaseStudies(CaseStudyQuery caseStudyQuery, PageRequest pageRequest) {
+        PageKit.startPage(pageRequest);
+        List<CaseStudyVO> caseStudies = caseMapper.queryCaseStudies(caseStudyQuery, SecurityKit.currentUserId());
+        if (CollUtil.isEmpty(caseStudies)) {
+            return PageKit.finishPage(caseStudies);
+        }
+        // 先根据条件查询出检查，再由检查查询序列
+        List<String> studyInfoIds = caseStudies.stream().map(CaseStudyVO::getStudyInfoId).collect(toList());
+        List<CaseSeriesVO> caseSeriesList = caseMapper.queryCaseSeries(
+                studyInfoIds, caseStudyQuery.getComputeType(), caseStudyQuery.getComputeStatus());
+        Map<String, List<CaseSeriesVO>> group = caseSeriesList
+                .stream().collect(groupingBy(CaseSeriesVO::getStudyInfoId));
+        for (CaseStudyVO caseStudy : caseStudies) {
+            List<CaseSeriesVO> caseSeriesGroupList = group.get(caseStudy.getStudyInfoId());
+            caseSeriesGroupList.forEach(caseSeries -> caseSeries.setMyFavorite(caseStudy.getMyFavorite()));
+            caseStudy.setCaseSeriesList(caseSeriesGroupList);
+            caseStudy.setSeriesCount(caseSeriesGroupList.size());
+            Set<Integer> computeTypes = caseSeriesGroupList.stream()
+                    .map(CaseSeriesVO::getComputeType)
+                    .collect(toSet());
+            caseStudy.setComputeType(Joiner.on(",").join(computeTypes));
+        }
+        return PageKit.finishPage(caseStudies);
+    }
+
+    @Override
+    public void addFavorite(String studyInfoId) {
+        checkStudyInfoExists(studyInfoId);
+        String currentUserId = SecurityKit.currentUserId();
+        boolean favoriteExists = favoriteMapper.exists(Wrappers.<FavoritePO>lambdaQuery()
+                .eq(FavoritePO::getStudyId, studyInfoId).eq(FavoritePO::getUserId, currentUserId));
+        AppAssert.isFalse(favoriteExists, "该检查已经收藏，无需重复收藏");
+        FavoritePO favoritePO = new FavoritePO();
+        favoritePO.setUserId(currentUserId);
+        favoritePO.setStudyId(studyInfoId);
+        int inserted = favoriteMapper.insert(favoritePO);
+        AppAssert.isTrue(inserted == 1, "收藏失败");
+    }
+
+    @Override
+    public void removeFavorite(String studyInfoId) {
+        checkStudyInfoExists(studyInfoId);
+        String currentUserId = SecurityKit.currentUserId();
+        boolean favoriteExists = favoriteMapper.exists(Wrappers.<FavoritePO>lambdaQuery()
+                .eq(FavoritePO::getStudyId, studyInfoId).eq(FavoritePO::getUserId, currentUserId));
+        AppAssert.isTrue(favoriteExists, "该检查没有被收藏，不需要取消收藏");
+        int deleted = favoriteMapper.delete(Wrappers.<FavoritePO>lambdaQuery()
+                .eq(FavoritePO::getStudyId, studyInfoId).eq(FavoritePO::getUserId, currentUserId));
+        AppAssert.isTrue(deleted > 0, "取消收藏失败");
+    }
+
+    @Override
+    public void deleteCaseStudy(String studyInfoId) {
+        checkStudyInfoExists(studyInfoId);
+        int deleted = studyInfoMapper.deleteById(studyInfoId);
+        AppAssert.isTrue(deleted == 1, "删除检查失败");
+    }
+
+    @Override
+    public void deleteCaseSeries(String computeTaskId) {
+        checkComputeTaskExists(computeTaskId);
+        int deleted = computeTaskMapper.deleteById(computeTaskId);
+        AppAssert.isTrue(deleted == 1, "删除序列失败");
+    }
+
+    @Override
+    public void reComputeStudy(String studyInfoId) {
+        checkStudyInfoExists(studyInfoId);
+        List<ComputeTaskPO> computeTaskList = computeTaskMapper.selectList(
+                Wrappers.<ComputeTaskPO>lambdaQuery().eq(ComputeTaskPO::getStudyInfoId, studyInfoId));
+        for (ComputeTaskPO computeTask : computeTaskList) {
+            if (computeTask.getComputeStatus() == 2) {
+                throw new AppException("存在计算中的序列，无法发起重新分析");
+            }
+        }
+        List<String> computeTaskIds = computeTaskList.stream().map(ComputeTaskPO::getComputeTaskId).collect(toList());
+        resetSubTasks(computeTaskIds);
+    }
+
+    @Override
+    public void reComputeSeries(String computeTaskId) {
+        checkComputeTaskExists(computeTaskId);
+        resetSubTasks(ListUtil.of(computeTaskId));
+    }
+
+    private void checkStudyInfoExists(String studyInfoId) {
+        boolean studyExists = studyInfoMapper.exists(
+                Wrappers.<StudyInfoPO>lambdaQuery().eq(StudyInfoPO::getStudyInfoId, studyInfoId));
+        AppAssert.isTrue(studyExists, "该检查不存在！");
+    }
+
+    private void checkComputeTaskExists(String computeTaskId) {
+        boolean taskExists = computeTaskMapper.exists(
+                Wrappers.<ComputeTaskPO>lambdaQuery().eq(ComputeTaskPO::getComputeTaskId, computeTaskId));
+        AppAssert.isTrue(taskExists, "该序列不存在！");
+    }
+
+    private void resetSubTasks(List<String> computeTaskIds) {
+        keyaApplyTaskMapper.update(new KeyaApplyTaskPO(), Wrappers.<KeyaApplyTaskPO>lambdaUpdate()
+                .in(KeyaApplyTaskPO::getComputeTaskId, computeTaskIds)
+                .set(KeyaApplyTaskPO::getTaskStatus, 0));
+        keyaQueryTaskMapper.delete(
+                Wrappers.<KeyaQueryTaskPO>lambdaUpdate().in(KeyaQueryTaskPO::getComputeTaskId, computeTaskIds));
+        mprTaskMapper.update(new MprTaskPO(), Wrappers.<MprTaskPO>lambdaUpdate()
+                .in(MprTaskPO::getComputeTaskId, computeTaskIds)
+                .set(MprTaskPO::getTaskStatus, 0));
     }
 }

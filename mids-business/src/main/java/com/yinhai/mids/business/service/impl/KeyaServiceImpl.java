@@ -225,6 +225,7 @@ public class KeyaServiceImpl implements KeyaService {
 
         String queryTaskId = queryTask.getQueryTaskId();
         String computeTaskId = queryTask.getComputeTaskId();
+        String applyTaskId = queryTask.getApplyTaskId();
         KeyaResponse keyaResponse = resp.getResult();
         if (keyaResponse.getCode() == 2
             && DateUtil.between(queryTask.getApplyTime(), DbClock.now(), DateUnit.MINUTE) < 10
@@ -232,25 +233,22 @@ public class KeyaServiceImpl implements KeyaService {
                 "创建分析任务成功，正在分析中。")) {
             return;
         }
+        String keyaResponseJson = JsonKit.toJsonString(keyaResponse);
 
         if (keyaResponse.getCode() != 1) {
-            updateQueryTaskStatus(queryTaskId, computeTaskId, 1, JsonKit.toJsonString(keyaResponse), 0, null);
+            updateQueryTaskStatus(queryTaskId, computeTaskId, 1, keyaResponseJson, 0, null, applyTaskId);
             return;
         }
 
-        String dataContent = JsonKit.parseTree(JsonKit.toJsonString(keyaResponse)).get("data").toString();
+        String dataContent = JsonKit.parseTree(keyaResponseJson).get("data").toString();
         KeyaComputeResult computeResult = JsonKit.parseObject(dataContent, KeyaComputeResult.class);
 
         if (computeResult == null || BeanUtil.getProperty(computeResult.getResult(), "nodule") == null) {
-            updateQueryTaskStatus(queryTaskId, computeTaskId, -1, JsonKit.toJsonString(keyaResponse), 1, "计算结果为空");
+            updateQueryTaskStatus(queryTaskId, computeTaskId, -1, keyaResponseJson, 1, "计算结果为空", applyTaskId);
             return;
         }
         saveNodule(queryTask, computeResult.getResult().getNodule());
-        updateQueryTaskStatus(queryTaskId, computeTaskId, 1, JsonKit.toJsonString(keyaResponse), 1, null);
-        KeyaApplyTaskPO applyTask = new KeyaApplyTaskPO();
-        applyTask.setApplyTaskId(queryTask.getApplyTaskId());
-        applyTask.setTaskStatus(2);
-        applyTaskMapper.updateById(applyTask);
+        updateQueryTaskStatus(queryTaskId, computeTaskId, 1, keyaResponseJson, 1, null, applyTaskId);
     }
 
     private void saveNodule(KeyaQueryToDoTask queryTask, KeyaComputeResult.Result.Nodule nodule) {
@@ -332,7 +330,7 @@ public class KeyaServiceImpl implements KeyaService {
     }
 
     private void updateQueryTaskStatus(String queryTaskId, String computeTaskId, Integer taskStatus, String queryResponse,
-                                       Integer queryResult, String errorMessage) {
+                                       Integer queryResult, String errorMessage, String applyTaskId) {
         KeyaQueryTaskPO task = UpdateEntity.of(KeyaQueryTaskPO.class);
         task.setTaskStatus(taskStatus);
         task.setQueryResponse(queryResponse);
@@ -341,6 +339,10 @@ public class KeyaServiceImpl implements KeyaService {
         queryTaskMapper.updateSetterInvoked(task,
                 Wrappers.<KeyaQueryTaskPO>lambdaQuery().eq(KeyaQueryTaskPO::getQueryTaskId, queryTaskId));
         computeTaskService.refreshComputeStatus(computeTaskId);
+        KeyaApplyTaskPO applyTask = new KeyaApplyTaskPO();
+        applyTask.setApplyTaskId(applyTaskId);
+        applyTask.setTaskStatus(2);
+        applyTaskMapper.updateById(applyTask);
     }
 
     @Async
