@@ -1,5 +1,8 @@
 package com.yinhai.mids.business.job;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.yinhai.mids.business.constant.TaskType;
 import com.yinhai.mids.business.entity.dto.KeyaApplyToDoTask;
 import com.yinhai.mids.business.mapper.KeyaApplyTaskMapper;
@@ -20,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class KeyaApplyJob {
 
+    private static final Log log = LogFactory.get();
+
     @Resource
     private KeyaApplyTaskMapper applyTaskMapper;
 
@@ -32,7 +37,10 @@ public class KeyaApplyJob {
         TaskLockManager.lock(TaskType.KEYA_APPLY, 30, () -> {
             PageKit.startPage(PageRequest.of(1, 1));
             List<KeyaApplyToDoTask> toDoTaskList = applyTaskMapper.queryTodoTasks();
-            toDoTaskList.forEach(task -> keyaService.lockedAsyncApply(task));
+            if (CollUtil.isNotEmpty(toDoTaskList)) {
+                log.debug("ToDoTasks: {}, {}", "KEYA_APPLY", toDoTaskList.size());
+                toDoTaskList.forEach(task -> keyaService.lockedAsyncApply(task));
+            }
         });
     }
 }

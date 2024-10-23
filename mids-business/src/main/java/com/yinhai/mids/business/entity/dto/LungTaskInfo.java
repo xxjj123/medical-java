@@ -3,6 +3,8 @@ package com.yinhai.mids.business.entity.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @author zhuhs
  * @date 2024/10/17
@@ -39,15 +41,27 @@ public class LungTaskInfo {
     @Schema(description = "查询结果 0:失败 1:成功")
     private Integer queryResult;
 
-    /**
-     * MPR任务状态 0:等待发起 1:等待推送 2:完成 -1:异常
-     */
-    @Schema(description = "MPR任务状态 0:等待发起 1:等待推送 2:完成 -1:异常")
-    private Integer mprTaskStatus;
+    private List<MprTaskInfo> mprTaskInfoList;
 
-    /**
-     * MPR结果 0:失败 1:成功
-     */
-    @Schema(description = "MPR结果 0:失败 1:成功")
-    private Integer mprResult;
+
+    @Data
+    public static class MprTaskInfo {
+        /**
+         * 任务状态 0:等待发起 1:等待推送 2:完成 -1:异常
+         */
+        @Schema(description = "任务状态 0:等待发起 1:等待推送 2:完成 -1:异常")
+        private Integer mprTaskStatus;
+
+        /**
+         * MPR结果 0:失败 1:成功
+         */
+        @Schema(description = "MPR结果 0:失败 1:成功")
+        private Integer mprResult;
+
+        /**
+         * 推送结果 0:失败 1:成功
+         */
+        @Schema(description = "推送结果 0:失败 1:成功")
+        private Integer mprPushResult;
+    }
 }

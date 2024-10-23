@@ -13,6 +13,7 @@ import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @author zhuhs
@@ -46,19 +47,24 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
             Integer pushResult = lungTaskInfo.getPushResult();
             Integer queryTaskStatus = lungTaskInfo.getQueryTaskStatus();
             Integer queryResult = lungTaskInfo.getQueryResult();
-            Integer mprTaskStatus = lungTaskInfo.getMprTaskStatus();
-            Integer mprResult = lungTaskInfo.getMprResult();
+            List<LungTaskInfo.MprTaskInfo> mprTaskInfoList = lungTaskInfo.getMprTaskInfoList();
 
-            if (applyTaskStatus == 0 && mprTaskStatus == 0) {
+            if (applyTaskStatus == 0
+                && mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprTaskStatus).allMatch(it -> it == 0)) {
                 computeStatus = ComputeStatus.WAIT_COMPUTE;
             }
-            if (applyResult == 0 || pushResult == 0 || mprResult == 0 || queryResult == 0) {
+            if (applyResult == 0 || pushResult == 0 || queryResult == 0
+                || mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprResult).anyMatch(it -> it == 0)
+                || mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprPushResult).anyMatch(it -> it == 0)) {
                 computeStatus = ComputeStatus.COMPUTE_FAILED;
             }
-            if (queryTaskStatus == 1 && mprTaskStatus == 2 && queryResult == 1 && mprResult == 1) {
+            if (queryTaskStatus == 1 && queryResult == 1
+                && mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprTaskStatus).allMatch(it -> it == 2)
+                && mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprPushResult).allMatch(it -> it == 1)) {
                 computeStatus = ComputeStatus.COMPUTE_SUCCESS;
             }
-            if (applyTaskStatus == -1 || queryTaskStatus == -1 || mprTaskStatus == -1) {
+            if (applyTaskStatus == -1 || queryTaskStatus == -1
+                || mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprTaskStatus).anyMatch(it -> it == -1)) {
                 computeStatus = ComputeStatus.COMPUTE_ERROR;
             }
         }

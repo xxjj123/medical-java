@@ -7,34 +7,34 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * vti文件
+ * MPR三维模型
  *
  * @author zhuhs
- * @date 2024/7/18 11:48
+ * @date 2024/10/21
  */
-@Schema(description = "vti文件")
+@Schema(description = "MPR三维模型")
 @Data
-@TableName(value = "tb_vti")
-public class VtiPO {
+@TableName(value = "tb_mpr_model")
+public class MprModelPO {
     /**
-     * 主键
+     * MPR模型ID
      */
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    @Schema(description = "主键")
-    private String id;
+    @TableId(value = "mpr_model_id", type = IdType.ASSIGN_ID)
+    @Schema(description = "MPR模型ID")
+    private String mprModelId;
 
     /**
-     * tb_study.id
+     * 检查ID
      */
     @TableField(value = "study_id")
-    @Schema(description = "tb_study.id")
+    @Schema(description = "检查ID")
     private String studyId;
 
     /**
-     * tb_series.id
+     * 序列ID
      */
     @TableField(value = "series_id")
-    @Schema(description = "tb_series.id")
+    @Schema(description = "序列ID")
     private String seriesId;
 
     /**
@@ -52,18 +52,11 @@ public class VtiPO {
     private String seriesInstanceUid;
 
     /**
-     * view name
+     * MPR类型
      */
-    @TableField(value = "view_name")
-    @Schema(description = "view name")
-    private String viewName;
-
-    /**
-     * view index
-     */
-    @TableField(value = "view_index")
-    @Schema(description = "view index")
-    private Integer viewIndex;
+    @TableField(value = "mpr_type")
+    @Schema(description = "MPR类型")
+    private String mprType;
 
     /**
      * 访问路径

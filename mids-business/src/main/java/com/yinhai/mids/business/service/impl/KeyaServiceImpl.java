@@ -7,7 +7,6 @@ import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.text.StrPool;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
@@ -24,6 +23,7 @@ import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.job.TaskLockManager;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeSeriesService;
+import com.yinhai.mids.business.service.InstanceInfoService;
 import com.yinhai.mids.business.service.KeyaService;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.module.mybatis.UpdateEntity;
@@ -31,24 +31,16 @@ import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
-import com.yinhai.ta404.module.storage.core.ITaFSManager;
-import com.yinhai.ta404.module.storage.core.TaFSObject;
-import com.yinhai.ta404.storage.ta.core.FSManager;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * @author zhuhs
@@ -79,7 +71,7 @@ public class KeyaServiceImpl implements KeyaService {
     private ComputeSeriesService computeSeriesService;
 
     @Resource
-    private ITaFSManager<FSManager> fsManager;
+    private InstanceInfoService instanceInfoService;
 
     @Resource
     private KeyaClient keyaClient;
@@ -124,7 +116,7 @@ public class KeyaServiceImpl implements KeyaService {
         File tempZip = null;
         KeyaResponse response;
         try {
-            tempZip = readDicom(instanceInfoList);
+            tempZip = instanceInfoService.readDicom(instanceInfoList);
             ForestResponse<KeyaResponse> resp = keyaClient.applyCompute(keyaProperties.getRegisterUrl(), tempZip, registerParam);
             if (resp.isError()) {
                 log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
@@ -156,36 +148,6 @@ public class KeyaServiceImpl implements KeyaService {
             return ((AppException) e).getErrorMessage();
         } else {
             return ExceptionUtil.getRootCauseMessage(e);
-        }
-    }
-
-    /**
-     * 读取DICOM文件
-     */
-    private File readDicom(List<InstanceInfoPO> instanceInfoList) {
-        // 创建临时文件用于压缩DICOM文件
-        File tempZip;
-        try {
-            tempZip = Files.createTempFile(null, ".zip").toFile();
-        } catch (IOException e) {
-            log.error(e);
-            throw new AppException("创建临时文件异常");
-        }
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(tempZip.toPath()))) {
-            for (InstanceInfoPO instanceInfo : instanceInfoList) {
-                TaFSObject fsObject = fsManager.getObject("mids", instanceInfo.getAccessPath());
-                zipOutputStream.putNextEntry(new ZipEntry(instanceInfo.getSopInstanceUid()));
-                try (InputStream inputStream = fsObject.getInputstream()) {
-                    IoUtil.copy(inputStream, zipOutputStream);
-                }
-                zipOutputStream.closeEntry();
-            }
-            zipOutputStream.finish();
-            return tempZip;
-        } catch (IOException e) {
-            FileUtil.del(tempZip);
-            log.error(e);
-            throw new AppException("读取并压缩DICOM文件异常");
         }
     }
 

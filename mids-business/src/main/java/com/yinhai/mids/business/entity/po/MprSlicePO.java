@@ -6,29 +6,35 @@ import lombok.Data;
 
 import java.util.Date;
 
-@Schema(description = "3d模型文件")
+/**
+ * MPR切片
+ *
+ * @author zhuhs
+ * @date 2024/10/21
+ */
+@Schema(description = "MPR切片")
 @Data
-@TableName(value = "tb_3d")
-public class Model3dPO {
+@TableName(value = "tb_mpr_slice")
+public class MprSlicePO {
     /**
-     * 主键
+     * MPR切片ID
      */
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    @Schema(description = "主键")
-    private String id;
+    @TableId(value = "mpr_slice_id", type = IdType.ASSIGN_ID)
+    @Schema(description = "MPR切片ID")
+    private String mprSliceId;
 
     /**
-     * tb_study.id
+     * 检查ID
      */
     @TableField(value = "study_id")
-    @Schema(description = "tb_study.id")
+    @Schema(description = "检查ID")
     private String studyId;
 
     /**
-     * tb_series.id
+     * 序列ID
      */
     @TableField(value = "series_id")
-    @Schema(description = "tb_series.id")
+    @Schema(description = "序列ID")
     private String seriesId;
 
     /**
@@ -46,11 +52,25 @@ public class Model3dPO {
     private String seriesInstanceUid;
 
     /**
-     * type
+     * view name
      */
-    @TableField(value = "type")
-    @Schema(description = "type")
-    private String type;
+    @TableField(value = "view_name")
+    @Schema(description = "view name")
+    private String viewName;
+
+    /**
+     * view index
+     */
+    @TableField(value = "view_index")
+    @Schema(description = "view index")
+    private Integer viewIndex;
+
+    /**
+     * 轴向总数
+     */
+    @TableField(value = "view_total")
+    @Schema(description = "轴向总数")
+    private Integer viewTotal;
 
     /**
      * 访问路径

@@ -10,7 +10,7 @@ import java.util.Date;
  * MPR任务
  *
  * @author zhuhs
- * @date 2024/10/16
+ * @date 2024/10/21
  */
 @Schema(description = "MPR任务")
 @Data
@@ -38,6 +38,20 @@ public class MprTaskPO {
     private Integer taskStatus;
 
     /**
+     * MPR类型
+     */
+    @TableField(value = "mpr_type")
+    @Schema(description = "MPR类型")
+    private String mprType;
+
+    /**
+     * 申请编号
+     */
+    @TableField(value = "apply_id")
+    @Schema(description = "申请编号")
+    private String applyId;
+
+    /**
      * 发起时间
      */
     @TableField(value = "mpr_time")
@@ -45,18 +59,39 @@ public class MprTaskPO {
     private Date mprTime;
 
     /**
-     * 申请返回
+     * MPR返回
      */
     @TableField(value = "mpr_response")
-    @Schema(description = "申请返回")
+    @Schema(description = "MPR返回")
     private String mprResponse;
 
     /**
      * MPR结果 0:失败 1:成功
      */
-    @TableField(value = "mpt_result")
+    @TableField(value = "mpr_result")
     @Schema(description = "MPR结果 0:失败 1:成功")
     private Integer mprResult;
+
+    /**
+     * 推送时间
+     */
+    @TableField(value = "push_time")
+    @Schema(description = "推送时间")
+    private Date pushTime;
+
+    /**
+     * 推送内容
+     */
+    @TableField(value = "push_content")
+    @Schema(description = "推送内容")
+    private String pushContent;
+
+    /**
+     * 推送结果 0:失败 1:成功
+     */
+    @TableField(value = "push_result")
+    @Schema(description = "推送结果 0:失败 1:成功")
+    private Integer pushResult;
 
     /**
      * 异常信息

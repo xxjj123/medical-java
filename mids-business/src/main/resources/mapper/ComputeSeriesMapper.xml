@@ -1,14 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yinhai.mids.business.mapper.ComputeSeriesMapper">
-    <select id="queryLungTaskInfo" resultType="com.yinhai.mids.business.entity.dto.LungTaskInfo">
-        SELECT a.task_status                    applyTaskStatus,
-               COALESCE(a.apply_result, 999999) applyResult,
-               COALESCE(a.push_result, 999999)  pushResult,
-               COALESCE(b.task_status, 999999)  queryTaskStatus,
-               COALESCE(b.query_result, 999999) queryResult,
-               COALESCE(c.task_status, 999999)  mprTaskStatus,
-               COALESCE(c.mpr_result, 999999)   mprResult
+    <resultMap id="lungTaskInfo" type="com.yinhai.mids.business.entity.dto.LungTaskInfo">
+        <result column="applyTaskStatus" jdbcType="INTEGER" property="applyTaskStatus"/>
+        <result column="applyResult" jdbcType="INTEGER" property="applyResult"/>
+        <result column="pushResult" jdbcType="INTEGER" property="pushResult"/>
+        <result column="queryTaskStatus" jdbcType="INTEGER" property="queryTaskStatus"/>
+        <result column="queryResult" jdbcType="INTEGER" property="queryResult"/>
+        <collection property="mprTaskInfoList" ofType="com.yinhai.mids.business.entity.dto.LungTaskInfo$MprTaskInfo">
+            <result column="mprTaskStatus" jdbcType="INTEGER" property="mprTaskStatus"/>
+            <result column="mprResult" jdbcType="INTEGER" property="mprResult"/>
+            <result column="mprPushResult" jdbcType="INTEGER" property="mprPushResult"/>
+        </collection>
+    </resultMap>
+
+    <select id="queryLungTaskInfo" resultMap="lungTaskInfo">
+        SELECT a.task_status               applyTaskStatus,
+               COALESCE(a.apply_result, 9) applyResult,
+               COALESCE(a.push_result, 9)  pushResult,
+               COALESCE(b.task_status, 9)  queryTaskStatus,
+               COALESCE(b.query_result, 9) queryResult,
+               COALESCE(c.task_status, 9)  mprTaskStatus,
+               COALESCE(c.mpr_result, 9)   mprResult,
+               COALESCE(c.push_result, 9)  mprPushResult
         FROM tb_keya_apply_task a
                  LEFT JOIN tb_keya_query_task b ON a.compute_series_id = b.compute_series_id
                  LEFT JOIN tb_mpr_task c ON a.compute_series_id = c.compute_series_id

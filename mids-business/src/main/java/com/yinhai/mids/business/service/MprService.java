@@ -1,17 +1,17 @@
 package com.yinhai.mids.business.service;
 
+import com.yinhai.mids.business.entity.dto.MprPushParam;
+import com.yinhai.mids.business.entity.dto.MprToDoTask;
+
 /**
  * @author zhuhs
  * @date 2024/7/18 15:23
  */
 public interface MprService {
 
-    void doMprAnalyse(String seriesId);
+    void mpr(MprToDoTask mprTask);
 
-    /**
-     * 异步执行三维分析，并且保证同时只有一处执行
-     *
-     * @param seriesId 序列ID
-     */
-    void lockedAsyncDoMprAnalyse(String seriesId);
+    void lockedAsyncMpr(MprToDoTask mprTask);
+
+    void onMprPush(MprPushParam mprPushParam);
 }

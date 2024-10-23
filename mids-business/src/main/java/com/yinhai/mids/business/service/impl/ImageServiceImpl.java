@@ -19,6 +19,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 /**
  * @author zhuhs
@@ -40,10 +41,10 @@ public class ImageServiceImpl implements ImageService {
     private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
-    private VtiMapper vtiMapper;
+    private MprSliceMapper mprSliceMapper;
 
     @Resource
-    private Model3dMapper model3dMapper;
+    private MprModelMapper mprModelMapper;
 
     @Resource
     private FileStoreService fileStoreService;
@@ -66,10 +67,12 @@ public class ImageServiceImpl implements ImageService {
         result.setStudyId(studyInfo.getStudyId());
         result.setSeriesId(seriesInfo.getSeriesId());
         result.setImageCount(seriesInfo.getImageCount());
-        // TODO MPR相关信息
-        // result.setAxialCount(seriesInfo.getAxialCount());
-        // result.setCoronalCount(seriesInfo.getCoronalCount());
-        // result.setSagittalCount(seriesInfo.getSagittalCount());
+
+        Map<String, Integer> viewTotal = mprSliceMapper.queryViewTotal(seriesInfo.getSeriesId());
+        result.setAxialCount(viewTotal.getOrDefault("axial", 0));
+        result.setCoronalCount(viewTotal.getOrDefault("coronal", 0));
+        result.setSagittalCount(viewTotal.getOrDefault("sagittal", 0));
+
         result.setSliceThickness(studyInfo.getSliceThickness());
         result.setKvp(studyInfo.getKvp());
         result.setPixelSpacing(studyInfo.getPixelSpacing());
@@ -86,13 +89,13 @@ public class ImageServiceImpl implements ImageService {
     @Override
     @SuppressWarnings("unchecked")
     public void downloadSlice(String seriesId, String viewName, Integer viewIndex, HttpServletResponse response) {
-        VtiPO vtiPO = vtiMapper.selectOne(Wrappers.<VtiPO>lambdaQuery()
-                .select(VtiPO::getAccessPath)
-                .eq(VtiPO::getSeriesId, seriesId)
-                .eq(VtiPO::getViewName, viewName)
-                .eq(VtiPO::getViewIndex, viewIndex));
-        AppAssert.notNull(vtiPO, "未找到切片");
-        try (InputStream in = fileStoreService.download(vtiPO.getAccessPath())) {
+        MprSlicePO slice = mprSliceMapper.selectOne(Wrappers.<MprSlicePO>lambdaQuery()
+                .select(MprSlicePO::getAccessPath)
+                .eq(MprSlicePO::getSeriesId, seriesId)
+                .eq(MprSlicePO::getViewName, viewName)
+                .eq(MprSlicePO::getViewIndex, viewIndex));
+        AppAssert.notNull(slice, "未找到切片");
+        try (InputStream in = fileStoreService.download(slice.getAccessPath())) {
             ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, viewName, viewIndex, "slice"));
         } catch (IOException e) {
             log.error(e, "下载影像切片异常，seriesId = {}, viewName = {}, viewIndex = {}", seriesId, viewName, viewIndex);
@@ -103,13 +106,13 @@ public class ImageServiceImpl implements ImageService {
     @Override
     @SuppressWarnings("unchecked")
     public void download3dModel(String seriesId, HttpServletResponse response) {
-        Model3dPO model3dPO = model3dMapper.selectOne(Wrappers.<Model3dPO>lambdaQuery()
-                .select(Model3dPO::getAccessPath)
-                .eq(Model3dPO::getSeriesId, seriesId)
-                .eq(Model3dPO::getType, "bone"));
-        AppAssert.notNull(model3dPO, "未找到3D模型");
+        MprModelPO model = mprModelMapper.selectOne(Wrappers.<MprModelPO>lambdaQuery()
+                .select(MprModelPO::getAccessPath)
+                .eq(MprModelPO::getSeriesId, seriesId)
+                .eq(MprModelPO::getMprType, "bone"));
+        AppAssert.notNull(model, "未找到3D模型");
 
-        try (InputStream in = fileStoreService.download(model3dPO.getAccessPath())) {
+        try (InputStream in = fileStoreService.download(model.getAccessPath())) {
             ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, "bone", "3d"));
         } catch (IOException e) {
             log.error(e, "下载3D模型异常，seriesId = {}, ", seriesId);

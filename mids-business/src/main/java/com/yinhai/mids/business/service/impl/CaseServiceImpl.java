@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ZipUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -11,6 +12,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.base.Joiner;
 import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.constant.ComputeType;
+import com.yinhai.mids.business.constant.MprType;
 import com.yinhai.mids.business.entity.dto.CaseStudyQuery;
 import com.yinhai.mids.business.entity.model.ContextFSObject;
 import com.yinhai.mids.business.entity.model.ContextUploadResult;
@@ -235,10 +237,20 @@ public class CaseServiceImpl implements CaseService {
                 applyTask.setTaskStatus(0);
                 keyaApplyTaskList.add(applyTask);
 
-                MprTaskPO mprTask = new MprTaskPO();
-                mprTask.setComputeSeriesId(computeSeries.getComputeSeriesId());
-                mprTask.setTaskStatus(0);
-                mprTaskList.add(mprTask);
+                MprTaskPO sliceMprTask = new MprTaskPO();
+                sliceMprTask.setComputeSeriesId(computeSeries.getComputeSeriesId());
+                sliceMprTask.setTaskStatus(0);
+                sliceMprTask.setMprType(MprType.SLICE);
+                mprTaskList.add(sliceMprTask);
+
+                MprTaskPO lungMprTask = new MprTaskPO();
+                lungMprTask.setComputeSeriesId(computeSeries.getComputeSeriesId());
+                lungMprTask.setTaskStatus(0);
+                lungMprTask.setMprType(MprType.LUNG);
+                mprTaskList.add(lungMprTask);
+
+                String mprApplyId = IdUtil.fastSimpleUUID();
+                mprTaskList.forEach(it -> it.setApplyId(mprApplyId));
             }
         }
         keyaApplyTaskMapper.insertBatch(keyaApplyTaskList);
@@ -364,8 +376,11 @@ public class CaseServiceImpl implements CaseService {
                 .set(KeyaApplyTaskPO::getTaskStatus, 0));
         keyaQueryTaskMapper.delete(
                 Wrappers.<KeyaQueryTaskPO>lambdaUpdate().in(KeyaQueryTaskPO::getComputeSeriesId, computeSeriesIds));
+        // MPR成功的，不用再重新发起MPR
         mprTaskMapper.update(new MprTaskPO(), Wrappers.<MprTaskPO>lambdaUpdate()
                 .in(MprTaskPO::getComputeSeriesId, computeSeriesIds)
+                .and(w -> w.isNull(MprTaskPO::getPushResult).or().ne(MprTaskPO::getMprResult, 1))
+                .set(MprTaskPO::getApplyId, IdUtil.fastSimpleUUID())
                 .set(MprTaskPO::getTaskStatus, 0));
     }
 }
