@@ -18,10 +18,8 @@ public class TaskLockManager {
 
     public static void lock(TaskType taskType, String itemId, int expireSeconds, Runnable runnable) {
         TaskLockService taskLockService = ServiceLocator.getService(TaskLockService.class);
-        log.debug("try lock task, taskType = {}, itemId = {}", taskType, itemId);
         boolean locked = taskLockService.tryLock(taskType, itemId, expireSeconds);
         if (!locked) {
-            log.debug("task lock fail, taskType = {}, itemId = {}", taskType, itemId);
             return;
         }
         try {

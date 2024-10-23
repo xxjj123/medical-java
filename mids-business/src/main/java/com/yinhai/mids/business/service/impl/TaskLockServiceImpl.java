@@ -1,7 +1,6 @@
 package com.yinhai.mids.business.service.impl;
 
 import cn.hutool.core.date.DateUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -10,7 +9,7 @@ import com.yinhai.mids.business.entity.po.TaskLockPO;
 import com.yinhai.mids.business.mapper.TaskLockMapper;
 import com.yinhai.mids.business.service.TaskLockService;
 import com.yinhai.mids.common.util.DbClock;
-import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +22,6 @@ import java.util.Date;
  * @date 2024/9/4
  */
 @Service
-@TaTransactional
 public class TaskLockServiceImpl implements TaskLockService {
 
     private static final Log log = LogFactory.get();
@@ -41,9 +39,13 @@ public class TaskLockServiceImpl implements TaskLockService {
             Date now = DbClock.now();
             Date expireTime = expireSeconds <= 0 ? null : DateUtil.offsetSecond(now, expireSeconds);
             if (taskLockPO == null) {
-                String id = IdUtil.getSnowflakeNextIdStr();
-                int created = taskLockMapper.createLock(id, itemId, taskType.getType(), expireTime);
-                return created > 0;
+                TaskLockPO newLock = new TaskLockPO();
+                newLock.setItemId(itemId);
+                newLock.setTaskType(taskType.getType());
+                newLock.setExpireTime(expireTime);
+                // 数据库里taskType和itemId构成唯一索引，如存在则会抛出DuplicateKeyException
+                int inserted = taskLockMapper.insert(newLock);
+                return inserted == 1;
             }
 
             // 不会失效或者尚未失效
@@ -56,7 +58,9 @@ public class TaskLockServiceImpl implements TaskLockService {
                     .set(TaskLockPO::getExpireTime, expireTime));
             return updated > 0;
         } catch (Exception e) {
-            log.debug("tryLock exception occurred: {}", e.getClass().getName());
+            if (!(e instanceof DuplicateKeyException)) {
+                log.error(e, "tryLock failed because of an exception: {}", e.getClass().getName());
+            }
             return false;
         }
     }
