@@ -96,25 +96,20 @@ public class JobConfig implements SchedulingConfigurer {
     /**
      * 创建一个定时任务，该任务在多节点下同时只在一个随机节点执行。任务的延迟时间和间隔时间不会严格按照设置
      *
-     * @param taskType            任务类型
-     * @param runnable            执行代码
-     * @param intervalSeconds     间隔时间
+     * @param taskType        任务类型
+     * @param runnable        执行代码
+     * @param intervalSeconds 间隔时间
      */
     private FixedRateTask createTask(TaskType taskType, Runnable runnable, int intervalSeconds) {
-        if (intervalSeconds < 2) {
-            throw new IllegalArgumentException("任务间隔时间不能小于2秒");
-        }
-        Runnable lockedRunnable = () -> {
-            // 微调加锁时间，减少锁竞争和增加随机性
-            ThreadUtil.safeSleep(RandomUtil.randomLong(500L));
-            TaskLockManager.lock(taskType, intervalSeconds, runnable);
-        };
-
         // 使不同节点的相同定时任务，执行时机相同
         int initialDelaySeconds = 30;
         long delay = initialDelaySeconds * 1000L;
         long interval = intervalSeconds * 1000L;
         long finalDelay = delay + interval - (DbClock.now().getTime() + delay) % interval;
-        return new FixedRateTask(lockedRunnable, interval, finalDelay);
+        return new FixedRateTask(() -> {
+            // 微调加锁时间，减少锁竞争和增加随机性
+            ThreadUtil.safeSleep(RandomUtil.randomLong(500L));
+            TaskLockManager.lock(taskType, intervalSeconds, runnable);
+        }, interval, finalDelay);
     }
 }
