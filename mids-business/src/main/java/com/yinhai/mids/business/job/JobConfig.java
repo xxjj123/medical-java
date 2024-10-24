@@ -1,6 +1,8 @@
 package com.yinhai.mids.business.job;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.log.Log;
@@ -108,8 +110,16 @@ public class JobConfig implements SchedulingConfigurer {
         long finalDelay = delay + interval - (DbClock.now().getTime() + delay) % interval;
         return new FixedRateTask(() -> {
             // 微调加锁时间，减少锁竞争和增加随机性
-            ThreadUtil.safeSleep(RandomUtil.randomLong(500L));
-            TaskLockManager.lock(taskType, intervalSeconds, runnable);
+            ThreadUtil.safeSleep(RandomUtil.randomLong(200L));
+            TaskLockManager.lock(taskType, intervalSeconds, () -> {
+                // 至少执行300毫秒
+                TimeInterval timer = DateUtil.timer();
+                runnable.run();
+                long cost = timer.interval();
+                if (cost < 300) {
+                    ThreadUtil.safeSleep(300 - cost);
+                }
+            });
         }, interval, finalDelay);
     }
 }
