@@ -122,9 +122,14 @@ public class DicomInfo {
     private String manufacturer;
 
     /**
+     * slicePosition
+     */
+    @Schema(description = "slicePosition")
+    private double slicePosition;
+
+    /**
      * DICOM文件
      */
     @Schema(description = "DICOM文件")
     private File file;
-
 }

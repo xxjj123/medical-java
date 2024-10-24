@@ -59,6 +59,10 @@ public class DicomUtil {
             }
             dicomInfo.setInstitutionName(dataset.getString(Tag.InstitutionName));
             dicomInfo.setManufacturer(dataset.getString(Tag.Manufacturer));
+            double[] imagePositionPatient = dataset.getDoubles(Tag.ImagePositionPatient);
+            if (ArrayUtil.isNotEmpty(imagePositionPatient)) {
+                dicomInfo.setSlicePosition(imagePositionPatient[2]);
+            }
             dicomInfo.setFile(dicomFile);
         } catch (IOException e) {
             log.error(e);

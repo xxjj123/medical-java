@@ -168,8 +168,12 @@ public class CaseServiceImpl implements CaseService {
     private void saveInstanceInfo(List<DicomInstance> dicomInstanceList) {
         List<InstanceInfoPO> instanceInfoList = new ArrayList<>();
         List<ContextFSObject<String>> contextFSObjects = new ArrayList<>();
-        for (DicomInstance dicomInstance : dicomInstanceList) {
+        List<DicomInstance> sortedDicomInstanceList = dicomInstanceList.stream()
+                .sorted((o1, o2) -> Double.compare(o2.getSlicePosition(), o1.getSlicePosition())).collect(toList());
+        for (int i = 0; i < sortedDicomInstanceList.size(); i++) {
+            DicomInstance dicomInstance = sortedDicomInstanceList.get(i);
             InstanceInfoPO instanceInfoPO = BeanUtil.copyProperties(dicomInstance, InstanceInfoPO.class);
+            instanceInfoPO.setViewIndex(i + 1);
             instanceInfoList.add(instanceInfoPO);
             ContextFSObject<String> contextFSObject;
             try {

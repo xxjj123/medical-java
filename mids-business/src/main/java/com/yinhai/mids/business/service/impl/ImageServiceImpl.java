@@ -1,5 +1,6 @@
 package com.yinhai.mids.business.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -38,6 +39,9 @@ public class ImageServiceImpl implements ImageService {
     private SeriesInfoMapper seriesInfoMapper;
 
     @Resource
+    private InstanceInfoMapper instanceInfoMapper;
+
+    @Resource
     private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
@@ -69,7 +73,7 @@ public class ImageServiceImpl implements ImageService {
         result.setImageCount(seriesInfo.getImageCount());
 
         Map<String, Integer> viewTotal = mprSliceMapper.queryViewTotal(seriesInfo.getSeriesId());
-        result.setAxialCount(viewTotal.getOrDefault("axial", 0));
+        result.setAxialCount(seriesInfo.getImageCount());
         result.setCoronalCount(viewTotal.getOrDefault("coronal", 0));
         result.setSagittalCount(viewTotal.getOrDefault("sagittal", 0));
 
@@ -89,13 +93,24 @@ public class ImageServiceImpl implements ImageService {
     @Override
     @SuppressWarnings("unchecked")
     public void downloadSlice(String seriesId, String viewName, Integer viewIndex, HttpServletResponse response) {
-        MprSlicePO slice = mprSliceMapper.selectOne(Wrappers.<MprSlicePO>lambdaQuery()
-                .select(MprSlicePO::getAccessPath)
-                .eq(MprSlicePO::getSeriesId, seriesId)
-                .eq(MprSlicePO::getViewName, viewName)
-                .eq(MprSlicePO::getViewIndex, viewIndex));
-        AppAssert.notNull(slice, "未找到切片");
-        try (InputStream in = fileStoreService.download(slice.getAccessPath())) {
+        String accessPath;
+        if (StrUtil.equals("axial", viewName)) {
+            InstanceInfoPO instanceInfo = instanceInfoMapper.selectOne(Wrappers.<InstanceInfoPO>lambdaQuery()
+                    .select(InstanceInfoPO::getAccessPath)
+                    .eq(InstanceInfoPO::getSeriesId, seriesId)
+                    .eq(InstanceInfoPO::getViewIndex, viewIndex));
+            AppAssert.notNull(instanceInfo, "未找到切片");
+            accessPath = instanceInfo.getAccessPath();
+        } else {
+            MprSlicePO slice = mprSliceMapper.selectOne(Wrappers.<MprSlicePO>lambdaQuery()
+                    .select(MprSlicePO::getAccessPath)
+                    .eq(MprSlicePO::getSeriesId, seriesId)
+                    .eq(MprSlicePO::getViewName, viewName)
+                    .eq(MprSlicePO::getViewIndex, viewIndex));
+            AppAssert.notNull(slice, "未找到切片");
+            accessPath = slice.getAccessPath();
+        }
+        try (InputStream in = fileStoreService.download(accessPath)) {
             ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, viewName, viewIndex, "slice"));
         } catch (IOException e) {
             log.error(e, "下载影像切片异常，seriesId = {}, viewName = {}, viewIndex = {}", seriesId, viewName, viewIndex);

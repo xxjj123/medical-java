@@ -97,6 +97,8 @@ public class JobConfig implements SchedulingConfigurer {
 
     /**
      * 创建一个定时任务，该任务在多节点下同时只在一个随机节点执行。任务的延迟时间和间隔时间不会严格按照设置
+     * <br>
+     * 只适用于间隔较短的定时任务，5s以上1h以下
      *
      * @param taskType        任务类型
      * @param runnable        执行代码

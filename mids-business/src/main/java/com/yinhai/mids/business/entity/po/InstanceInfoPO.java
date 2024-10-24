@@ -73,6 +73,13 @@ public class InstanceInfoPO {
     private String accessPath;
 
     /**
+     * view index
+     */
+    @TableField(value = "view_index")
+    @Schema(description = "view index")
+    private Integer viewIndex;
+
+    /**
      * 数据创建时间
      */
     @TableField(value = "create_time", fill = FieldFill.INSERT)
