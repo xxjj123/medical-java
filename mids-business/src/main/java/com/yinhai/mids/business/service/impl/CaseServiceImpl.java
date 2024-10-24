@@ -207,7 +207,7 @@ public class CaseServiceImpl implements CaseService {
             computeSeries.setStudyId(dicomInstance.getStudyId());
             computeSeries.setSeriesId(dicomInstance.getSeriesId());
             computeSeries.setComputeType(ComputeType.SPINE);
-            computeSeries.setComputeStatus(Integer.valueOf(ComputeStatus.WAIT_COMPUTE));
+            computeSeries.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
             computeSeriesMapper.insert(computeSeries);
             computeSeriesList.add(computeSeries);
         } else {
@@ -220,7 +220,7 @@ public class CaseServiceImpl implements CaseService {
                 computeSeries.setStudyId(dicomInstance.getStudyId());
                 computeSeries.setSeriesId(dicomInstance.getSeriesId());
                 computeSeries.setComputeType(ComputeType.LUNG);
-                computeSeries.setComputeStatus(Integer.valueOf(ComputeStatus.WAIT_COMPUTE));
+                computeSeries.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
                 computeSeriesList.add(computeSeries);
             }
             computeSeriesMapper.insertBatch(computeSeriesList);

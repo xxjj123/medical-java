@@ -5,6 +5,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.base.Joiner;
+import com.yinhai.mids.business.entity.dto.ViewCount;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.ImageInitInfoVO;
 import com.yinhai.mids.business.mapper.*;
@@ -20,6 +21,8 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -64,7 +67,7 @@ public class ImageServiceImpl implements ImageService {
         AppAssert.notNull(seriesInfo, "该序列不存在");
         StudyInfoPO studyInfo = studyInfoMapper.selectById(computeSeries.getStudyId());
         AppAssert.notNull(studyInfo, "该序列对应检查不存在！");
-        AppAssert.equals(computeSeries.getComputeStatus(), 3, "该序列计算不成功");
+        AppAssert.equals(computeSeries.getComputeStatus(), 3, "当前序列计算状态非成功状态");
 
         ImageInitInfoVO result = new ImageInitInfoVO();
         result.setComputeSeriesId(computeSeriesId);
@@ -72,10 +75,14 @@ public class ImageServiceImpl implements ImageService {
         result.setSeriesId(seriesInfo.getSeriesId());
         result.setImageCount(seriesInfo.getImageCount());
 
-        Map<String, Integer> viewTotal = mprSliceMapper.queryViewTotal(seriesInfo.getSeriesId());
+        List<ViewCount> viewCounts = mprSliceMapper.queryViewTotal(seriesInfo.getSeriesId());
+        Map<String, Integer> viewCountMap = new HashMap<>();
+        for (ViewCount viewCount : viewCounts) {
+            viewCountMap.put(viewCount.getViewName(), viewCount.getViewTotal());
+        }
         result.setAxialCount(seriesInfo.getImageCount());
-        result.setCoronalCount(viewTotal.getOrDefault("coronal", 0));
-        result.setSagittalCount(viewTotal.getOrDefault("sagittal", 0));
+        result.setCoronalCount(viewCountMap.getOrDefault("coronal", 0));
+        result.setSagittalCount(viewCountMap.getOrDefault("sagittal", 0));
 
         result.setSliceThickness(studyInfo.getSliceThickness());
         result.setKvp(studyInfo.getKvp());
@@ -124,11 +131,11 @@ public class ImageServiceImpl implements ImageService {
         MprModelPO model = mprModelMapper.selectOne(Wrappers.<MprModelPO>lambdaQuery()
                 .select(MprModelPO::getAccessPath)
                 .eq(MprModelPO::getSeriesId, seriesId)
-                .eq(MprModelPO::getMprType, "bone"));
+                .eq(MprModelPO::getMprType, "lung"));
         AppAssert.notNull(model, "未找到3D模型");
 
         try (InputStream in = fileStoreService.download(model.getAccessPath())) {
-            ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, "bone", "3d"));
+            ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, "lung", "3d"));
         } catch (IOException e) {
             log.error(e, "下载3D模型异常，seriesId = {}, ", seriesId);
             throw new AppException("下载3D模型异常");

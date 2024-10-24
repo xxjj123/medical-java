@@ -248,7 +248,6 @@ public class MprServiceImpl implements MprService {
         for (File file : files) {
             ContextFSObject<String> cfo = new ContextFSObject<>(file);
             cfo.setContext(file.getName());
-            cfo.setContentType("application/vti");
             contextFSObjects.add(cfo);
         }
         List<ContextUploadResult<String>> uploadResults = fileStoreService.upload(contextFSObjects);

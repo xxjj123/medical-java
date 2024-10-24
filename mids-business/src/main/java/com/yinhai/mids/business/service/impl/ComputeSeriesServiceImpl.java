@@ -35,7 +35,7 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
             return;
         }
 
-        String computeStatus = ComputeStatus.IN_COMPUTE;
+        int computeStatus = ComputeStatus.IN_COMPUTE;
         Integer computeType = computeSeries.getComputeType();
         if (ComputeType.LUNG == computeType) {
             LungTaskInfo lungTaskInfo = computeSeriesMapper.queryLungTaskInfo(computeSeriesId);
@@ -70,7 +70,7 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
         }
         computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
                 .eq(ComputeSeriesPO::getComputeSeriesId, computeSeriesId)
-                .set(ComputeSeriesPO::getComputeStatus, Integer.valueOf(computeStatus))
+                .set(ComputeSeriesPO::getComputeStatus, computeStatus)
         );
     }
 }

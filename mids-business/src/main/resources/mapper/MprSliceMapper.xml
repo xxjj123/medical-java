@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yinhai.mids.business.mapper.MprSliceMapper">
-    <select id="queryViewTotal" resultType="java.util.Map">
-        SELECT view_name, MAX(view_total)
+    <resultMap id="viewCount" type="com.yinhai.mids.business.entity.dto.ViewCount">
+        <result column="view_name" jdbcType="VARCHAR" property="viewName"/>
+        <result column="max_view_total" jdbcType="INTEGER" property="viewTotal"/>
+    </resultMap>
+
+    <select id="queryViewTotal" resultMap="viewCount">
+        SELECT view_name, MAX(view_total) max_view_total
         FROM tb_mpr_slice
+        WHERE series_id = #{seriesId,jdbcType=VARCHAR}
         GROUP BY view_name
     </select>
 </mapper>

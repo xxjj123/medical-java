@@ -1,9 +1,10 @@
 package com.yinhai.mids.business.mapper;
 
+import com.yinhai.mids.business.entity.dto.ViewCount;
 import com.yinhai.mids.business.entity.po.MprSlicePO;
 import com.yinhai.mids.common.module.mybatis.SuperMapper;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * @author zhuhs
@@ -11,5 +12,5 @@ import java.util.Map;
  */
 public interface MprSliceMapper extends SuperMapper<MprSlicePO> {
 
-    Map<String, Integer> queryViewTotal(String seriesId);
+    List<ViewCount> queryViewTotal(String seriesId);
 }
