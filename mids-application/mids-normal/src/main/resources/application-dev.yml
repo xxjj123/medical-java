@@ -46,11 +46,11 @@ xml-reload-enabled: true
 keya:
   result-url: http://192.168.1.24/connector/api/common/result
   register-url: http://192.168.1.24/connector/api/common/from/register/pacs
-  push-callback-url: http://192.168.1.26:39625/mids-api/open/keyaApplyPush
+  push-callback-url: http://192.168.1.4:39625/mids-api/open/keyaApplyPush
 
 
 # mpr配置
 mpr:
   register-url: http://192.168.1.4:36000/mpr/analyse
   health-url: http://192.168.1.4:36000/mpr/health
-  push-callback-url: http://192.168.1.26:39625/mids-api/open/mprPush
+  push-callback-url: http://192.168.1.4:39625/mids-api/open/mprPush

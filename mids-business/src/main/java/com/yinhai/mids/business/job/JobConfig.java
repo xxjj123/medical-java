@@ -1,6 +1,7 @@
 package com.yinhai.mids.business.job;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DatePattern;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.date.TimeInterval;
 import cn.hutool.core.thread.ThreadUtil;
@@ -71,8 +72,8 @@ public class JobConfig implements SchedulingConfigurer {
     public void keyaApply() {
         PageKit.startPage(PageRequest.of(1, 1));
         List<KeyaApplyToDoTask> toDoTaskList = applyTaskMapper.queryTodoTasks();
+        log.debug("{}, ToDoTasks: {}, {}", DateUtil.format(DbClock.now(), DatePattern.NORM_DATETIME_MS_PATTERN), "KEYA_APPLY", toDoTaskList.size());
         if (CollUtil.isNotEmpty(toDoTaskList)) {
-            log.debug("ToDoTasks: {}, {}", "KEYA_APPLY", toDoTaskList.size());
             toDoTaskList.forEach(task -> keyaService.lockedAsyncApply(task));
         }
     }
@@ -80,8 +81,8 @@ public class JobConfig implements SchedulingConfigurer {
     public void keyaQuery() {
         PageKit.startPage(PageRequest.of(1, 5));
         List<KeyaQueryToDoTask> toDoTaskList = queryTaskMapper.queryTodoTasks();
+        log.debug("{}, ToDoTasks: {}, {}", DateUtil.format(DbClock.now(), DatePattern.NORM_DATETIME_MS_PATTERN), "KEYA_QUERY", toDoTaskList.size());
         if (CollUtil.isNotEmpty(toDoTaskList)) {
-            log.debug("ToDoTasks: {}, {}", "KEYA_QUERY", toDoTaskList.size());
             toDoTaskList.forEach(task -> keyaService.lockedAsyncQuery(task));
         }
     }
@@ -89,8 +90,8 @@ public class JobConfig implements SchedulingConfigurer {
     public void mpr() {
         PageKit.startPage(PageRequest.of(1, 5));
         List<MprToDoTask> toDoTaskList = mprTaskMapper.queryTodoTasks();
+        log.debug("{}, ToDoTasks: {}, {}", DateUtil.format(DbClock.now(), DatePattern.NORM_DATETIME_MS_PATTERN), "MPR", toDoTaskList.size());
         if (CollUtil.isNotEmpty(toDoTaskList)) {
-            log.debug("ToDoTasks: {}, {}", "MPR", toDoTaskList.size());
             toDoTaskList.forEach(task -> mprService.lockedAsyncMpr(task));
         }
     }
@@ -112,14 +113,14 @@ public class JobConfig implements SchedulingConfigurer {
         long finalDelay = delay + interval - (DbClock.now().getTime() + delay) % interval;
         return new FixedRateTask(() -> {
             // 微调加锁时间，减少锁竞争和增加随机性
-            ThreadUtil.safeSleep(RandomUtil.randomLong(200L));
+            ThreadUtil.safeSleep(RandomUtil.randomLong(1000L));
             TaskLockManager.lock(taskType, intervalSeconds, () -> {
-                // 至少执行300毫秒
+                // 至少执行2000毫秒，以消除各节点之间的时间差
                 TimeInterval timer = DateUtil.timer();
                 runnable.run();
                 long cost = timer.interval();
-                if (cost < 300) {
-                    ThreadUtil.safeSleep(300 - cost);
+                if (cost < 3000L) {
+                    ThreadUtil.safeSleep(3000L - cost);
                 }
             });
         }, interval, finalDelay);
