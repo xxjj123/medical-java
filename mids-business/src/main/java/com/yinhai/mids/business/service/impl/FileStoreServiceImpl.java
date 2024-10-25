@@ -9,7 +9,7 @@ import com.yinhai.mids.business.entity.po.FileStorePO;
 import com.yinhai.mids.business.mapper.FileStoreMapper;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.common.exception.AppAssert;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.module.storage.core.ITaFSManager;
 import com.yinhai.ta404.module.storage.core.TaFSObject;
@@ -52,7 +52,7 @@ public class FileStoreServiceImpl implements FileStoreService {
         fileStorePO.setContentType(contextFSObject.getContentType());
         fileStorePO.setOriginalName(contextFSObject.getName());
         fileStorePO.setAccessPath(taFSObject.getKeyId());
-        fileStorePO.setUploadTime(DbKit.now());
+        fileStorePO.setUploadTime(DbClock.now());
         fileStoreMapper.insert(fileStorePO);
 
         UploadResult uploadResult = new UploadResult();
@@ -72,7 +72,7 @@ public class FileStoreServiceImpl implements FileStoreService {
             fileStorePO.setContentType(fsObject.getContentType());
             fileStorePO.setOriginalName(fsObject.getName());
             fileStorePO.setAccessPath(fsObject.getKeyId());
-            fileStorePO.setUploadTime(DbKit.now());
+            fileStorePO.setUploadTime(DbClock.now());
             fileStorePOList.add(fileStorePO);
         }
         fileStoreMapper.insertBatch(fileStorePOList);

@@ -38,20 +38,6 @@ public class TaskLockPO {
     private Integer taskType;
 
     /**
-     * 是否有效 0-否 1-是
-     */
-    @TableField(value = "effective")
-    @Schema(description = "是否有效 0-否 1-是")
-    private Boolean effective;
-
-    /**
-     * 生效时间
-     */
-    @TableField(value = "effective_time", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "生效时间")
-    private Date effectiveTime;
-
-    /**
      * 失效时间
      */
     @TableField(value = "expire_time", updateStrategy = FieldStrategy.ALWAYS)

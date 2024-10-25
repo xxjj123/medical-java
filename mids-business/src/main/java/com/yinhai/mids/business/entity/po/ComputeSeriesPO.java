@@ -3,90 +3,67 @@ package com.yinhai.mids.business.entity.po;
 import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.experimental.Accessors;
 
 import java.util.Date;
 
 /**
- * 序列计算
+ * 计算序列
  *
  * @author zhuhs
- * @date 2024/7/11 9:22
+ * @date 2024/10/15
  */
-@Accessors(chain = true)
-@Schema(description = "序列计算")
+@Schema(description = "计算序列")
 @Data
-@TableName(value = "tb_compute_series")
+@TableName(value = "tb_compute_series_info")
 public class ComputeSeriesPO {
     /**
-     * 主键
+     * 计算序列ID
      */
-    @TableId(value = "id", type = IdType.ASSIGN_ID)
-    @Schema(description = "主键")
-    private String id;
+    @TableId(value = "compute_series_id", type = IdType.ASSIGN_ID)
+    @Schema(description = "计算序列ID")
+    private String computeSeriesId;
 
     /**
-     * tb_study.id
+     * 案例ID
+     */
+    @TableField(value = "case_id")
+    @Schema(description = "案例ID")
+    private String caseId;
+
+    /**
+     * 检查ID
      */
     @TableField(value = "study_id")
-    @Schema(description = "tb_study.id")
+    @Schema(description = "检查ID")
     private String studyId;
 
     /**
-     * tb_series.id
+     * 序列ID
      */
     @TableField(value = "series_id")
-    @Schema(description = "tb_series.id")
+    @Schema(description = "序列ID")
     private String seriesId;
 
     /**
-     * 算法类型
+     * 计算类型
      */
-    @TableField(value = "algorithm_type")
-    @Schema(description = "算法类型")
-    private String algorithmType;
-
-    /**
-     * 计算申请编号
-     */
-    @TableField(value = "apply_id")
-    @Schema(description = "计算申请编号")
-    private String applyId;
+    @TableField(value = "compute_type")
+    @Schema(description = "计算类型")
+    private Integer computeType;
 
     /**
      * 计算状态 1-等待计算 2-计算中 3-计算成功 4-计算失败 5-计算取消 6-计算异常
      */
     @TableField(value = "compute_status")
     @Schema(description = "计算状态 1-等待计算 2-计算中 3-计算成功 4-计算失败 5-计算取消 6-计算异常")
-    private String computeStatus;
-
-    /**
-     * 发起计算时间
-     */
-    @TableField(value = "compute_start_time")
-    @Schema(description = "发起计算时间")
-    private Date computeStartTime;
-
-    /**
-     * 计算返回结果
-     */
-    @TableField(value = "compute_response")
-    @Schema(description = "计算返回结果")
-    private String computeResponse;
-
-    /**
-     * 异常信息
-     */
-    @TableField(value = "error_message")
-    @Schema(description = "异常信息")
-    private String errorMessage;
+    private Integer computeStatus;
 
     /**
      * 操作状态
      */
     @TableField(value = "operate_status")
     @Schema(description = "操作状态")
-    private String operateStatus;
+    private Integer operateStatus;
 
     /**
      * 操作医师
@@ -94,14 +71,6 @@ public class ComputeSeriesPO {
     @TableField(value = "operate_doctor_user_id")
     @Schema(description = "操作医师")
     private String operateDoctorUserId;
-
-    /**
-     * 逻辑删除
-     */
-    @TableLogic
-    @TableField(value = "deleted")
-    @Schema(description = "逻辑删除")
-    private Boolean deleted;
 
     /**
      * 数据创建时间

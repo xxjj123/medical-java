@@ -3,7 +3,7 @@ package com.yinhai.mids.business.mpr;
 import com.dtflys.forest.annotation.*;
 import com.dtflys.forest.http.ForestResponse;
 
-import java.io.InputStream;
+import java.io.File;
 
 /**
  * @author zhuhs
@@ -12,10 +12,10 @@ import java.io.InputStream;
 public interface MprClient {
     @Post(url = "{url}")
     ForestResponse<MprResponse> register(@Var("url") String url,
-                                         @DataFile(value = "file", fileName = "dicom.zip") InputStream in,
+                                         @DataFile(value = "file", fileName = "dicom.zip") File file,
                                          @Body RegisterParam other);
 
-    @Post(url = "{url}")
+    @Get(url = "{url}")
     @LogEnabled(value = false)
     ForestResponse<MprResponse> health(@Var("url") String url);
 }

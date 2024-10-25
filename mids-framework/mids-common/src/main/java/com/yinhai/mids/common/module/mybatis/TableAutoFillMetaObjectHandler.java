@@ -3,7 +3,7 @@ package com.yinhai.mids.common.module.mybatis;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.yinhai.mids.common.constant.Constants;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.SecurityKit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.reflection.MetaObject;
@@ -24,7 +24,7 @@ public class TableAutoFillMetaObjectHandler implements MetaObjectHandler {
     @Override
     public void insertFill(MetaObject metaObject) {
         // 时间
-        Date dbNow = DbKit.now();
+        Date dbNow = DbClock.now();
         this.strictInsertFill(metaObject, "createTime", Date.class, dbNow);
         this.strictInsertFill(metaObject, "updateTime", Date.class, dbNow);
         // 用户
@@ -36,7 +36,7 @@ public class TableAutoFillMetaObjectHandler implements MetaObjectHandler {
     @Override
     public void updateFill(MetaObject metaObject) {
         // 时间
-        Date dbNow = DbKit.now();
+        Date dbNow = DbClock.now();
         this.strictUpdateFill(metaObject, "updateTime", Date.class, dbNow);
         // 用户
         String loginId = StrUtil.isBlank(SecurityKit.currentUserId()) ? Constants.UNKNOWN : SecurityKit.currentUserId();

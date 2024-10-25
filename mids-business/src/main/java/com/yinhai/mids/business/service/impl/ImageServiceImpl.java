@@ -5,7 +5,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.base.Joiner;
-import com.yinhai.mids.business.constant.ComputeStatus;
+import com.yinhai.mids.business.entity.dto.ViewCount;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.ImageInitInfoVO;
 import com.yinhai.mids.business.mapper.*;
@@ -21,6 +21,9 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author zhuhs
@@ -33,19 +36,22 @@ public class ImageServiceImpl implements ImageService {
     private static final Log log = LogFactory.get();
 
     @Resource
-    private StudyMapper studyMapper;
+    private StudyInfoMapper studyInfoMapper;
 
     @Resource
-    private SeriesMapper seriesMapper;
+    private SeriesInfoMapper seriesInfoMapper;
+
+    @Resource
+    private InstanceInfoMapper instanceInfoMapper;
 
     @Resource
     private ComputeSeriesMapper computeSeriesMapper;
 
     @Resource
-    private VtiMapper vtiMapper;
+    private MprSliceMapper mprSliceMapper;
 
     @Resource
-    private Model3dMapper model3dMapper;
+    private MprModelMapper mprModelMapper;
 
     @Resource
     private FileStoreService fileStoreService;
@@ -53,59 +59,65 @@ public class ImageServiceImpl implements ImageService {
     @Override
     @SuppressWarnings("unchecked")
     public ImageInitInfoVO queryInitInfo(String computeSeriesId) {
-        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
-                .select(ComputeSeriesPO::getStudyId, ComputeSeriesPO::getSeriesId)
-                .eq(ComputeSeriesPO::getId, computeSeriesId));
-        AppAssert.notNull(computeSeriesPO, "该序列不存在！");
-        SeriesPO seriesPO = seriesMapper.selectById(computeSeriesPO.getSeriesId());
-        AppAssert.notNull(seriesPO, "该序列不存在");
-        StudyPO studyPO = studyMapper.selectById(computeSeriesPO.getStudyId());
-        AppAssert.notNull(studyPO, "该序列对应检查不存在！");
-
-        String mprStatus = seriesPO.getMprStatus();
-        if (StrUtil.equals(mprStatus, ComputeStatus.WAIT_COMPUTE)) {
-            throw new AppException("mpr等待计算中...");
-        } else if (StrUtil.equals(mprStatus, ComputeStatus.IN_COMPUTE)) {
-            throw new AppException("mpr计算中...");
-        } else if (StrUtil.equals(mprStatus, ComputeStatus.COMPUTE_FAILED)) {
-            throw new AppException("mpr计算失败...");
-        } else if (StrUtil.equals(mprStatus, ComputeStatus.COMPUTE_CANCELED)) {
-            throw new AppException("mpr计算取消...");
-        } else if (StrUtil.equals(mprStatus, ComputeStatus.COMPUTE_ERROR)) {
-            throw new AppException("mpr计算异常...");
-        }
+        ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
+                .select(ComputeSeriesPO::getStudyId, ComputeSeriesPO::getSeriesId, ComputeSeriesPO::getComputeStatus)
+                .eq(ComputeSeriesPO::getComputeSeriesId, computeSeriesId));
+        AppAssert.notNull(computeSeries, "该序列不存在！");
+        SeriesInfoPO seriesInfo = seriesInfoMapper.selectById(computeSeries.getSeriesId());
+        AppAssert.notNull(seriesInfo, "该序列不存在");
+        StudyInfoPO studyInfo = studyInfoMapper.selectById(computeSeries.getStudyId());
+        AppAssert.notNull(studyInfo, "该序列对应检查不存在！");
+        AppAssert.equals(computeSeries.getComputeStatus(), 3, "当前序列计算状态非成功状态");
 
         ImageInitInfoVO result = new ImageInitInfoVO();
         result.setComputeSeriesId(computeSeriesId);
-        result.setStudyId(studyPO.getId());
-        result.setSeriesId(seriesPO.getId());
-        result.setImageCount(seriesPO.getImageCount());
-        result.setAxialCount(seriesPO.getAxialCount());
-        result.setCoronalCount(seriesPO.getCoronalCount());
-        result.setSagittalCount(seriesPO.getSagittalCount());
-        result.setSliceThickness(studyPO.getSliceThickness());
-        result.setKvp(studyPO.getKvp());
-        result.setPixelSpacing(studyPO.getPixelSpacing());
-        result.setInstitutionName(studyPO.getInstitutionName());
-        result.setManufacturer(studyPO.getManufacturer());
-        result.setPatientName(studyPO.getPatientName());
-        result.setPatientSex(studyPO.getPatientSex());
-        result.setPatientAge(studyPO.getPatientAge());
-        result.setPatientId(studyPO.getPatientId());
-        result.setStudyDateAndTime(studyPO.getStudyDateAndTime());
+        result.setStudyId(studyInfo.getStudyId());
+        result.setSeriesId(seriesInfo.getSeriesId());
+        result.setImageCount(seriesInfo.getImageCount());
+
+        List<ViewCount> viewCounts = mprSliceMapper.queryViewTotal(seriesInfo.getSeriesId());
+        Map<String, Integer> viewCountMap = new HashMap<>();
+        for (ViewCount viewCount : viewCounts) {
+            viewCountMap.put(viewCount.getViewName(), viewCount.getViewTotal());
+        }
+        result.setAxialCount(seriesInfo.getImageCount());
+        result.setCoronalCount(viewCountMap.getOrDefault("coronal", 0));
+        result.setSagittalCount(viewCountMap.getOrDefault("sagittal", 0));
+
+        result.setSliceThickness(studyInfo.getSliceThickness());
+        result.setKvp(studyInfo.getKvp());
+        result.setPixelSpacing(studyInfo.getPixelSpacing());
+        result.setInstitutionName(studyInfo.getInstitutionName());
+        result.setManufacturer(studyInfo.getManufacturer());
+        result.setPatientName(studyInfo.getPatientName());
+        result.setPatientSex(studyInfo.getPatientSex());
+        result.setPatientAge(studyInfo.getPatientAge());
+        result.setPatientId(studyInfo.getPatientId());
+        result.setStudyDateAndTime(studyInfo.getStudyDateAndTime());
         return result;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void downloadSlice(String seriesId, String viewName, Integer viewIndex, HttpServletResponse response) {
-        VtiPO vtiPO = vtiMapper.selectOne(Wrappers.<VtiPO>lambdaQuery()
-                .select(VtiPO::getAccessPath)
-                .eq(VtiPO::getSeriesId, seriesId)
-                .eq(VtiPO::getViewName, viewName)
-                .eq(VtiPO::getViewIndex, viewIndex));
-        AppAssert.notNull(vtiPO, "未找到切片");
-        try (InputStream in = fileStoreService.download(vtiPO.getAccessPath())) {
+        String accessPath;
+        if (StrUtil.equals("axial", viewName)) {
+            InstanceInfoPO instanceInfo = instanceInfoMapper.selectOne(Wrappers.<InstanceInfoPO>lambdaQuery()
+                    .select(InstanceInfoPO::getAccessPath)
+                    .eq(InstanceInfoPO::getSeriesId, seriesId)
+                    .eq(InstanceInfoPO::getViewIndex, viewIndex));
+            AppAssert.notNull(instanceInfo, "未找到切片");
+            accessPath = instanceInfo.getAccessPath();
+        } else {
+            MprSlicePO slice = mprSliceMapper.selectOne(Wrappers.<MprSlicePO>lambdaQuery()
+                    .select(MprSlicePO::getAccessPath)
+                    .eq(MprSlicePO::getSeriesId, seriesId)
+                    .eq(MprSlicePO::getViewName, viewName)
+                    .eq(MprSlicePO::getViewIndex, viewIndex));
+            AppAssert.notNull(slice, "未找到切片");
+            accessPath = slice.getAccessPath();
+        }
+        try (InputStream in = fileStoreService.download(accessPath)) {
             ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, viewName, viewIndex, "slice"));
         } catch (IOException e) {
             log.error(e, "下载影像切片异常，seriesId = {}, viewName = {}, viewIndex = {}", seriesId, viewName, viewIndex);
@@ -116,14 +128,14 @@ public class ImageServiceImpl implements ImageService {
     @Override
     @SuppressWarnings("unchecked")
     public void download3dModel(String seriesId, HttpServletResponse response) {
-        Model3dPO model3dPO = model3dMapper.selectOne(Wrappers.<Model3dPO>lambdaQuery()
-                .select(Model3dPO::getAccessPath)
-                .eq(Model3dPO::getSeriesId, seriesId)
-                .eq(Model3dPO::getType, "bone"));
-        AppAssert.notNull(model3dPO, "未找到3D模型");
+        MprModelPO model = mprModelMapper.selectOne(Wrappers.<MprModelPO>lambdaQuery()
+                .select(MprModelPO::getAccessPath)
+                .eq(MprModelPO::getSeriesId, seriesId)
+                .eq(MprModelPO::getMprType, "lung"));
+        AppAssert.notNull(model, "未找到3D模型");
 
-        try (InputStream in = fileStoreService.download(model3dPO.getAccessPath())) {
-            ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, "bone", "3d"));
+        try (InputStream in = fileStoreService.download(model.getAccessPath())) {
+            ResponseExportUtil.exportFileWithStream(response, in, Joiner.on(".").join(seriesId, "lung", "3d"));
         } catch (IOException e) {
             log.error(e, "下载3D模型异常，seriesId = {}, ", seriesId);
             throw new AppException("下载3D模型异常");

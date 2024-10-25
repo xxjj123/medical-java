@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.core.toolkit.*;
 import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.yinhai.mids.common.core.PageRequest;
-import com.yinhai.mids.common.util.DbKit;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.PageKit;
 import com.yinhai.ta404.core.restservice.requestbean.PageParam;
 import com.yinhai.ta404.core.restservice.resultbean.Page;
@@ -87,6 +87,9 @@ public interface SuperMapper<T> extends BaseMapper<T>, Ta404SupportMapper {
         if (CollUtil.isEmpty(entityList)) {
             return false;
         }
+        if (entityList.size() == 1) {
+            return insert(CollUtil.getFirst(entityList)) == 1;
+        }
         Optional<T> optional = entityList.stream().findFirst();
         return optional.filter(t -> SqlHelper.executeBatch(
                 t.getClass(),
@@ -119,12 +122,12 @@ public interface SuperMapper<T> extends BaseMapper<T>, Ta404SupportMapper {
         for (T t : entityList) {
             if (updateTime != null && updateTime.getType().equals(Date.class)) {
                 ReflectUtil.setAccessible(updateTime);
-                ReflectUtil.setFieldValue(t, updateTime, DbKit.now());
+                ReflectUtil.setFieldValue(t, updateTime, DbClock.now());
             }
             if (createTime != null && createTime.getType().equals(Date.class)) {
                 if (ReflectUtil.getFieldValue(t, createTime) == null) {
                     ReflectUtil.setAccessible(createTime);
-                    ReflectUtil.setFieldValue(t, createTime, DbKit.now());
+                    ReflectUtil.setFieldValue(t, createTime, DbClock.now());
                 }
             }
         }

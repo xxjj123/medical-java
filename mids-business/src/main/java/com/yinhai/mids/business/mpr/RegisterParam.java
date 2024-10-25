@@ -10,13 +10,19 @@ import lombok.Data;
 public class RegisterParam {
 
     /**
-     * 序列号 必须
+     * 序列ID
      */
-    String seriesId;
+    private String seriesId;
+
+    private String applyId;
 
     /**
      * AI分析完成回调地址
      */
-    String callbackUrl;
+    private String callbackUrl;
 
+    /**
+     * MPR类型，多个用英文逗号拼接。例如 slice,lung
+     */
+    private String types;
 }

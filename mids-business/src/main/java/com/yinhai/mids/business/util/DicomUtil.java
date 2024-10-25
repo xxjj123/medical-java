@@ -1,6 +1,8 @@
 package com.yinhai.mids.business.util;
 
+import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -13,6 +15,7 @@ import org.dcm4che3.io.DicomInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -56,6 +59,10 @@ public class DicomUtil {
             }
             dicomInfo.setInstitutionName(dataset.getString(Tag.InstitutionName));
             dicomInfo.setManufacturer(dataset.getString(Tag.Manufacturer));
+            double[] imagePositionPatient = dataset.getDoubles(Tag.ImagePositionPatient);
+            if (ArrayUtil.isNotEmpty(imagePositionPatient)) {
+                dicomInfo.setSlicePosition(imagePositionPatient[2]);
+            }
             dicomInfo.setFile(dicomFile);
         } catch (IOException e) {
             log.error(e);
@@ -102,6 +109,29 @@ public class DicomUtil {
         } catch (Exception e) {
             log.error(e);
             throw new AppException("DICOM文件解析异常！");
+        }
+    }
+
+    public static boolean isDicom(InputStream inputStream) {
+        try {
+            byte[] header = IoUtil.readBytes(inputStream, 132);
+            if (header.length < 132) {
+                return false;
+            }
+            return DICOM_HEADER.equals(new String(ArrayUtil.sub(header, 128, 132)));
+        } catch (Exception e) {
+            log.error(e);
+            throw new AppException("DICOM文件解析异常！");
+        } finally {
+            IoUtil.close(inputStream);
+        }
+    }
+
+    public static boolean isZip(InputStream inputStream) {
+        try {
+            return "zip".equals(FileTypeUtil.getType(inputStream));
+        } finally {
+            IoUtil.close(inputStream);
         }
     }
 }

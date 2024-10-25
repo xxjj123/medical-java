@@ -78,7 +78,7 @@ public class NoduleController {
     @Operation(summary = "查询图文报告")
     @PostMapping("queryGraphicReport")
     public GraphicReportVO queryGraphicReport(@RequestParam @NotBlank(message = "序列ID不能为空") String computeSeriesId,
-                                        @RequestParam(required = false) Boolean reset) {
+                                              @RequestParam(required = false) Boolean reset) {
         return noduleService.queryGraphicReport(computeSeriesId, reset);
     }
 

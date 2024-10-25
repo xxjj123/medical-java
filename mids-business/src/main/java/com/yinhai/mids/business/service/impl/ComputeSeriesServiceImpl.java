@@ -1,24 +1,19 @@
 package com.yinhai.mids.business.service.impl;
 
-import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.yinhai.mids.business.constant.ComputeStatus;
-import com.yinhai.mids.business.constant.TaskType;
+import com.yinhai.mids.business.constant.ComputeType;
+import com.yinhai.mids.business.entity.dto.LungTaskInfo;
 import com.yinhai.mids.business.entity.po.ComputeSeriesPO;
 import com.yinhai.mids.business.mapper.ComputeSeriesMapper;
 import com.yinhai.mids.business.service.ComputeSeriesService;
-import com.yinhai.mids.business.service.ComputeService;
-import com.yinhai.mids.business.service.TaskLockService;
-import com.yinhai.mids.business.util.TransactionKit;
-import com.yinhai.mids.common.exception.AppAssert;
-import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.Map;
+import java.util.List;
 
 /**
  * @author zhuhs
@@ -33,46 +28,49 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
     @Resource
     private ComputeSeriesMapper computeSeriesMapper;
 
-    @Resource
-    private ComputeService computeService;
-
-    @Resource
-    private TaskLockService taskLockService;
-
     @Override
-    public void reCompute(String computeSeriesId) {
-        AppAssert.notBlank(computeSeriesId, "计算序列ID不能为空");
-        AppAssert.notNull(computeSeriesMapper.selectById(computeSeriesId), "计算序列不存在！");
-        computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
-                .eq(ComputeSeriesPO::getId, computeSeriesId)
-                .set(ComputeSeriesPO::getComputeStatus, ComputeStatus.WAIT_COMPUTE)
-                .set(ComputeSeriesPO::getErrorMessage, null)
-                .set(ComputeSeriesPO::getComputeResponse, null));
-        taskLockService.unlock(TaskType.COMPUTE, computeSeriesId);
-        TransactionKit.doAfterTxCommit(() -> computeService.lockedAsyncApplyCompute(computeSeriesId));
-    }
-
-    @Override
-    public void onComputePush(Map<String, Object> pushParamMap) {
-        String code = (String) pushParamMap.get("code");
-        AppAssert.notBlank(code, "code为空");
-        String applyId = (String) pushParamMap.get("applyId");
-        AppAssert.notBlank(applyId, "applyId为空");
-        ComputeSeriesPO computeSeriesPO = computeSeriesMapper.selectOne(
-                Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getApplyId, applyId));
-        if (computeSeriesPO == null) {
-            log.error("applyId {} 对应计算序列不存在", applyId);
+    public void refreshComputeStatus(String computeSeriesId) {
+        ComputeSeriesPO computeSeries = computeSeriesMapper.selectById(computeSeriesId);
+        if (computeSeries == null) {
             return;
         }
-        if (StrUtil.equals(code, "1")) {
-            TransactionKit.doAfterTxCommit(() -> computeService.lockedAsyncQueryComputeResult(applyId));
+
+        int computeStatus = ComputeStatus.IN_COMPUTE;
+        Integer computeType = computeSeries.getComputeType();
+        if (ComputeType.LUNG == computeType) {
+            LungTaskInfo lungTaskInfo = computeSeriesMapper.queryLungTaskInfo(computeSeriesId);
+            if (lungTaskInfo == null) {
+                return;
+            }
+            Integer applyTaskStatus = lungTaskInfo.getApplyTaskStatus();
+            Integer applyResult = lungTaskInfo.getApplyResult();
+            Integer pushResult = lungTaskInfo.getPushResult();
+            Integer queryTaskStatus = lungTaskInfo.getQueryTaskStatus();
+            Integer queryResult = lungTaskInfo.getQueryResult();
+            List<LungTaskInfo.MprTaskInfo> mprTaskInfoList = lungTaskInfo.getMprTaskInfoList();
+
+            if (applyTaskStatus == 0
+                && mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprTaskStatus).allMatch(it -> it == 0)) {
+                computeStatus = ComputeStatus.WAIT_COMPUTE;
+            }
+            if (applyResult == 0 || pushResult == 0 || queryResult == 0
+                || mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprResult).anyMatch(it -> it == 0)
+                || mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprPushResult).anyMatch(it -> it == 0)) {
+                computeStatus = ComputeStatus.COMPUTE_FAILED;
+            }
+            if (queryTaskStatus == 1 && queryResult == 1
+                && mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprTaskStatus).allMatch(it -> it == 2)
+                && mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprPushResult).allMatch(it -> it == 1)) {
+                computeStatus = ComputeStatus.COMPUTE_SUCCESS;
+            }
+            if (applyTaskStatus == -1 || queryTaskStatus == -1
+                || mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprTaskStatus).anyMatch(it -> it == -1)) {
+                computeStatus = ComputeStatus.COMPUTE_ERROR;
+            }
         }
-        if (StrUtil.equalsAny(code, "2", "3")) {
-            computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
-                    .eq(ComputeSeriesPO::getId, computeSeriesPO.getId())
-                    .set(ComputeSeriesPO::getComputeStatus, ComputeStatus.COMPUTE_FAILED)
-                    .set(ComputeSeriesPO::getComputeResponse, JsonKit.toJsonString(pushParamMap))
-                    .set(ComputeSeriesPO::getErrorMessage, pushParamMap.get("message")));
-        }
+        computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
+                .eq(ComputeSeriesPO::getComputeSeriesId, computeSeriesId)
+                .set(ComputeSeriesPO::getComputeStatus, computeStatus)
+        );
     }
 }

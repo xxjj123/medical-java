@@ -7,8 +7,6 @@
         <id column="id" jdbcType="VARCHAR" property="id" />
         <result column="item_id" jdbcType="VARCHAR" property="itemId" />
         <result column="task_type" jdbcType="INTEGER" property="taskType" />
-        <result column="effective" jdbcType="BOOLEAN" property="effective" />
-        <result column="effective_time" jdbcType="TIMESTAMP" property="effectiveTime" />
         <result column="expire_time" jdbcType="TIMESTAMP" property="expireTime" />
         <result column="version" jdbcType="INTEGER" property="version" />
         <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
@@ -16,21 +14,21 @@
     </resultMap>
     <sql id="Base_Column_List">
         <!--@mbg.generated-->
-        id, item_id, task_type, effective, effective_time, expire_time, version, create_time,
+        id,
+        item_id,
+        task_type,
+        expire_time,
+        version,
+        create_time,
         update_time
     </sql>
 
     <insert id="createLock">
-        INSERT INTO tb_task_lock (id, item_id, task_type, effective, effective_time, expire_time,
-                                  version,
-                                  create_time,
-                                  update_time)
+        INSERT INTO tb_task_lock (id, item_id, task_type, expire_time, version, create_time, update_time)
         SELECT #{id,jdbcType=VARCHAR},
                #{itemId,jdbcType=VARCHAR},
                #{taskType},
-               0,
-               NULL,
-               NULL,
+               #{expireTime,jdbcType=TIMESTAMP},
                1,
                NOW(),
                NOW()
