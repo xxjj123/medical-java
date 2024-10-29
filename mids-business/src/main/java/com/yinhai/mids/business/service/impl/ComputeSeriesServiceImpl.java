@@ -58,7 +58,7 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
                 || mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprPushResult).anyMatch(it -> it == 0)) {
                 computeStatus = ComputeStatus.COMPUTE_FAILED;
             }
-            if (queryTaskStatus == 1 && queryResult == 1
+            if (applyTaskStatus == 2 && queryTaskStatus == 1 && pushResult == 1 && queryResult == 1
                 && mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprTaskStatus).allMatch(it -> it == 2)
                 && mprTaskInfoList.stream().map(LungTaskInfo.MprTaskInfo::getMprPushResult).allMatch(it -> it == 1)) {
                 computeStatus = ComputeStatus.COMPUTE_SUCCESS;

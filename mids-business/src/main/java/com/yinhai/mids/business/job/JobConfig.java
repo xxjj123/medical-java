@@ -65,7 +65,7 @@ public class JobConfig implements SchedulingConfigurer {
         taskRegistrar.setScheduler(scheduler);
 
         taskRegistrar.addFixedRateTask(createTask(TaskType.KEYA_APPLY, this::keyaApply, 30));
-        taskRegistrar.addFixedRateTask(createTask(TaskType.KEYA_QUERY, this::keyaQuery, 30));
+        taskRegistrar.addFixedRateTask(createTask(TaskType.KEYA_QUERY, this::keyaQuery, 10));
         taskRegistrar.addFixedRateTask(createTask(TaskType.MPR, this::mpr, 30));
     }
 
@@ -79,7 +79,7 @@ public class JobConfig implements SchedulingConfigurer {
     }
 
     public void keyaQuery() {
-        PageKit.startPage(PageRequest.of(1, 5));
+        PageKit.startPage(PageRequest.of(1, 10));
         List<KeyaQueryToDoTask> toDoTaskList = queryTaskMapper.queryTodoTasks();
         log.debug("{}, ToDoTasks: {}, {}", DateUtil.format(DbClock.now(), DatePattern.NORM_DATETIME_MS_PATTERN), "KEYA_QUERY", toDoTaskList.size());
         if (CollUtil.isNotEmpty(toDoTaskList)) {

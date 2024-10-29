@@ -1,8 +1,6 @@
 package com.yinhai.mids.business.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
@@ -15,12 +13,16 @@ import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.dtflys.forest.http.ForestResponse;
-import com.yinhai.mids.business.keya.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Joiner;
+import com.yinhai.mids.business.constant.DiagnosisType;
 import com.yinhai.mids.business.constant.TaskType;
 import com.yinhai.mids.business.entity.dto.KeyaApplyToDoTask;
 import com.yinhai.mids.business.entity.dto.KeyaQueryToDoTask;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.job.TaskLockManager;
+import com.yinhai.mids.business.keya.*;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.mids.business.service.InstanceInfoService;
@@ -34,13 +36,13 @@ import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nullable;
 import javax.annotation.Resource;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * @author zhuhs
@@ -66,6 +68,15 @@ public class KeyaServiceImpl implements KeyaService {
 
     @Resource
     private NoduleLesionMapper noduleLesionMapper;
+
+    @Resource
+    private PneumoniaLesionMapper pneumoniaLesionMapper;
+
+    @Resource
+    private PneumoniaContourMapper pneumoniaContourMapper;
+
+    @Resource
+    private FracLesionMapper fracLesionMapper;
 
     @Resource
     private ComputeSeriesService computeSeriesService;
@@ -106,7 +117,7 @@ public class KeyaServiceImpl implements KeyaService {
         registerParam.setApplyId(applyId);
         registerParam.setAccessionNumber(applyTask.getAccessionNumber());
         registerParam.setStudyInstanceUID(applyTask.getStudyInstanceUid());
-        registerParam.setHospitalId("ctbay99");
+        registerParam.setHospitalId("1299");
         registerParam.setExaminedName("胸部平扫");
         registerParam.setPatientName(applyTask.getPatientName());
         registerParam.setPatientAge(applyTask.getPatientAge());
@@ -126,12 +137,6 @@ public class KeyaServiceImpl implements KeyaService {
             String responseJson = JsonKit.toJsonString(response);
             if (response.getCode() == 1) {
                 updateApplyTaskStatus(applyTaskId, computeSeriesId, 1, applyId, DbClock.now(), responseJson, 1, null);
-                KeyaQueryTaskPO queryTask = new KeyaQueryTaskPO();
-                queryTask.setComputeSeriesId(computeSeriesId);
-                queryTask.setApplyTaskId(applyTaskId);
-                queryTask.setApplyId(applyId);
-                queryTask.setTaskStatus(0);
-                queryTaskMapper.insert(queryTask);
             } else {
                 updateApplyTaskStatus(applyTaskId, computeSeriesId, 2, applyId, DbClock.now(), responseJson, 0, null);
             }
@@ -176,6 +181,7 @@ public class KeyaServiceImpl implements KeyaService {
         TaskLockManager.lock(TaskType.KEYA_APPLY, applyTask.getApplyTaskId(), 60 * 2, () -> apply(applyTask));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void query(KeyaQueryToDoTask queryTask) {
         String applyId = queryTask.getApplyId();
@@ -201,71 +207,218 @@ public class KeyaServiceImpl implements KeyaService {
             updateQueryTaskStatus(queryTaskId, computeSeriesId, 1, keyaResponseJson, 0, null, applyTaskId);
             return;
         }
-
-        String dataContent = JsonKit.parseTree(keyaResponseJson).get("data").toString();
-        KeyaComputeResult computeResult = JsonKit.parseObject(dataContent, KeyaComputeResult.class);
-
-        if (computeResult == null || BeanUtil.getProperty(computeResult.getResult(), "nodule") == null) {
+        JsonNode resultTree = JsonKit.parseTree(keyaResponseJson);
+        if (resultTree.at("/data/result").isMissingNode()) {
             updateQueryTaskStatus(queryTaskId, computeSeriesId, -1, keyaResponseJson, 1, "计算结果为空", applyTaskId);
             return;
         }
-        saveNodule(queryTask, computeResult.getResult().getNodule());
+
+        KeyaApplyTaskPO applyTaskPO = applyTaskMapper.selectOne(Wrappers.<KeyaApplyTaskPO>lambdaQuery()
+                .select(KeyaApplyTaskPO::getPushResult, KeyaApplyTaskPO::getPushContent)
+                .eq(KeyaApplyTaskPO::getApplyTaskId, queryTask.getApplyTaskId())
+                .eq(KeyaApplyTaskPO::getApplyId, queryTask.getApplyId()));
+        String pushContent = applyTaskPO.getPushContent();
+        if (applyTaskPO.getPushResult() != 1 || StrUtil.isEmpty(pushContent)) {
+            updateQueryTaskStatus(queryTaskId, computeSeriesId, -1, keyaResponseJson, 1, "推送结果异常", applyTaskId);
+            return;
+        }
+        JsonNode detailTextNode = JsonKit.parseTree(pushContent).at("/detail");
+        if (detailTextNode.isMissingNode()) {
+            saveNodule(queryTask, resultTree, null);
+        } else {
+            JsonNode detailNode = JsonKit.parseTree(detailTextNode.toString());
+            saveNodule(queryTask, resultTree, detailNode);
+            savePneumonia(queryTask, resultTree, detailNode);
+            saveFrac(queryTask, resultTree, detailNode);
+        }
+
         updateQueryTaskStatus(queryTaskId, computeSeriesId, 1, keyaResponseJson, 1, null, applyTaskId);
     }
 
-    private void saveNodule(KeyaQueryToDoTask queryTask, KeyaComputeResult.Result.Nodule nodule) {
+    private void saveFrac(KeyaQueryToDoTask queryTask, JsonNode resultTree, JsonNode detailNode) {
         String computeSeriesId = queryTask.getComputeSeriesId();
-        diagnosisMapper.delete(
-                Wrappers.<DiagnosisPO>lambdaQuery().eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
-        noduleLesionMapper.delete(
-                Wrappers.<NoduleLesionPO>lambdaQuery().eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
+        diagnosisMapper.delete(Wrappers.<DiagnosisPO>lambdaQuery()
+                .eq(DiagnosisPO::getType, DiagnosisType.FRAC)
+                .eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
+        fracLesionMapper.delete(
+                Wrappers.<FracLesionPO>lambdaQuery().eq(FracLesionPO::getComputeSeriesId, computeSeriesId));
+
+        JsonNode node = detailNode.at("/frac/infos");
+        if (node.isMissingNode()) {
+            return;
+        }
 
         // 主要诊断信息
         DiagnosisPO diagnosisPO = new DiagnosisPO();
         diagnosisPO.setComputeSeriesId(computeSeriesId);
-        diagnosisPO.setType("nodule");
-        diagnosisPO.setDiagnosis(nodule.getDiagnosis());
-        diagnosisPO.setFinding(nodule.getFinding());
-        diagnosisPO.setHasLesion(nodule.isHasLesion());
-        diagnosisPO.setNumber(nodule.getNumber());
+        diagnosisPO.setType(DiagnosisType.FRAC);
+        diagnosisPO.setDiagnosis(parseDiagnosis(resultTree, DiagnosisType.FRAC));
+        diagnosisPO.setFinding(parseFinding(resultTree, DiagnosisType.FRAC));
+        diagnosisPO.setHasLesion(parseHasLesion(resultTree, DiagnosisType.FRAC));
+        diagnosisPO.setNumber(parseNumber(resultTree, DiagnosisType.FRAC));
+        diagnosisMapper.insert(diagnosisPO);
+
+        // 骨折详细信息
+        List<KeyaFracInfo> fracInfos = JsonKit.parseObject(node.toString(), new TypeReference<List<KeyaFracInfo>>() {
+        });
+        if (CollUtil.isEmpty(fracInfos)) {
+            return;
+        }
+        List<FracLesionPO> fracLesionPOList = new ArrayList<>();
+        for (KeyaFracInfo fracInfo : fracInfos) {
+            FracLesionPO fracLesionPO = new FracLesionPO();
+            fracLesionPO.setDataType(0);
+            fracLesionPO.setComputeSeriesId(computeSeriesId);
+            fracLesionPO.setChecked(true);
+            fracLesionPO.setRibSide(fracInfo.getRibSide());
+            fracLesionPO.setRibType(fracInfo.getRibType());
+            fracLesionPO.setRibNum(fracInfo.getRibNum());
+            fracLesionPO.setFracClass(fracInfo.getFracClass());
+            fracLesionPO.setFracBBox(Joiner.on(StrPool.COMMA).join(fracInfo.getFracBBox()));
+            fracLesionPOList.add(fracLesionPO);
+        }
+        fracLesionMapper.insertBatch(fracLesionPOList);
+    }
+
+    private void savePneumonia(KeyaQueryToDoTask queryTask, JsonNode resultTree, JsonNode detailNode) {
+        String computeSeriesId = queryTask.getComputeSeriesId();
+        diagnosisMapper.delete(Wrappers.<DiagnosisPO>lambdaQuery()
+                .eq(DiagnosisPO::getType, DiagnosisType.PNEUMONIA)
+                .eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
+        pneumoniaLesionMapper.delete(
+                Wrappers.<PneumoniaLesionPO>lambdaQuery().eq(PneumoniaLesionPO::getComputeSeriesId, computeSeriesId));
+
+        JsonNode node = detailNode.at("/pneumonia/infos");
+        if (node.isMissingNode()) {
+            return;
+        }
+
+        // 主要诊断信息
+        DiagnosisPO diagnosisPO = new DiagnosisPO();
+        diagnosisPO.setComputeSeriesId(computeSeriesId);
+        diagnosisPO.setType(DiagnosisType.PNEUMONIA);
+        diagnosisPO.setDiagnosis(parseDiagnosis(resultTree, DiagnosisType.PNEUMONIA));
+        diagnosisPO.setFinding(parseFinding(resultTree, DiagnosisType.PNEUMONIA));
+        diagnosisPO.setHasLesion(parseHasLesion(resultTree, DiagnosisType.PNEUMONIA));
+        diagnosisPO.setNumber(parseNumber(resultTree, DiagnosisType.PNEUMONIA));
+        diagnosisMapper.insert(diagnosisPO);
+
+        // 肺炎详细信息
+        List<KeyaPneumoniaInfo> pneumoniaInfos = JsonKit.parseObject(node.toString(), new TypeReference<List<KeyaPneumoniaInfo>>() {
+        });
+        if (CollUtil.isEmpty(pneumoniaInfos)) {
+            return;
+        }
+        List<PneumoniaLesionPO> pneumoniaLesionPOList = new ArrayList<>();
+        for (KeyaPneumoniaInfo pneumoniaInfo : pneumoniaInfos) {
+            PneumoniaLesionPO pneumoniaLesionPO = new PneumoniaLesionPO();
+            pneumoniaLesionPO.setDataType(0);
+            pneumoniaLesionPO.setComputeSeriesId(computeSeriesId);
+            pneumoniaLesionPO.setChecked(true);
+            pneumoniaLesionPO.setLobeName(pneumoniaInfo.getName());
+            pneumoniaLesionPO.setLobeVolume(pneumoniaInfo.getLobeVolume());
+            pneumoniaLesionPO.setDiseaseVolume(pneumoniaInfo.getDiseaseVolume());
+            pneumoniaLesionPO.setIntensity(pneumoniaInfo.getIntensity());
+            pneumoniaLesionPO.setDiseaseClass(pneumoniaInfo.getDiseaseClass());
+            pneumoniaLesionPOList.add(pneumoniaLesionPO);
+        }
+        pneumoniaLesionMapper.insertBatch(pneumoniaLesionPOList);
+
+        List<PneumoniaContourPO> pneumoniaContourPOList = new ArrayList<>();
+        JsonNode contourNode = detailNode.at("/pneumonia/contours");
+        contourNode.fieldNames().forEachRemaining(viewName -> {
+            contourNode.get(viewName).elements().forEachRemaining(n -> {
+                JsonNode contours = n.get("contours");
+                contours.fieldNames().forEachRemaining(instanceNumber -> {
+                    JsonNode jsonNode = contours.get(instanceNumber);
+                    PneumoniaContourPO contourPO = new PneumoniaContourPO();
+                    contourPO.setComputeSeriesId(computeSeriesId);
+                    contourPO.setViewName(viewName);
+                    contourPO.setInstanceNumber(Integer.parseInt(instanceNumber));
+                    contourPO.setPoints(jsonNode.toString());
+                    pneumoniaContourPOList.add(contourPO);
+                });
+            });
+        });
+        if (CollUtil.isNotEmpty(pneumoniaContourPOList)) {
+            pneumoniaContourMapper.insertBatch(pneumoniaContourPOList);
+        }
+    }
+
+    private void saveNodule(KeyaQueryToDoTask queryTask, JsonNode resultTree, @Nullable JsonNode detailNode) {
+        String computeSeriesId = queryTask.getComputeSeriesId();
+        diagnosisMapper.delete(Wrappers.<DiagnosisPO>lambdaQuery()
+                .eq(DiagnosisPO::getType, DiagnosisType.NODULE)
+                .eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
+        noduleLesionMapper.delete(
+                Wrappers.<NoduleLesionPO>lambdaQuery().eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
+
+        List<KeyaNoduleInfo> noduleInfos;
+        if (detailNode != null) {
+            JsonNode node = detailNode.at("/nodule/infos");
+            if (node.isMissingNode()) {
+                return;
+            }
+            noduleInfos = JsonKit.parseObject(node.toString(), new TypeReference<List<KeyaNoduleInfo>>() {
+            });
+        } else {
+            JsonNode node = resultTree.at("/data/result/nodule/volumeDetailList");
+            noduleInfos = JsonKit.parseObject(node.toString(), new TypeReference<List<KeyaNoduleInfo>>() {
+            });
+        }
+
+        // 主要诊断信息
+        DiagnosisPO diagnosisPO = new DiagnosisPO();
+        diagnosisPO.setComputeSeriesId(computeSeriesId);
+        diagnosisPO.setType(DiagnosisType.NODULE);
+        diagnosisPO.setDiagnosis(parseDiagnosis(resultTree, DiagnosisType.NODULE));
+        diagnosisPO.setFinding(parseFinding(resultTree, DiagnosisType.NODULE));
+        diagnosisPO.setHasLesion(parseHasLesion(resultTree, DiagnosisType.NODULE));
+        diagnosisPO.setNumber(parseNumber(resultTree, DiagnosisType.NODULE));
         diagnosisMapper.insert(diagnosisPO);
 
         // 结节详细信息
-        List<KeyaComputeResult.Result.Nodule.VolumeDetail> volumeDetailList = nodule.getVolumeDetailList();
-        if (CollUtil.isEmpty(volumeDetailList)) {
+        if (CollUtil.isEmpty(noduleInfos)) {
             return;
         }
         List<NoduleLesionPO> noduleLesionPOList = new ArrayList<>();
-        for (KeyaComputeResult.Result.Nodule.VolumeDetail volumeDetail : volumeDetailList) {
+        for (KeyaNoduleInfo noduleInfo : noduleInfos) {
             NoduleLesionPO noduleLesionPO = new NoduleLesionPO();
             noduleLesionPO.setDataType(0);
             noduleLesionPO.setChecked(true);
             noduleLesionPO.setComputeSeriesId(computeSeriesId);
-            noduleLesionPO.setSopInstanceUid(volumeDetail.getSopInstanceUID());
-            noduleLesionPO.setVocabularyEntry(volumeDetail.getVocabularyEntry());
-            noduleLesionPO.setType(volumeDetail.getType());
-            noduleLesionPO.setLobeSegment(volumeDetail.getLobeSegment());
-            noduleLesionPO.setLobe(volumeDetail.getLobe());
-            noduleLesionPO.setVolume(volumeDetail.getVolume());
-            noduleLesionPO.setRiskCode(volumeDetail.getRiskCode());
-            KeyaComputeResult.Result.Nodule.VolumeDetail.CtMeasures ctMeasures = volumeDetail.getCtMeasures();
+            if (noduleInfo.getInstanceUID() == null) {
+                noduleLesionPO.setSopInstanceUid(noduleInfo.getSopInstanceUID());
+            } else {
+                noduleLesionPO.setSopInstanceUid(noduleInfo.getInstanceUID());
+            }
+            noduleLesionPO.setVocabularyEntry(noduleInfo.getVocabularyEntry());
+            noduleLesionPO.setType(noduleInfo.getType());
+            noduleLesionPO.setLobeSegment(noduleInfo.getLobeSegment());
+            noduleLesionPO.setLobe(noduleInfo.getLobe());
+            noduleLesionPO.setVolume(noduleInfo.getVolume());
+            KeyaNoduleInfo.CtMeasures ctMeasures = noduleInfo.getCtMeasures();
             if (ctMeasures != null) {
                 noduleLesionPO.setCtMeasuresMean(ctMeasures.getMean());
                 noduleLesionPO.setCtMeasuresMinimum(ctMeasures.getMinimum());
                 noduleLesionPO.setCtMeasuresMaximum(ctMeasures.getMaximum());
             }
-            KeyaComputeResult.Result.Nodule.VolumeDetail.EllipsoidAxis ellipsoidAxis = volumeDetail.getEllipsoidAxis();
+            KeyaNoduleInfo.EllipsoidAxis ellipsoidAxis = noduleInfo.getEllipsoidAxis();
             if (ellipsoidAxis != null) {
                 noduleLesionPO.setEllipsoidAxisLeast(ellipsoidAxis.getLeast());
                 noduleLesionPO.setEllipsoidAxisMinor(ellipsoidAxis.getMinor());
                 noduleLesionPO.setEllipsoidAxisMajor(ellipsoidAxis.getMajor());
             }
-            List<KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation> annotationList = volumeDetail.getAnnotation();
-            if (CollUtil.isNotEmpty(annotationList)) {
-                KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation annotation = annotationList.get(0);
-                KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point1 = annotation.getPoints().get(0);
-                KeyaComputeResult.Result.Nodule.VolumeDetail.Annotation.Point point2 = annotation.getPoints().get(1);
 
+            List<KeyaNoduleInfo.Point> points;
+            if (CollUtil.isNotEmpty(noduleInfo.getAnnotation())) {
+                points = noduleInfo.getAnnotation().get(0).getPoints();
+            } else {
+                points = noduleInfo.getPoints();
+            }
+            if (CollUtil.isNotEmpty(points)) {
+                KeyaNoduleInfo.Point point1 = points.get(0);
+                KeyaNoduleInfo.Point point2 = points.get(1);
                 int minZ = point1.getZ();
                 int maxZ = point2.getZ();
                 Integer imageCount = queryTask.getImageCount();
@@ -275,20 +428,20 @@ public class KeyaServiceImpl implements KeyaService {
                 if (maxZ > imageCount) {
                     maxZ = 2 * imageCount - point1.getZ();
                 }
-                noduleLesionPO.setPoints(StrUtil.join(StrPool.COMMA, ListUtil.of(
-                        point1.getX(), point2.getX(), point1.getY(), point2.getY(), minZ, maxZ)));
+                noduleLesionPO.setPoints(Joiner.on(StrPool.COMMA)
+                        .join(point1.getX(), point2.getX(), point1.getY(), point2.getY(), minZ, maxZ));
+
+                // IM
+                noduleLesionPO.setIm((minZ + maxZ) / 2);
+            }
+            if (noduleInfo.getRiskCode() != null) {
+                noduleLesionPO.setRiskCode(noduleInfo.getRiskCode());
+            } else {
+                noduleLesionPO.setRiskCode(getRiskCode(noduleLesionPO.getType(),
+                        noduleLesionPO.getEllipsoidAxisLeast(), noduleLesionPO.getEllipsoidAxisMajor()));
             }
             noduleLesionPOList.add(noduleLesionPO);
         }
-
-        // 设置IM
-        for (NoduleLesionPO noduleLesionPO : noduleLesionPOList) {
-            List<Integer> points = StrUtil.split(noduleLesionPO.getPoints(), ',').stream()
-                    .map(Integer::parseInt)
-                    .collect(Collectors.toList());
-            noduleLesionPO.setIm((points.get(4) + points.get(5)) / 2);
-        }
-
         noduleLesionMapper.insertBatch(noduleLesionPOList);
     }
 
@@ -308,6 +461,65 @@ public class KeyaServiceImpl implements KeyaService {
         applyTaskMapper.updateById(applyTask);
     }
 
+    private Integer getRiskCode(String type, Double ellipsoidAxisLeast, Double ellipsoidAxisMajor) {
+        if (type == null || ellipsoidAxisLeast == null || ellipsoidAxisMajor == null) {
+            return null;
+        }
+        double diameter = (ellipsoidAxisLeast + ellipsoidAxisMajor) / 2.0;
+        switch (type) {
+            case "Mass":
+                return 3;
+            case "Solid":
+                if (diameter < 5.0) {
+                    return 1;
+                } else {
+                    if (diameter >= 5.0 && diameter < 8.0) {
+                        return 2;
+                    }
+                    return 3;
+                }
+            case "Mixed":
+                if (diameter <= 8.0) {
+                    return 2;
+                }
+                return 3;
+            case "GCN":
+                if (diameter <= 5.0) {
+                    return 1;
+                }
+                return 2;
+            case "Calcified":
+            default:
+                return 1;
+        }
+    }
+
+    private String parseDiagnosis(JsonNode node, String diagnosisType) {
+        return node.at("/data/result/" + diagnosisType + "/diagnosis").asText(null);
+    }
+
+    private String parseFinding(JsonNode node, String diagnosisType) {
+        return node.at("/data/result/" + diagnosisType + "/finding").asText(null);
+    }
+
+    private Boolean parseHasLesion(JsonNode node, String diagnosisType) {
+        JsonNode hasLesionNode = node.at("/data/result/" + diagnosisType + "/hasLesion");
+        if (hasLesionNode.isMissingNode()) {
+            return null;
+        } else {
+            return hasLesionNode.asBoolean();
+        }
+    }
+
+    private Integer parseNumber(JsonNode node, String diagnosisType) {
+        JsonNode hasLesionNode = node.at("/data/result/" + diagnosisType + "/number");
+        if (hasLesionNode.isMissingNode()) {
+            return null;
+        } else {
+            return hasLesionNode.asInt();
+        }
+    }
+
     @Async
     @Override
     public void lockedAsyncQuery(KeyaQueryToDoTask queryTask) {
@@ -323,6 +535,7 @@ public class KeyaServiceImpl implements KeyaService {
         KeyaApplyTaskPO applyTask = applyTaskMapper.selectOne(
                 Wrappers.<KeyaApplyTaskPO>lambdaQuery().eq(KeyaApplyTaskPO::getApplyId, applyId));
         if (applyTask == null) {
+            log.debug("applyTask不存在，applyId = {}", applyId);
             return;
         }
         boolean success = StrUtil.equals("1", code);
@@ -332,5 +545,14 @@ public class KeyaServiceImpl implements KeyaService {
         applyTask.setPushResult(success ? 1 : 0);
         applyTaskMapper.updateById(applyTask);
         computeSeriesService.refreshComputeStatus(applyTask.getComputeSeriesId());
+
+        if (success) {
+            KeyaQueryTaskPO queryTask = new KeyaQueryTaskPO();
+            queryTask.setComputeSeriesId(applyTask.getComputeSeriesId());
+            queryTask.setApplyTaskId(applyTask.getApplyTaskId());
+            queryTask.setApplyId(applyId);
+            queryTask.setTaskStatus(0);
+            queryTaskMapper.insert(queryTask);
+        }
     }
 }

@@ -10,6 +10,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.common.collect.ImmutableMap;
 import com.yinhai.mids.business.constant.ComputeStatus;
+import com.yinhai.mids.business.constant.DiagnosisType;
 import com.yinhai.mids.business.entity.dto.ManualDiagnosisParam;
 import com.yinhai.mids.business.entity.model.ReportCommon;
 import com.yinhai.mids.business.entity.po.*;
@@ -160,8 +161,9 @@ public class NoduleServiceImpl implements NoduleService {
                 .eq(NoduleLesionPO::getDataType, 1)
                 .eq(NoduleLesionPO::getComputeSeriesId, computeSeriesId));
         // 清空人工诊断结果
-        manualDiagnosisMapper.delete(Wrappers.<ManualDiagnosisPO>lambdaQuery().eq(
-                ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
+        manualDiagnosisMapper.delete(Wrappers.<ManualDiagnosisPO>lambdaQuery()
+                .eq(ManualDiagnosisPO::getType, DiagnosisType.NODULE)
+                .eq(ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
         // 清空报告
         clearNoduleReport(computeSeriesId);
     }
@@ -175,8 +177,9 @@ public class NoduleServiceImpl implements NoduleService {
         SeriesInfoPO seriesInfo = seriesInfoMapper.selectById(computeSeries.getSeriesId());
         AppAssert.notNull(seriesInfo, "该序列不存在！");
 
-        DiagnosisPO diagnosisPO = diagnosisMapper.selectOne(
-                Wrappers.<DiagnosisPO>lambdaQuery().eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
+        DiagnosisPO diagnosisPO = diagnosisMapper.selectOne(Wrappers.<DiagnosisPO>lambdaQuery()
+                .eq(DiagnosisPO::getType, DiagnosisType.NODULE)
+                .eq(DiagnosisPO::getComputeSeriesId, computeSeriesId));
         AppAssert.notNull(diagnosisPO, "计算结果丢失");
 
         NoduleVO noduleVO = new NoduleVO();
@@ -224,17 +227,19 @@ public class NoduleServiceImpl implements NoduleService {
         String computeSeriesId = manualDiagnosisParam.getComputeSeriesId();
         ManualDiagnosisPO one = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()
                 .select(ManualDiagnosisPO::getId)
+                .eq(ManualDiagnosisPO::getType, DiagnosisType.NODULE)
                 .eq(ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
         if (one != null) {
             manualDiagnosisMapper.update(new ManualDiagnosisPO(), Wrappers.<ManualDiagnosisPO>lambdaUpdate()
                     .eq(ManualDiagnosisPO::getId, one.getId())
+                    .eq(ManualDiagnosisPO::getType, DiagnosisType.NODULE)
                     .set(ManualDiagnosisPO::getDiagnosis, manualDiagnosisParam.getDiagnosis())
                     .set(ManualDiagnosisPO::getFinding, manualDiagnosisParam.getFinding())
                     .set(ManualDiagnosisPO::getDiagnoseTime, DbClock.now()));
         } else {
             ManualDiagnosisPO manualDiagnosisPO = new ManualDiagnosisPO();
             manualDiagnosisPO.setComputeSeriesId(computeSeriesId);
-            manualDiagnosisPO.setType("nodule");
+            manualDiagnosisPO.setType(DiagnosisType.NODULE);
             manualDiagnosisPO.setDiagnosis(manualDiagnosisParam.getDiagnosis());
             manualDiagnosisPO.setFinding(manualDiagnosisParam.getFinding());
             manualDiagnosisPO.setDiagnoseTime(DbClock.now());
@@ -246,11 +251,13 @@ public class NoduleServiceImpl implements NoduleService {
     public TextReportVO queryTextReport(String computeSeriesId, Boolean reset) {
         boolean resetReport = BooleanUtil.isTrue(reset);
         if (resetReport) {
-            textReportMapper.delete(Wrappers.<TextReportPO>lambdaQuery().eq(TextReportPO::getComputeSeriesId, computeSeriesId));
+            textReportMapper.delete(Wrappers.<TextReportPO>lambdaQuery()
+                    .eq(TextReportPO::getReportType, DiagnosisType.NODULE)
+                    .eq(TextReportPO::getComputeSeriesId, computeSeriesId));
             return generateAndSaveTextReport(computeSeriesId);
         }
         TextReportPO textReportPO = textReportMapper.selectOne(Wrappers.<TextReportPO>lambdaQuery()
-                .eq(TextReportPO::getReportType, "nodule")
+                .eq(TextReportPO::getReportType, DiagnosisType.NODULE)
                 .eq(TextReportPO::getComputeSeriesId, computeSeriesId));
         if (textReportPO != null) {
             return BeanUtil.copyProperties(textReportPO, TextReportVO.class);
@@ -268,11 +275,13 @@ public class NoduleServiceImpl implements NoduleService {
         GraphicReportVO graphicReportVO;
         boolean resetReport = BooleanUtil.isTrue(reset);
         if (resetReport) {
-            graphicReportMapper.delete(Wrappers.<GraphicReportPO>lambdaQuery().eq(GraphicReportPO::getComputeSeriesId, computeSeriesId));
+            graphicReportMapper.delete(Wrappers.<GraphicReportPO>lambdaQuery()
+                    .eq(GraphicReportPO::getReportType, DiagnosisType.NODULE)
+                    .eq(GraphicReportPO::getComputeSeriesId, computeSeriesId));
             graphicReportVO = generateAndSaveGraphicReport(computeSeriesId);
         } else {
             GraphicReportPO graphicReportPO = graphicReportMapper.selectOne(Wrappers.<GraphicReportPO>lambdaQuery()
-                    .eq(GraphicReportPO::getReportType, "nodule")
+                    .eq(GraphicReportPO::getReportType, DiagnosisType.NODULE)
                     .eq(GraphicReportPO::getComputeSeriesId, computeSeriesId));
             if (graphicReportPO != null) {
                 graphicReportVO = BeanUtil.copyProperties(graphicReportPO, GraphicReportVO.class);
@@ -321,7 +330,7 @@ public class NoduleServiceImpl implements NoduleService {
         TextReportVO textReportVO = BeanUtil.copyProperties(reportCommon, TextReportVO.class);
 
         TextReportPO reportPO = BeanUtil.copyProperties(textReportVO, TextReportPO.class);
-        reportPO.setReportType("nodule");
+        reportPO.setReportType(DiagnosisType.NODULE);
         textReportMapper.insert(reportPO);
         textReportVO.setId(reportPO.getId());
 
@@ -333,7 +342,7 @@ public class NoduleServiceImpl implements NoduleService {
         GraphicReportVO graphicReportVO = BeanUtil.copyProperties(reportCommon, GraphicReportVO.class);
 
         GraphicReportPO reportPO = BeanUtil.copyProperties(graphicReportVO, GraphicReportPO.class);
-        reportPO.setReportType("nodule");
+        reportPO.setReportType(DiagnosisType.NODULE);
         graphicReportMapper.insert(reportPO);
         graphicReportVO.setId(reportPO.getId());
         return graphicReportVO;
@@ -349,6 +358,7 @@ public class NoduleServiceImpl implements NoduleService {
         AppAssert.notNull(studyInfo, "该序列对应检查不存在！");
 
         ManualDiagnosisPO manualDiagnosisPO = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()
+                .eq(ManualDiagnosisPO::getType, DiagnosisType.NODULE)
                 .eq(ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
         AppAssert.notNull(manualDiagnosisPO, "该序列对应诊断不存在！");
 
@@ -383,7 +393,11 @@ public class NoduleServiceImpl implements NoduleService {
      * @author zhuhs 2024/08/22
      */
     private void clearNoduleReport(String computeSeriesId) {
-        textReportMapper.delete(Wrappers.<TextReportPO>lambdaQuery().eq(TextReportPO::getComputeSeriesId, computeSeriesId));
-        graphicReportMapper.delete(Wrappers.<GraphicReportPO>lambdaQuery().eq(GraphicReportPO::getComputeSeriesId, computeSeriesId));
+        textReportMapper.delete(Wrappers.<TextReportPO>lambdaQuery()
+                .eq(TextReportPO::getComputeSeriesId, computeSeriesId)
+                .eq(TextReportPO::getReportType, DiagnosisType.NODULE));
+        graphicReportMapper.delete(Wrappers.<GraphicReportPO>lambdaQuery()
+                .eq(GraphicReportPO::getReportType, DiagnosisType.NODULE)
+                .eq(GraphicReportPO::getComputeSeriesId, computeSeriesId));
     }
 }
