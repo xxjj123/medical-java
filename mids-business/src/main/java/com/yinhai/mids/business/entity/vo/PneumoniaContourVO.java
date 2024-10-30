@@ -1,6 +1,7 @@
 package com.yinhai.mids.business.entity.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 
 /**
  * 肺炎轮廓
@@ -8,6 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @author zhuhs
  * @date 2024/10/28
  */
+@Data
+@Schema(description = "肺炎轮廓")
 public class PneumoniaContourVO {
     /**
      * tb_compute_series.id
