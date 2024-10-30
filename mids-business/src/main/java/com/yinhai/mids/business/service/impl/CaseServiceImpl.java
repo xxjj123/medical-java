@@ -23,6 +23,7 @@ import com.yinhai.mids.business.entity.vo.CaseSeriesVO;
 import com.yinhai.mids.business.entity.vo.CaseStudyVO;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.CaseService;
+import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.util.DicomUtil;
 import com.yinhai.mids.common.core.PageRequest;
@@ -85,6 +86,9 @@ public class CaseServiceImpl implements CaseService {
 
     @Resource
     private FavoriteMapper favoriteMapper;
+
+    @Resource
+    private ComputeSeriesService computeSeriesService;
 
     @Resource
     private FileStoreService fileStoreService;
@@ -386,5 +390,6 @@ public class CaseServiceImpl implements CaseService {
                 .not(w -> w.eq(MprTaskPO::getTaskStatus, 2).eq(MprTaskPO::getPushResult, 1))
                 .set(MprTaskPO::getApplyId, IdUtil.fastSimpleUUID())
                 .set(MprTaskPO::getTaskStatus, 0));
+        computeSeriesIds.forEach(computeSeriesService::refreshComputeStatus);
     }
 }
