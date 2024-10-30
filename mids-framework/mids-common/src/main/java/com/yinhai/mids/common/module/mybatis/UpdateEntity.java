@@ -1,5 +1,6 @@
 package com.yinhai.mids.common.module.mybatis;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.TableFieldInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfo;
 import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
@@ -70,7 +71,7 @@ public class UpdateEntity {
                 return result;
             }
 
-            String field = methodName.substring(3).toLowerCase();
+            String field = StrUtil.lowerFirst(methodName.substring(3));
             TableInfo tableInfo = TableInfoHelper.getTableInfo(method.getDeclaringClass());
             if (tableInfo == null) {
                 return result;
@@ -78,7 +79,7 @@ public class UpdateEntity {
             List<TableFieldInfo> fieldList = tableInfo.getFieldList();
             for (TableFieldInfo tableFieldInfo : fieldList) {
                 String property = tableFieldInfo.getProperty();
-                if (field.equals(property)) {
+                if (field.equals(StrUtil.lowerFirst(property))) {
                     updateNullColumns.add(tableFieldInfo.getColumn());
                     TABLE_COLUMN_MAP.put(method, tableFieldInfo.getColumn());
                     break;
