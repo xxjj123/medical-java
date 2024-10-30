@@ -1,9 +1,6 @@
 package com.yinhai.mids.business.entity.po;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -85,14 +82,14 @@ public class PneumoniaLesionPO {
     /**
      * 数据创建时间
      */
-    @TableField(value = "create_time")
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
     @Schema(description = "数据创建时间")
     private Date createTime;
 
     /**
      * 数据修改时间
      */
-    @TableField(value = "update_time")
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     @Schema(description = "数据修改时间")
     private Date updateTime;
 }

@@ -44,9 +44,9 @@ xml-reload-enabled: true
 
 # 科亚配置
 keya:
-  result-url: http://192.168.1.24/connector/api/common/result
-  register-url: http://192.168.1.24/connector/api/common/from/register/pacs
-  push-callback-url: http://192.168.1.4:39625/mids-api/open/keyaApplyPush
+  result-url: https://keya56.deepinsight.deepvessel.net/connector/api/common/result
+  register-url: https://keya56.deepinsight.deepvessel.net/connector/api/common/from/register/yinhai
+  push-callback-url: http://admin.itsea.com.cn:39627/mids-api/open/keyaApplyPush
 
 
 # mpr配置

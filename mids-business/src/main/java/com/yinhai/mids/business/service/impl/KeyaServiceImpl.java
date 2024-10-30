@@ -226,7 +226,7 @@ public class KeyaServiceImpl implements KeyaService {
         if (detailTextNode.isMissingNode()) {
             saveNodule(queryTask, resultTree, null);
         } else {
-            JsonNode detailNode = JsonKit.parseTree(detailTextNode.toString());
+            JsonNode detailNode = JsonKit.parseTree(detailTextNode.asText());
             saveNodule(queryTask, resultTree, detailNode);
             savePneumonia(queryTask, resultTree, detailNode);
             saveFrac(queryTask, resultTree, detailNode);
