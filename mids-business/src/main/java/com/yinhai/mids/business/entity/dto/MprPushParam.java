@@ -2,7 +2,9 @@ package com.yinhai.mids.business.entity.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.util.Date;
 
 /**
  * @author zhuhs
@@ -12,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class MprPushParam {
 
     @JsonIgnore
-    private MultipartFile file;
+    private File file;
 
     private String type;
 
@@ -23,4 +25,9 @@ public class MprPushParam {
     private String code;
 
     private String message;
+
+    private Date pushTime;
+
+    @JsonIgnore
+    private Exception exception;
 }

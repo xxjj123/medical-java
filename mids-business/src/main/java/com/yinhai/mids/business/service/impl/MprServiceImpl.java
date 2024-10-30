@@ -27,19 +27,18 @@ import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.service.InstanceInfoService;
 import com.yinhai.mids.business.service.MprService;
-import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.module.mybatis.UpdateEntity;
 import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.core.utils.ZipUtil;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -171,9 +170,9 @@ public class MprServiceImpl implements MprService {
         TaskLockManager.lock(TaskType.MPR, mprTask.getApplyId(), 60 * 2, () -> mpr(mprTask));
     }
 
+    @Async
     @Override
     public void onMprPush(MprPushParam mprPushParam) {
-        AppAssert.notNull(mprPushParam.getFile(), "MPR结果文件为空！");
         String code = mprPushParam.getCode();
         String applyId = mprPushParam.getApplyId();
         String type = mprPushParam.getType();
@@ -182,22 +181,26 @@ public class MprServiceImpl implements MprService {
             return;
         }
         if (!StrUtil.equals("1", code)) {
-            updateAfterPushMprTaskStatus(type, applyId, 2, mprPushParam, 0, null);
+            updateAfterPushMprTaskStatus(2, mprPushParam, 0, null);
+            return;
+        }
+        if (mprPushParam.getException() != null) {
+            updateAfterPushMprTaskStatus(-1, mprPushParam, 0, getErrorMessage(mprPushParam.getException()));
             return;
         }
         if (mprPushParam.getFile() == null) {
-            updateAfterPushMprTaskStatus(type, applyId, -1, mprPushParam, 0, "MPR结果文件为空");
+            updateAfterPushMprTaskStatus(-1, mprPushParam, 0, "MPR结果文件为空");
             return;
         }
         SeriesInfoPO seriesInfo = seriesInfoMapper.selectById(mprPushParam.getSeriesId());
         if (seriesInfo == null) {
-            updateAfterPushMprTaskStatus(type, applyId, -1, mprPushParam, 1, "序列信息不存在");
+            updateAfterPushMprTaskStatus(-1, mprPushParam, 1, "序列信息不存在");
             return;
         }
 
         File tempDir = null;
         try {
-            tempDir = createMprFileTempDir(mprPushParam.getFile().getInputStream());
+            tempDir = createMprFileTempDir(mprPushParam.getFile());
             if (StrUtil.equals(type, MprType.SLICE)) {
                 saveSliceFile(tempDir, seriesInfo);
             }
@@ -206,12 +209,12 @@ public class MprServiceImpl implements MprService {
             }
         } catch (Exception e) {
             log.error(e);
-            updateAfterPushMprTaskStatus(type, applyId, -1, mprPushParam, 1, getErrorMessage(e));
+            updateAfterPushMprTaskStatus(-1, mprPushParam, 1, getErrorMessage(e));
             return;
         } finally {
             FileUtil.del(tempDir);
         }
-        updateAfterPushMprTaskStatus(type, applyId, 2, mprPushParam, 1, null);
+        updateAfterPushMprTaskStatus(2, mprPushParam, 1, null);
     }
 
     /**
@@ -275,23 +278,22 @@ public class MprServiceImpl implements MprService {
     }
 
     @SuppressWarnings("unchecked")
-    private void updateAfterPushMprTaskStatus(String type, String applyId, Integer taskStatus, MprPushParam mprPushParam,
-                                              Integer pushResult, String errorMessage) {
+    private void updateAfterPushMprTaskStatus(Integer taskStatus, MprPushParam mprPushParam, Integer pushResult,
+                                              String errorMessage) {
         MprTaskPO task = UpdateEntity.of(MprTaskPO.class);
         task.setTaskStatus(taskStatus);
-        task.setPushTime(DbClock.now());
+        task.setPushTime(mprPushParam.getPushTime());
         task.setPushContent(JsonKit.toJsonString(mprPushParam));
         task.setPushResult(pushResult);
         task.setErrorMessage(errorMessage);
 
-        // 只更新非推送成功的任务状态
         mprTaskMapper.updateSetterInvoked(task, Wrappers.<MprTaskPO>lambdaUpdate()
-                .eq(MprTaskPO::getApplyId, applyId).eq(MprTaskPO::getMprType, type)
-                .and(w -> w.isNull(MprTaskPO::getPushResult).or().ne(MprTaskPO::getMprResult, 1)));
+                .eq(MprTaskPO::getApplyId, mprPushParam.getApplyId())
+                .eq(MprTaskPO::getMprType, mprPushParam.getType()));
 
         List<MprTaskPO> mprTasks = mprTaskMapper.selectList(Wrappers.<MprTaskPO>lambdaQuery()
                 .select(MprTaskPO::getComputeSeriesId)
-                .eq(MprTaskPO::getApplyId, applyId));
+                .eq(MprTaskPO::getApplyId, mprPushParam.getApplyId()));
         mprTasks.stream().map(MprTaskPO::getComputeSeriesId)
                 .collect(Collectors.toSet())
                 .forEach(i -> computeSeriesService.refreshComputeStatus(i));
@@ -300,17 +302,14 @@ public class MprServiceImpl implements MprService {
     /**
      * 创建一个临时文件夹，用于存储解压后的文件
      */
-    private File createMprFileTempDir(InputStream inputStream) {
-        File tempZip = null;
+    private File createMprFileTempDir(File tempZip) {
         try {
-            tempZip = Files.createTempFile(null, ".zip").toFile();
             File tempDir = Files.createTempDirectory("mpr_file").toFile();
-            FileUtil.writeFromStream(inputStream, tempZip);
             ZipUtil.extractingAllFile(tempZip.getAbsolutePath(), tempDir.getAbsolutePath());
             return tempDir;
         } catch (IOException e) {
             log.error(e);
-            throw new AppException("创建临时文件异常");
+            throw new AppException("解压MPR文件异常");
         } finally {
             FileUtil.del(tempZip);
         }

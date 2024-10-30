@@ -383,7 +383,7 @@ public class CaseServiceImpl implements CaseService {
         // MPR成功的，不用再重新发起MPR
         mprTaskMapper.update(new MprTaskPO(), Wrappers.<MprTaskPO>lambdaUpdate()
                 .in(MprTaskPO::getComputeSeriesId, computeSeriesIds)
-                .and(w -> w.isNull(MprTaskPO::getPushResult).or().ne(MprTaskPO::getMprResult, 1))
+                .not(w -> w.eq(MprTaskPO::getTaskStatus, 2).eq(MprTaskPO::getPushResult, 1))
                 .set(MprTaskPO::getApplyId, IdUtil.fastSimpleUUID())
                 .set(MprTaskPO::getTaskStatus, 0));
     }

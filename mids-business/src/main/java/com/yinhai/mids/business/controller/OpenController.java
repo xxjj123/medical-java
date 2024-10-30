@@ -1,8 +1,13 @@
 package com.yinhai.mids.business.controller;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.yinhai.mids.business.entity.dto.MprPushParam;
 import com.yinhai.mids.business.service.KeyaService;
 import com.yinhai.mids.business.service.MprService;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
 
 /**
@@ -23,6 +31,8 @@ import java.util.Map;
 @Tag(name = "开放接口")
 @RestService("open")
 public class OpenController {
+
+    private static final Log log = LogFactory.get();
 
     @Resource
     private KeyaService keyaService;
@@ -46,12 +56,23 @@ public class OpenController {
             @RequestParam(value = "code") @NotNull(message = "code不能为空") String code,
             @RequestParam(value = "message") String message) {
         MprPushParam mprPushParam = new MprPushParam();
-        mprPushParam.setFile(file);
         mprPushParam.setType(type);
         mprPushParam.setSeriesId(seriesId);
         mprPushParam.setApplyId(applyId);
         mprPushParam.setCode(code);
         mprPushParam.setMessage(message);
+        mprPushParam.setPushTime(DbClock.now());
+
+        if (StrUtil.equals("1", code) && file != null) {
+            try {
+                File tempZip = Files.createTempFile(null, ".zip").toFile();
+                FileUtil.writeFromStream(file.getInputStream(), tempZip);
+                mprPushParam.setFile(tempZip);
+            } catch (IOException e) {
+                log.error(e);
+                mprPushParam.setException(e);
+            }
+        }
         mprService.onMprPush(mprPushParam);
     }
 }
