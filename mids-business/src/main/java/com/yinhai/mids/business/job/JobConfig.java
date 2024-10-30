@@ -8,6 +8,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.github.pagehelper.Page;
 import com.yinhai.mids.business.constant.TaskType;
 import com.yinhai.mids.business.entity.dto.KeyaApplyToDoTask;
 import com.yinhai.mids.business.entity.dto.KeyaQueryToDoTask;
@@ -72,8 +73,8 @@ public class JobConfig implements SchedulingConfigurer {
     public void keyaApply() {
         PageKit.startPage(PageRequest.of(1, 1));
         List<KeyaApplyToDoTask> toDoTaskList = applyTaskMapper.queryTodoTasks();
-        log.debug("{}, ToDoTasks: {}, {}", DateUtil.format(DbClock.now(), DatePattern.NORM_DATETIME_MS_PATTERN), "KEYA_APPLY", toDoTaskList.size());
         if (CollUtil.isNotEmpty(toDoTaskList)) {
+            logTaskTotal(TaskType.KEYA_APPLY, toDoTaskList);
             toDoTaskList.forEach(task -> keyaService.lockedAsyncApply(task));
         }
     }
@@ -81,8 +82,8 @@ public class JobConfig implements SchedulingConfigurer {
     public void keyaQuery() {
         PageKit.startPage(PageRequest.of(1, 10));
         List<KeyaQueryToDoTask> toDoTaskList = queryTaskMapper.queryTodoTasks();
-        log.debug("{}, ToDoTasks: {}, {}", DateUtil.format(DbClock.now(), DatePattern.NORM_DATETIME_MS_PATTERN), "KEYA_QUERY", toDoTaskList.size());
         if (CollUtil.isNotEmpty(toDoTaskList)) {
+            logTaskTotal(TaskType.KEYA_QUERY, toDoTaskList);
             toDoTaskList.forEach(task -> keyaService.lockedAsyncQuery(task));
         }
     }
@@ -90,10 +91,16 @@ public class JobConfig implements SchedulingConfigurer {
     public void mpr() {
         PageKit.startPage(PageRequest.of(1, 5));
         List<MprToDoTask> toDoTaskList = mprTaskMapper.queryTodoTasks();
-        log.debug("{}, ToDoTasks: {}, {}", DateUtil.format(DbClock.now(), DatePattern.NORM_DATETIME_MS_PATTERN), "MPR", toDoTaskList.size());
         if (CollUtil.isNotEmpty(toDoTaskList)) {
+            logTaskTotal(TaskType.MPR, toDoTaskList);
             toDoTaskList.forEach(task -> mprService.lockedAsyncMpr(task));
         }
+    }
+
+    private <T> void logTaskTotal(TaskType taskType, List<T> list) {
+        int total = list instanceof Page ? (int) ((Page<T>) list).getTotal() : CollUtil.size(list);
+        String time = DateUtil.format(DbClock.now(), DatePattern.NORM_DATETIME_MS_PATTERN);
+        log.debug("{}, {}, total = {}, todo = {}", time, taskType.toString(), total, CollUtil.size(list));
     }
 
     /**
