@@ -337,6 +337,7 @@ public class CaseServiceImpl implements CaseService {
         checkStudyInfoExists(studyId);
         int deleted = studyInfoMapper.deleteById(studyId);
         AppAssert.isTrue(deleted == 1, "删除检查失败");
+        computeSeriesMapper.delete(Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getStudyId, studyId));
     }
 
     @Override
@@ -351,11 +352,6 @@ public class CaseServiceImpl implements CaseService {
         checkStudyInfoExists(studyId);
         List<ComputeSeriesPO> computeSeriesList = computeSeriesMapper.selectList(
                 Wrappers.<ComputeSeriesPO>lambdaQuery().eq(ComputeSeriesPO::getStudyId, studyId));
-        for (ComputeSeriesPO computeSeries : computeSeriesList) {
-            if (computeSeries.getComputeStatus() == 2) {
-                throw new AppException("存在计算中的序列，无法发起重新分析");
-            }
-        }
         List<String> computeSeriesIds = computeSeriesList.stream().map(ComputeSeriesPO::getComputeSeriesId).collect(toList());
         resetSubTasks(computeSeriesIds);
     }
@@ -381,6 +377,7 @@ public class CaseServiceImpl implements CaseService {
     private void resetSubTasks(List<String> computeSeriesIds) {
         keyaApplyTaskMapper.update(new KeyaApplyTaskPO(), Wrappers.<KeyaApplyTaskPO>lambdaUpdate()
                 .in(KeyaApplyTaskPO::getComputeSeriesId, computeSeriesIds)
+                .set(KeyaApplyTaskPO::getApplyId, null)
                 .set(KeyaApplyTaskPO::getTaskStatus, 0));
         keyaQueryTaskMapper.delete(
                 Wrappers.<KeyaQueryTaskPO>lambdaUpdate().in(KeyaQueryTaskPO::getComputeSeriesId, computeSeriesIds));
