@@ -1,5 +1,7 @@
 package com.yinhai.mids.common.module.mybatis;
 
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
+import com.baomidou.mybatisplus.core.toolkit.GlobalConfigUtils;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -32,6 +34,8 @@ public class MybatisRunner implements ApplicationRunner {
             Configuration configuration = sqlSessionFactory.getConfiguration();
             for (MybatisPlusInterceptor mybatisPlusInterceptor : mybatisPlusInterceptorList) {
                 configuration.addInterceptor(mybatisPlusInterceptor);
+                GlobalConfig globalConfig = GlobalConfigUtils.getGlobalConfig(configuration);
+                globalConfig.setIdentifierGenerator(new CustomIdentifierGenerator(globalConfig.getIdentifierGenerator()));
             }
         }
     }

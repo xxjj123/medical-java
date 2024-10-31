@@ -19,7 +19,7 @@ public class SeriesInfoPO {
     /**
      * 序列ID
      */
-    @TableId(value = "series_id", type = IdType.ASSIGN_ID)
+    @TableId(value = "series_id", type = IdType.ASSIGN_UUID)
     @Schema(description = "序列ID")
     private String seriesId;
 

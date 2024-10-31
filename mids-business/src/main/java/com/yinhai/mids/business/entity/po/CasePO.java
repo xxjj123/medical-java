@@ -19,7 +19,7 @@ public class CasePO {
     /**
      * 案例ID
      */
-    @TableId(value = "case_id", type = IdType.ASSIGN_ID)
+    @TableId(value = "case_id", type = IdType.ASSIGN_UUID)
     @Schema(description = "案例ID")
     private String caseId;
 

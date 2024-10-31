@@ -19,7 +19,7 @@ public class StudyInfoPO {
     /**
      * 检查ID
      */
-    @TableId(value = "study_id", type = IdType.ASSIGN_ID)
+    @TableId(value = "study_id", type = IdType.ASSIGN_UUID)
     @Schema(description = "检查ID")
     private String studyId;
 

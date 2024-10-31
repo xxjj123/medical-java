@@ -19,7 +19,7 @@ public class ComputeSeriesPO {
     /**
      * 计算序列ID
      */
-    @TableId(value = "compute_series_id", type = IdType.ASSIGN_ID)
+    @TableId(value = "compute_series_id", type = IdType.ASSIGN_UUID)
     @Schema(description = "计算序列ID")
     private String computeSeriesId;
 
