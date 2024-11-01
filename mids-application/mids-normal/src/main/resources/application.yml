@@ -29,3 +29,5 @@ knife4j:
   production: false
   setting:
     enable-open-api: true
+forest:
+  backend: httpclient

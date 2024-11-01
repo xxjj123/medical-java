@@ -11,10 +11,10 @@ import java.io.File;
  */
 public interface KeyaClient {
 
-    @Post(url = "{url}")
+    @Post(url = "{url}", connectTimeout = 30000, readTimeout = 300000)
     ForestResponse<KeyaResponse> applyCompute(@Var("url") String url, @DataFile(value = "files") File file, @Body RegisterParam other);
 
-    @Get(url = "{url}", readTimeout = 30000)
+    @Get(url = "{url}", connectTimeout = 30000, readTimeout = 60000)
     ForestResponse<KeyaResponse> queryComputeResult(@Var("url") String url, @Query("applyId") String applyId);
 
     @Post(url = "{url}")

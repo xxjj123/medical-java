@@ -10,7 +10,7 @@ import java.io.File;
  * @date 2024/6/28 17:37
  */
 public interface MprClient {
-    @Post(url = "{url}")
+    @Post(url = "{url}", connectTimeout = 30000, readTimeout = 300000)
     ForestResponse<MprResponse> register(@Var("url") String url,
                                          @DataFile(value = "file", fileName = "dicom.zip") File file,
                                          @Body RegisterParam other);
