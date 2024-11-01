@@ -35,11 +35,11 @@ public enum ExceptionEnum implements Assertable<AppException>, Exceptional {
 
     @Override
     public AppException newException() {
-        return new AppException(getMsg());
+        return new AppException(getCode(), getMsg());
     }
 
     @Override
     public AppException newException(String msg) {
-        return new AppException(msg);
+        return new AppException(getCode(), msg);
     }
 }
