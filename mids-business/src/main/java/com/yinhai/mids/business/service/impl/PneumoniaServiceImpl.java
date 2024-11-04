@@ -103,7 +103,7 @@ public class PneumoniaServiceImpl implements PneumoniaService {
                     PneumoniaLesionPO::getId, PneumoniaLesionPO::getCreateTime, PneumoniaLesionPO::getUpdateTime);
             manualList = BeanUtil.copyToList(sourceList, PneumoniaLesionPO.class, copyOptions);
             manualList.forEach(i -> i.setDataType(1));
-            pneumoniaLesionMapper.insertBatch(manualList);
+            pneumoniaLesionMapper.insert(manualList);
         }
         List<PneumoniaLesionVO> pneumoniaLesionList = BeanUtil.copyToList(manualList, PneumoniaLesionVO.class);
         pneumoniaVO.setPneumoniaLesionList(pneumoniaLesionList);

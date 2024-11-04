@@ -75,7 +75,7 @@ public class FileStoreServiceImpl implements FileStoreService {
             fileStorePO.setUploadTime(DbClock.now());
             fileStorePOList.add(fileStorePO);
         }
-        fileStoreMapper.insertBatch(fileStorePOList);
+        fileStoreMapper.insert(fileStorePOList);
         List<ContextUploadResult<T>> contextUploadResultList = new ArrayList<>();
         for (int i = 0; i < fileStorePOList.size(); i++) {
             FileStorePO fileStorePO = fileStorePOList.get(i);

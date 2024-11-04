@@ -137,7 +137,7 @@ public class CaseServiceImpl implements CaseService {
         if (CollUtil.size(studyInfoList) == 1) {
             studyInfoMapper.insert(studyInfoList.get(0));
         } else {
-            studyInfoMapper.insertBatch(studyInfoList);
+            studyInfoMapper.insert(studyInfoList);
         }
         for (StudyInfoPO studyInfo : studyInfoList) {
             group.get(studyInfo.getStudyInstanceUid()).forEach(e -> e.setStudyId(studyInfo.getStudyId()));
@@ -159,7 +159,7 @@ public class CaseServiceImpl implements CaseService {
         if (CollUtil.size(seriesInfoList) == 1) {
             seriesInfoMapper.insert(seriesInfoList.get(0));
         } else {
-            seriesInfoMapper.insertBatch(seriesInfoList);
+            seriesInfoMapper.insert(seriesInfoList);
         }
         for (SeriesInfoPO seriesInfo : seriesInfoList) {
             group.get(seriesInfo.getSeriesInstanceUid()).forEach(e -> e.setSeriesId(seriesInfo.getSeriesId()));
@@ -194,7 +194,7 @@ public class CaseServiceImpl implements CaseService {
         for (InstanceInfoPO instanceInfo : instanceInfoList) {
             instanceInfo.setAccessPath(uploadMap.get(instanceInfo).getAccessPath());
         }
-        instanceInfoMapper.insertBatch(instanceInfoList);
+        instanceInfoMapper.insert(instanceInfoList);
     }
 
     /**
@@ -227,7 +227,7 @@ public class CaseServiceImpl implements CaseService {
                 computeSeries.setComputeStatus(ComputeStatus.WAIT_COMPUTE);
                 computeSeriesList.add(computeSeries);
             }
-            computeSeriesMapper.insertBatch(computeSeriesList);
+            computeSeriesMapper.insert(computeSeriesList);
         }
         return computeSeriesList;
     }
@@ -261,8 +261,8 @@ public class CaseServiceImpl implements CaseService {
                 mprTaskList.forEach(it -> it.setApplyId(mprApplyId));
             }
         }
-        keyaApplyTaskMapper.insertBatch(keyaApplyTaskList);
-        mprTaskMapper.insertBatch(mprTaskList);
+        keyaApplyTaskMapper.insert(keyaApplyTaskList);
+        mprTaskMapper.insert(mprTaskList);
     }
 
     /**
