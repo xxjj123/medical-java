@@ -277,7 +277,7 @@ public class KeyaServiceImpl implements KeyaService {
             fracLesionPO.setFracBBox(Joiner.on(StrPool.COMMA).join(fracInfo.getFracBBox()));
             fracLesionPOList.add(fracLesionPO);
         }
-        fracLesionMapper.insertBatch(fracLesionPOList);
+        fracLesionMapper.insert(fracLesionPOList);
     }
 
     private void savePneumonia(KeyaQueryToDoTask queryTask, JsonNode resultTree, JsonNode detailNode) {
@@ -322,7 +322,7 @@ public class KeyaServiceImpl implements KeyaService {
             pneumoniaLesionPO.setDiseaseClass(pneumoniaInfo.getDiseaseClass());
             pneumoniaLesionPOList.add(pneumoniaLesionPO);
         }
-        pneumoniaLesionMapper.insertBatch(pneumoniaLesionPOList);
+        pneumoniaLesionMapper.insert(pneumoniaLesionPOList);
 
         List<PneumoniaContourPO> pneumoniaContourPOList = new ArrayList<>();
         JsonNode contourNode = detailNode.at("/pneumonia/contours");
@@ -341,7 +341,7 @@ public class KeyaServiceImpl implements KeyaService {
             });
         });
         if (CollUtil.isNotEmpty(pneumoniaContourPOList)) {
-            pneumoniaContourMapper.insertBatch(pneumoniaContourPOList);
+            pneumoniaContourMapper.insert(pneumoniaContourPOList);
         }
     }
 
@@ -442,7 +442,7 @@ public class KeyaServiceImpl implements KeyaService {
             }
             noduleLesionPOList.add(noduleLesionPO);
         }
-        noduleLesionMapper.insertBatch(noduleLesionPOList);
+        noduleLesionMapper.insert(noduleLesionPOList);
     }
 
     private void updateQueryTaskStatus(String queryTaskId, String computeSeriesId, Integer taskStatus, String queryResponse,

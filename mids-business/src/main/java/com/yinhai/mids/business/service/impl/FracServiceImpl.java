@@ -99,7 +99,7 @@ public class FracServiceImpl implements FracService {
                     FracLesionPO::getId, FracLesionPO::getCreateTime, FracLesionPO::getUpdateTime);
             manualList = BeanUtil.copyToList(sourceList, FracLesionPO.class, copyOptions);
             manualList.forEach(i -> i.setDataType(1));
-            fracLesionMapper.insertBatch(manualList);
+            fracLesionMapper.insert(manualList);
         }
         List<FracLesionVO> fracLesionList = BeanUtil.copyToList(manualList, FracLesionVO.class);
         fracVO.setFracLesionList(fracLesionList);

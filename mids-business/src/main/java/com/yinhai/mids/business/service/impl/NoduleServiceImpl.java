@@ -202,7 +202,7 @@ public class NoduleServiceImpl implements NoduleService {
             manualList = BeanUtil.copyToList(sourceList, NoduleLesionPO.class, copyOptions);
             manualList.forEach(i -> i.setDataType(1));
             manualList.forEach(i -> i.setLobe(LOBE_MAP.get(i.getLobeSegment())));
-            noduleLesionMapper.insertBatch(manualList);
+            noduleLesionMapper.insert(manualList);
         }
         List<NoduleLesionVO> noduleLesionVOList = BeanUtil.copyToList(manualList, NoduleLesionVO.class);
         for (NoduleLesionVO noduleLesionVO : noduleLesionVOList) {

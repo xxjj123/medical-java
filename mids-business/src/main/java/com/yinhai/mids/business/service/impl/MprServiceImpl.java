@@ -274,7 +274,7 @@ public class MprServiceImpl implements MprService {
         for (MprSlicePO mprSlice : mprSliceList) {
             mprSlice.setViewTotal(viewTotalMap.get(mprSlice.getViewName()));
         }
-        mprSliceMapper.insertBatch(mprSliceList);
+        mprSliceMapper.insert(mprSliceList);
     }
 
     @SuppressWarnings("unchecked")
