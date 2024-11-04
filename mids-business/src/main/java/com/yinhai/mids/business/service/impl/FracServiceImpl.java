@@ -94,7 +94,7 @@ public class FracServiceImpl implements FracService {
                 .eq(FracLesionPO::getComputeSeriesId, computeSeriesId));
         if (CollUtil.isEmpty(manualList)) {
             List<FracLesionPO> sourceList = fracLesionMapper.selectList(Wrappers.<FracLesionPO>lambdaQuery()
-                    .eq(FracLesionPO::getDataType, 1).eq(FracLesionPO::getComputeSeriesId, computeSeriesId));
+                    .eq(FracLesionPO::getDataType, 0).eq(FracLesionPO::getComputeSeriesId, computeSeriesId));
             CopyOptions copyOptions = new CopyOptions().setIgnoreProperties(
                     FracLesionPO::getId, FracLesionPO::getCreateTime, FracLesionPO::getUpdateTime);
             manualList = BeanUtil.copyToList(sourceList, FracLesionPO.class, copyOptions);

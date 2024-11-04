@@ -98,7 +98,7 @@ public class PneumoniaServiceImpl implements PneumoniaService {
                 .eq(PneumoniaLesionPO::getComputeSeriesId, computeSeriesId));
         if (CollUtil.isEmpty(manualList)) {
             List<PneumoniaLesionPO> sourceList = pneumoniaLesionMapper.selectList(Wrappers.<PneumoniaLesionPO>lambdaQuery()
-                    .eq(PneumoniaLesionPO::getDataType, 1).eq(PneumoniaLesionPO::getComputeSeriesId, computeSeriesId));
+                    .eq(PneumoniaLesionPO::getDataType, 0).eq(PneumoniaLesionPO::getComputeSeriesId, computeSeriesId));
             CopyOptions copyOptions = new CopyOptions().setIgnoreProperties(
                     PneumoniaLesionPO::getId, PneumoniaLesionPO::getCreateTime, PneumoniaLesionPO::getUpdateTime);
             manualList = BeanUtil.copyToList(sourceList, PneumoniaLesionPO.class, copyOptions);
