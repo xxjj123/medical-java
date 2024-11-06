@@ -266,7 +266,7 @@ public class MprServiceImpl implements MprService {
             String withoutExtension = fileName.substring(0, fileName.lastIndexOf('.'));
             String[] parts = withoutExtension.split("_");
             mprSlice.setViewName(parts[0]);
-            mprSlice.setViewIndex(Integer.parseInt(parts[1]));
+            mprSlice.setViewIndex(Integer.parseInt(parts[1]) + 1);
             viewTotalMap.put(mprSlice.getViewName(), viewTotalMap.getOrDefault(mprSlice.getViewName(), 0) + 1);
             mprSlice.setAccessPath(uploadResult.getAccessPath());
             mprSliceList.add(mprSlice);
