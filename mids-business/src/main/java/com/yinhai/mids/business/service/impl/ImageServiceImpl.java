@@ -8,6 +8,7 @@ import com.google.common.base.Joiner;
 import com.yinhai.mids.business.entity.dto.ViewCount;
 import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.ImageInitInfoVO;
+import com.yinhai.mids.business.entity.vo.InstanceMetadata;
 import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.service.ImageService;
@@ -21,6 +22,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,6 @@ public class ImageServiceImpl implements ImageService {
     private FileStoreService fileStoreService;
 
     @Override
-    @SuppressWarnings("unchecked")
     public ImageInitInfoVO queryInitInfo(String computeSeriesId) {
         ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
                 .select(ComputeSeriesPO::getStudyId, ComputeSeriesPO::getSeriesId, ComputeSeriesPO::getComputeStatus)
@@ -94,6 +95,18 @@ public class ImageServiceImpl implements ImageService {
         result.setPatientAge(studyInfo.getPatientAge());
         result.setPatientId(studyInfo.getPatientId());
         result.setStudyDateAndTime(studyInfo.getStudyDateAndTime());
+
+        List<InstanceInfoPO> instanceInfoList = instanceInfoMapper.selectList(Wrappers.<InstanceInfoPO>lambdaQuery()
+                .select(InstanceInfoPO::getInstanceNumber, InstanceInfoPO::getSlicePosition)
+                .eq(InstanceInfoPO::getSeriesId, seriesInfo.getSeriesId()));
+        List<InstanceMetadata> instanceMetadataList = new ArrayList<>();
+        for (InstanceInfoPO instanceInfoPO : instanceInfoList) {
+            InstanceMetadata metadata = new InstanceMetadata();
+            metadata.setInstanceNumber(instanceInfoPO.getInstanceNumber());
+            metadata.setSlicePosition(instanceInfoPO.getSlicePosition());
+            instanceMetadataList.add(metadata);
+        }
+        result.setInstanceMetadataList(instanceMetadataList);
         return result;
     }
 

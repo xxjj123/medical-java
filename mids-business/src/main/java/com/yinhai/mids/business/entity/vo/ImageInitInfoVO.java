@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 影像初始化数据
@@ -114,4 +115,9 @@ public class ImageInitInfoVO {
      */
     @Schema(description = "StudyDateAndTime 检查时间")
     private Date studyDateAndTime;
+
+    /**
+     * Instance metadata
+     */
+    private List<InstanceMetadata> instanceMetadataList;
 }

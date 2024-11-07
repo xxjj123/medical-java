@@ -80,6 +80,13 @@ public class InstanceInfoPO {
     private Integer viewIndex;
 
     /**
+     * slicePosition
+     */
+    @TableField(value = "slice_position")
+    @Schema(description = "imagePositionPatient[2]")
+    private String slicePosition;
+
+    /**
      * 数据创建时间
      */
     @TableField(value = "create_time", fill = FieldFill.INSERT)

@@ -128,6 +128,12 @@ public class DicomInfo {
     private double slicePosition;
 
     /**
+     * imagePositionPatient
+     */
+    @Schema(description = "imagePositionPatient")
+    private float[] imagePositionPatient;
+
+    /**
      * DICOM文件
      */
     @Schema(description = "DICOM文件")

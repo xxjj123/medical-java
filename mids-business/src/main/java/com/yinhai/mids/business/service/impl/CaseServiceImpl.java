@@ -178,6 +178,7 @@ public class CaseServiceImpl implements CaseService {
             DicomInstance dicomInstance = sortedDicomInstanceList.get(i);
             InstanceInfoPO instanceInfoPO = BeanUtil.copyProperties(dicomInstance, InstanceInfoPO.class);
             instanceInfoPO.setViewIndex(i + 1);
+            instanceInfoPO.setSlicePosition(String.valueOf(dicomInstance.getSlicePosition()));
             instanceInfoList.add(instanceInfoPO);
             ContextFSObject<String> contextFSObject;
             try {
