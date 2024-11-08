@@ -21,4 +21,10 @@ public class InstanceMetadata {
      */
     @Schema(description = "slicePosition")
     private String slicePosition;
+
+    /**
+     * view index
+     */
+    @Schema(description = "view index")
+    private Integer viewIndex;
 }

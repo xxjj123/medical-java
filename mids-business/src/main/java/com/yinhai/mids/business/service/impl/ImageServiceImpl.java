@@ -97,13 +97,14 @@ public class ImageServiceImpl implements ImageService {
         result.setStudyDateAndTime(studyInfo.getStudyDateAndTime());
 
         List<InstanceInfoPO> instanceInfoList = instanceInfoMapper.selectList(Wrappers.<InstanceInfoPO>lambdaQuery()
-                .select(InstanceInfoPO::getInstanceNumber, InstanceInfoPO::getSlicePosition)
+                .select(InstanceInfoPO::getInstanceNumber, InstanceInfoPO::getSlicePosition, InstanceInfoPO::getViewIndex)
                 .eq(InstanceInfoPO::getSeriesId, seriesInfo.getSeriesId()));
         List<InstanceMetadata> instanceMetadataList = new ArrayList<>();
         for (InstanceInfoPO instanceInfoPO : instanceInfoList) {
             InstanceMetadata metadata = new InstanceMetadata();
             metadata.setInstanceNumber(instanceInfoPO.getInstanceNumber());
             metadata.setSlicePosition(instanceInfoPO.getSlicePosition());
+            metadata.setViewIndex(instanceInfoPO.getViewIndex());
             instanceMetadataList.add(metadata);
         }
         result.setInstanceMetadataList(instanceMetadataList);
