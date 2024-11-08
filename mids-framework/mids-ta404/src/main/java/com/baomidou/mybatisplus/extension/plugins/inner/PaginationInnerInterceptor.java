@@ -61,7 +61,6 @@ import java.util.stream.Collectors;
  */
 @Data
 @NoArgsConstructor
-@SuppressWarnings({"rawtypes"})
 public class PaginationInnerInterceptor implements InnerInterceptor {
     /**
      * 获取jsqlparser中count的SelectItem

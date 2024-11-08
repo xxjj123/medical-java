@@ -90,7 +90,6 @@ public class KeyaServiceImpl implements KeyaService {
     @Resource
     private KeyaProperties keyaProperties;
 
-    @SuppressWarnings("unchecked")
     @Override
     public void apply(KeyaApplyToDoTask applyTask) {
         ForestResponse<KeyaResponse> connectResponse = keyaClient.testConnect(keyaProperties.getRegisterUrl());
@@ -181,7 +180,6 @@ public class KeyaServiceImpl implements KeyaService {
         TaskLockManager.lock(TaskType.KEYA_APPLY, applyTask.getApplyTaskId(), 60 * 2, () -> apply(applyTask));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void query(KeyaQueryToDoTask queryTask) {
         String applyId = queryTask.getApplyId();

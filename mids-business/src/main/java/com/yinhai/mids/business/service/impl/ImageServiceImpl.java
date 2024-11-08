@@ -112,7 +112,6 @@ public class ImageServiceImpl implements ImageService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void downloadSlice(String seriesId, String viewName, Integer viewIndex, HttpServletResponse response) {
         String accessPath;
         if (StrUtil.equals("axial", viewName)) {
@@ -140,7 +139,6 @@ public class ImageServiceImpl implements ImageService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void download3dModel(String seriesId, HttpServletResponse response) {
         MprModelPO model = mprModelMapper.selectOne(Wrappers.<MprModelPO>lambdaQuery()
                 .select(MprModelPO::getAccessPath)

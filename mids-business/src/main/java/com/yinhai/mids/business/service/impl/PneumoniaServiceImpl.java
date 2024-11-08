@@ -125,7 +125,6 @@ public class PneumoniaServiceImpl implements PneumoniaService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void savePneumoniaManualDiagnosis(ManualDiagnosisParam manualDiagnosisParam) {
         String computeSeriesId = manualDiagnosisParam.getComputeSeriesId();
         ManualDiagnosisPO one = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()
@@ -185,7 +184,6 @@ public class PneumoniaServiceImpl implements PneumoniaService {
         return textReportVO;
     }
 
-    @SuppressWarnings("unchecked")
     private ReportCommon queryReportCommon(String computeSeriesId) {
         ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
                 .select(ComputeSeriesPO::getStudyId)
