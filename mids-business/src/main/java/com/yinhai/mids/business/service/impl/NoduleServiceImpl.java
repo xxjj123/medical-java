@@ -131,7 +131,6 @@ public class NoduleServiceImpl implements NoduleService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void saveNoduleOperate(NoduleOperateVO noduleOperateVO) {
         validateNoduleOperate(noduleOperateVO);
         NoduleOperatePO noduleOperatePO = new NoduleOperatePO();
@@ -222,7 +221,6 @@ public class NoduleServiceImpl implements NoduleService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void saveNoduleManualDiagnosis(ManualDiagnosisParam manualDiagnosisParam) {
         String computeSeriesId = manualDiagnosisParam.getComputeSeriesId();
         ManualDiagnosisPO one = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()

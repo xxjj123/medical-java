@@ -147,6 +147,8 @@ public class PneumoniaServiceImpl implements PneumoniaService {
             manualDiagnosisPO.setDiagnoseTime(DbClock.now());
             manualDiagnosisMapper.insert(manualDiagnosisPO);
         }
+         // 清空报告
+        clearPneumoniaReport(computeSeriesId);
     }
 
     @Override
