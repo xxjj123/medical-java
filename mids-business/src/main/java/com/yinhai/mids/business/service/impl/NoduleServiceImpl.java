@@ -85,7 +85,7 @@ public class NoduleServiceImpl implements NoduleService {
             .put(18, "lobe_left_bottom")
             .build();
 
-    private static final Map<Integer, Integer> LOBE_SEGMENT_SORT_MAP = ImmutableMap.<Integer, Integer>builder()
+    private static final Map<Integer, Integer> LOBE_SEGMENT_SORT_MAP_334 = ImmutableMap.<Integer, Integer>builder()
             .put(1, 11)
             .put(2, 10)
             .put(3, 9)
@@ -205,7 +205,7 @@ public class NoduleServiceImpl implements NoduleService {
         }
         List<NoduleLesionVO> noduleLesionVOList = BeanUtil.copyToList(manualList, NoduleLesionVO.class);
         for (NoduleLesionVO noduleLesionVO : noduleLesionVOList) {
-            noduleLesionVO.setLobeSegmentSort(LOBE_SEGMENT_SORT_MAP.get(noduleLesionVO.getLobeSegment()));
+            noduleLesionVO.setLobeSegmentSort(LOBE_SEGMENT_SORT_MAP_334.get(noduleLesionVO.getLobeSegment()));
             noduleLesionVO.setTypeSort(TYPE_SORT_MAP.get(noduleLesionVO.getType()));
         }
         noduleVO.setNoduleLesionList(noduleLesionVOList);
@@ -293,7 +293,7 @@ public class NoduleServiceImpl implements NoduleService {
                 .eq(NoduleLesionPO::getChecked, 1));
         List<NoduleLesionVO> noduleLesionVOList = BeanUtil.copyToList(noduleLesionPOList, NoduleLesionVO.class);
         for (NoduleLesionVO noduleLesionVO : noduleLesionVOList) {
-            noduleLesionVO.setLobeSegmentSort(LOBE_SEGMENT_SORT_MAP.get(noduleLesionVO.getLobeSegment()));
+            noduleLesionVO.setLobeSegmentSort(LOBE_SEGMENT_SORT_MAP_334.get(noduleLesionVO.getLobeSegment()));
             noduleLesionVO.setTypeSort(TYPE_SORT_MAP.get(noduleLesionVO.getType()));
         }
         graphicReportVO.setNoduleLesionList(noduleLesionVOList);

@@ -54,3 +54,6 @@ mpr:
   register-url: http://192.168.1.4:36000/mpr/analyse
   health-url: http://192.168.1.4:36000/mpr/health
   push-callback-url: http://192.168.1.4:39625/mids-api/open/mprPush
+
+spine:
+  query-url: http://192.168.1.7:6092/hl/BoneInfo

@@ -1,6 +1,7 @@
 package com.yinhai.mids.business.controller;
 
 import com.yinhai.mids.business.entity.vo.SingleImageInfoVO;
+import com.yinhai.mids.business.entity.vo.SpineInfoVO;
 import com.yinhai.mids.business.service.SingleImageService;
 import com.yinhai.ta404.core.restservice.annotation.RestService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,7 +19,7 @@ import javax.validation.constraints.NotNull;
 import java.io.IOException;
 
 @Validated
-@Tag(name = "单张dicom浏览")
+@Tag(name = "脊柱侧弯")
 @RestService("single")
 public class SingleImageController {
     @Resource
@@ -43,6 +44,15 @@ public class SingleImageController {
                               HttpServletResponse response) {
         SingleImageService.downloadSlice(studyid, response);
     }
+
+    @Operation(summary = "获取脊柱检测信息")
+    @PostMapping("getSpineInfo")
+    public SpineInfoVO getSpineInfo(@RequestPart("dicom")
+                            @NotNull(message = "DICOM文件不能为空") MultipartFile dicom) throws IOException {
+        SpineInfoVO spineInfoVO = SingleImageService.getSpineInfo(dicom);
+        return spineInfoVO;
+    }
+
 }
 
 
