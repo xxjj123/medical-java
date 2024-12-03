@@ -1,5 +1,6 @@
 package com.yinhai.mids.business.util;
 
+import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.io.FileTypeUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
@@ -10,8 +11,13 @@ import com.yinhai.mids.business.entity.model.DicomInfo;
 import com.yinhai.ta404.core.exception.AppException;
 import org.dcm4che3.data.Attributes;
 import org.dcm4che3.data.Tag;
+import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
+import org.dcm4che3.imageio.plugins.dcm.DicomImageReader;
 import org.dcm4che3.io.DicomInputStream;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import java.awt.image.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -133,5 +139,17 @@ public class DicomUtil {
         } finally {
             IoUtil.close(inputStream);
         }
+    }
+
+    /**
+     * 将DICOM文件转为JPG格式图片，返回图片的base64串
+     */
+    public static String convertToImageBase64(InputStream inputStream) throws IOException {
+        Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("DICOM");
+        DicomImageReader reader = (DicomImageReader) readers.next();
+        reader.setInput(ImageIO.createImageInputStream(inputStream));
+
+        BufferedImage bufferedImage = reader.read(0, new DicomImageReadParam());
+        return ImgUtil.toBase64(bufferedImage, "jpg");
     }
 }

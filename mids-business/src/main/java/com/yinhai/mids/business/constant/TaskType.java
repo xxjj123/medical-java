@@ -34,6 +34,11 @@ public enum TaskType {
      * 科亚AI分析结果查询
      */
     KEYA_QUERY(5),
+
+    /**
+     * 脊柱识别
+     */
+    SPINE_RECOG(6),
     ;
 
     private final int type;

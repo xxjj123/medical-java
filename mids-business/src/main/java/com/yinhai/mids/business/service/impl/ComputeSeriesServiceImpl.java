@@ -7,7 +7,9 @@ import com.yinhai.mids.business.constant.ComputeStatus;
 import com.yinhai.mids.business.constant.ComputeType;
 import com.yinhai.mids.business.entity.dto.LungTaskInfo;
 import com.yinhai.mids.business.entity.po.ComputeSeriesPO;
+import com.yinhai.mids.business.entity.po.SpineRecogTaskPO;
 import com.yinhai.mids.business.mapper.ComputeSeriesMapper;
+import com.yinhai.mids.business.mapper.SpineRecogTaskMapper;
 import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,9 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
 
     @Resource
     private ComputeSeriesMapper computeSeriesMapper;
+
+    @Resource
+    private SpineRecogTaskMapper spineRecogTaskMapper;
 
     @Override
     public void refreshComputeStatus(String computeSeriesId) {
@@ -68,6 +73,25 @@ public class ComputeSeriesServiceImpl implements ComputeSeriesService {
                 computeStatus = ComputeStatus.COMPUTE_ERROR;
             }
         }
+
+        if (ComputeType.SPINE == computeType) {
+            SpineRecogTaskPO spineRecogTaskPO = spineRecogTaskMapper.selectOne(Wrappers.<SpineRecogTaskPO>lambdaQuery()
+                    .select(SpineRecogTaskPO::getTaskStatus, SpineRecogTaskPO::getRecogResult)
+                    .eq(SpineRecogTaskPO::getComputeSeriesId, computeSeriesId));
+            if (spineRecogTaskPO.getTaskStatus() == 0) {
+                computeStatus = ComputeStatus.WAIT_COMPUTE;
+            }
+            if (spineRecogTaskPO.getTaskStatus() == -1) {
+                computeStatus = ComputeStatus.COMPUTE_ERROR;
+            }
+            if (spineRecogTaskPO.getTaskStatus() == 1 && spineRecogTaskPO.getRecogResult() == 0) {
+                computeStatus = ComputeStatus.COMPUTE_FAILED;
+            }
+            if (spineRecogTaskPO.getTaskStatus() == 1 && spineRecogTaskPO.getRecogResult() == 1) {
+                computeStatus = ComputeStatus.COMPUTE_SUCCESS;
+            }
+        }
+
         computeSeriesMapper.update(new ComputeSeriesPO(), Wrappers.<ComputeSeriesPO>lambdaUpdate()
                 .eq(ComputeSeriesPO::getComputeSeriesId, computeSeriesId)
                 .set(ComputeSeriesPO::getComputeStatus, computeStatus)

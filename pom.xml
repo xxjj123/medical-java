@@ -109,7 +109,6 @@
                 <artifactId>dcm4che-imageio</artifactId>
                 <version>5.30.0</version>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 </project>

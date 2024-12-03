@@ -19,7 +19,7 @@
                d.image_count
         FROM tb_keya_query_task a
                  JOIN tb_keya_apply_task b ON a.apply_task_id = b.apply_task_id AND a.apply_id = b.apply_id
-                 JOIN tb_compute_series_info c ON b.compute_series_id = c.compute_series_id
+                 JOIN tb_compute_series c ON b.compute_series_id = c.compute_series_id
                  JOIN tb_series_info d ON c.series_id = d.series_id
         WHERE a.task_status = 0
           AND b.apply_id IS NOT NULL

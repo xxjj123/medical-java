@@ -14,7 +14,7 @@
                group_concat(a.mpr_type)          mpr_types,
                group_concat(a.compute_series_id) compute_series_ids
         FROM tb_mpr_task a
-                 JOIN tb_compute_series_info b ON a.compute_series_id = b.compute_series_id
+                 JOIN tb_compute_series b ON a.compute_series_id = b.compute_series_id
         WHERE (a.task_status = 0 OR (a.task_status = 1 AND a.mpr_time &lt; now() - INTERVAL 5 MINUTE))
           AND NOT exists(SELECT 1
                          FROM tb_task_lock

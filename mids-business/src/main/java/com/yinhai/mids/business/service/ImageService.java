@@ -38,4 +38,9 @@ public interface ImageService {
      * @author zhuhs 2024/08/28
      */
     void download3dModel(String seriesId, HttpServletResponse response);
+
+    /**
+     * 下载影像DICOM
+     */
+    void downloadDicom(String instanceId, HttpServletResponse response);
 }

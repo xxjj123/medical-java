@@ -8,6 +8,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "spine")
 @Component
 public class SpineProperties {
-    private String queryUrl;
 
+    private String queryUrl;
 }

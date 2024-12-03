@@ -47,4 +47,11 @@ public class ImageController {
                                 HttpServletResponse response) {
         imageService.download3dModel(seriesId, response);
     }
+
+    @Operation(summary = "下载影像DICOM")
+    @PostMapping("downloadDicom")
+    public void downloadDicom(@RequestParam @NotBlank(message = "实例ID不能为空") String instanceId,
+                              HttpServletResponse response) {
+        imageService.downloadDicom(instanceId, response);
+    }
 }

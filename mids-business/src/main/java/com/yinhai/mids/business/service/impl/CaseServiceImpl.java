@@ -85,6 +85,9 @@ public class CaseServiceImpl implements CaseService {
     private MprTaskMapper mprTaskMapper;
 
     @Resource
+    private SpineRecogTaskMapper spineRecogTaskMapper;
+
+    @Resource
     private FavoriteMapper favoriteMapper;
 
     @Resource
@@ -240,7 +243,7 @@ public class CaseServiceImpl implements CaseService {
         List<KeyaApplyTaskPO> keyaApplyTaskList = new ArrayList<>();
         List<MprTaskPO> mprTaskList = new ArrayList<>();
         for (ComputeSeriesPO computeSeries : computeSeriesList) {
-            if (computeSeries.getComputeType() == 1) {
+            if (computeSeries.getComputeType() == ComputeType.LUNG) {
                 KeyaApplyTaskPO applyTask = new KeyaApplyTaskPO();
                 applyTask.setComputeSeriesId(computeSeries.getComputeSeriesId());
                 applyTask.setTaskStatus(0);
@@ -260,6 +263,12 @@ public class CaseServiceImpl implements CaseService {
 
                 String mprApplyId = IdUtil.fastSimpleUUID();
                 mprTaskList.forEach(it -> it.setApplyId(mprApplyId));
+            }
+            if (computeSeries.getComputeType() == ComputeType.SPINE) {
+                SpineRecogTaskPO spineRecogTaskPO = new SpineRecogTaskPO();
+                spineRecogTaskPO.setComputeSeriesId(computeSeries.getComputeSeriesId());
+                spineRecogTaskPO.setTaskStatus(0);
+                spineRecogTaskMapper.insert(spineRecogTaskPO);
             }
         }
         keyaApplyTaskMapper.insert(keyaApplyTaskList);
@@ -388,6 +397,11 @@ public class CaseServiceImpl implements CaseService {
                 .not(w -> w.eq(MprTaskPO::getTaskStatus, 2).eq(MprTaskPO::getPushResult, 1))
                 .set(MprTaskPO::getApplyId, IdUtil.fastSimpleUUID())
                 .set(MprTaskPO::getTaskStatus, 0));
+
+        spineRecogTaskMapper.update(new SpineRecogTaskPO(), Wrappers.<SpineRecogTaskPO>lambdaUpdate()
+                .in(SpineRecogTaskPO::getComputeSeriesId, computeSeriesIds)
+                .set(SpineRecogTaskPO::getTaskStatus, 0));
+
         computeSeriesIds.forEach(computeSeriesService::refreshComputeStatus);
     }
 }

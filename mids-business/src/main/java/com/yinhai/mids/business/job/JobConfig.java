@@ -13,11 +13,14 @@ import com.yinhai.mids.business.constant.TaskType;
 import com.yinhai.mids.business.entity.dto.KeyaApplyToDoTask;
 import com.yinhai.mids.business.entity.dto.KeyaQueryToDoTask;
 import com.yinhai.mids.business.entity.dto.MprToDoTask;
+import com.yinhai.mids.business.entity.dto.SpineRecogToDoTask;
 import com.yinhai.mids.business.mapper.KeyaApplyTaskMapper;
 import com.yinhai.mids.business.mapper.KeyaQueryTaskMapper;
 import com.yinhai.mids.business.mapper.MprTaskMapper;
+import com.yinhai.mids.business.mapper.SpineRecogTaskMapper;
 import com.yinhai.mids.business.service.KeyaService;
 import com.yinhai.mids.business.service.MprService;
+import com.yinhai.mids.business.service.SpineService;
 import com.yinhai.mids.common.core.PageRequest;
 import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.PageKit;
@@ -49,18 +52,24 @@ public class JobConfig implements SchedulingConfigurer {
     private KeyaQueryTaskMapper queryTaskMapper;
 
     @Resource
-    private KeyaService keyaService;
+    private MprTaskMapper mprTaskMapper;
 
     @Resource
-    private MprTaskMapper mprTaskMapper;
+    private SpineRecogTaskMapper spineRecogTaskMapper;
+
+    @Resource
+    private KeyaService keyaService;
 
     @Resource
     private MprService mprService;
 
+    @Resource
+    private SpineService spineService;
+
     @Override
     public void configureTasks(@NotNull ScheduledTaskRegistrar taskRegistrar) {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(3);
+        scheduler.setPoolSize(4);
         scheduler.setThreadNamePrefix("job-thread-");
         scheduler.initialize();
         taskRegistrar.setScheduler(scheduler);
@@ -68,6 +77,7 @@ public class JobConfig implements SchedulingConfigurer {
         taskRegistrar.addFixedRateTask(createTask(TaskType.KEYA_APPLY, this::keyaApply, 30));
         taskRegistrar.addFixedRateTask(createTask(TaskType.KEYA_QUERY, this::keyaQuery, 10));
         taskRegistrar.addFixedRateTask(createTask(TaskType.MPR, this::mpr, 30));
+        taskRegistrar.addFixedRateTask(createTask(TaskType.SPINE_RECOG, this::spineRecognize, 10));
     }
 
     public void keyaApply() {
@@ -94,6 +104,15 @@ public class JobConfig implements SchedulingConfigurer {
         if (CollUtil.isNotEmpty(toDoTaskList)) {
             logTaskTotal(TaskType.MPR, toDoTaskList);
             toDoTaskList.forEach(task -> mprService.lockedAsyncMpr(task));
+        }
+    }
+
+    public void spineRecognize() {
+        PageKit.startPage(PageRequest.of(1, 5));
+        List<SpineRecogToDoTask> toDoTaskList = spineRecogTaskMapper.queryTodoTasks();
+        if (CollUtil.isNotEmpty(toDoTaskList)) {
+            logTaskTotal(TaskType.SPINE_RECOG, toDoTaskList);
+            toDoTaskList.forEach(task -> spineService.lockedAsyncApply(task));
         }
     }
 

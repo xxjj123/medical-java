@@ -52,7 +52,7 @@
                       ON a.study_id = b.study_id AND b.user_id = #{userId,jdbcType=VARCHAR}
         </if>
         <where>
-            EXISTS(SELECT 1 FROM tb_compute_series_info WHERE study_id = a.study_id)
+            EXISTS(SELECT 1 FROM tb_compute_series WHERE study_id = a.study_id)
             <if test="query.startDate != null">
                 AND a.study_date_and_time >= #{query.startDate, jdbcType=DATE}
             </if>
@@ -70,7 +70,7 @@
             </if>
             <if test="query.computeType != null or query.computeStatus != null">
                 AND EXISTS (SELECT 1
-                            FROM tb_compute_series_info
+                            FROM tb_compute_series
                 WHERE study_id = a.study_id
                 <if test="query.computeType != null">
                     AND compute_type = #{query.computeType,jdbcType=INTEGER}
@@ -108,7 +108,7 @@
                a.compute_status,
                a.operate_status,
                a.operate_doctor_user_id
-        FROM tb_compute_series_info a
+        FROM tb_compute_series a
                  JOIN tb_series_info b ON a.series_id = b.series_id
         <where>
             a.study_id IN

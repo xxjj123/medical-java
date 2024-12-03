@@ -14,7 +14,7 @@ import java.util.Date;
  */
 @Schema(description = "计算序列")
 @Data
-@TableName(value = "tb_compute_series_info")
+@TableName(value = "tb_compute_series")
 public class ComputeSeriesPO {
     /**
      * 计算序列ID

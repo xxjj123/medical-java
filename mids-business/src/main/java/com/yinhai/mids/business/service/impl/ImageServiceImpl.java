@@ -97,11 +97,16 @@ public class ImageServiceImpl implements ImageService {
         result.setStudyDateAndTime(studyInfo.getStudyDateAndTime());
 
         List<InstanceInfoPO> instanceInfoList = instanceInfoMapper.selectList(Wrappers.<InstanceInfoPO>lambdaQuery()
-                .select(InstanceInfoPO::getInstanceNumber, InstanceInfoPO::getSlicePosition, InstanceInfoPO::getViewIndex)
-                .eq(InstanceInfoPO::getSeriesId, seriesInfo.getSeriesId()));
+                .select(
+                        InstanceInfoPO::getInstanceId,
+                        InstanceInfoPO::getInstanceNumber,
+                        InstanceInfoPO::getSlicePosition,
+                        InstanceInfoPO::getViewIndex
+                ).eq(InstanceInfoPO::getSeriesId, seriesInfo.getSeriesId()));
         List<InstanceMetadata> instanceMetadataList = new ArrayList<>();
         for (InstanceInfoPO instanceInfoPO : instanceInfoList) {
             InstanceMetadata metadata = new InstanceMetadata();
+            metadata.setInstanceId(instanceInfoPO.getInstanceId());
             metadata.setInstanceNumber(instanceInfoPO.getInstanceNumber());
             metadata.setSlicePosition(instanceInfoPO.getSlicePosition());
             metadata.setViewIndex(instanceInfoPO.getViewIndex());
@@ -151,6 +156,20 @@ public class ImageServiceImpl implements ImageService {
         } catch (IOException e) {
             log.error(e, "下载3D模型异常，seriesId = {}, ", seriesId);
             throw new AppException("下载3D模型异常");
+        }
+    }
+
+    @Override
+    public void downloadDicom(String instanceId, HttpServletResponse response) {
+        InstanceInfoPO instanceInfo = instanceInfoMapper.selectOne(Wrappers.<InstanceInfoPO>lambdaQuery()
+                .select(InstanceInfoPO::getAccessPath)
+                .eq(InstanceInfoPO::getInstanceId, instanceId));
+        AppAssert.notNull(instanceInfo, "未找到DICOM文件");
+        try (InputStream in = fileStoreService.download(instanceInfo.getAccessPath())) {
+            ResponseExportUtil.exportFileWithStream(response, in, instanceId);
+        } catch (IOException e) {
+            log.error(e, "下载DICOM文件异常，instanceId = {}, ", instanceId);
+            throw new AppException("下载DICOM文件异常");
         }
     }
 }

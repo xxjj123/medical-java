@@ -84,7 +84,6 @@ public class MprServiceImpl implements MprService {
     private MprProperties mprProperties;
 
     @Override
-    @SuppressWarnings("unchecked")
     public void mpr(MprToDoTask mprTask) {
         ForestResponse<MprResponse> connectResponse = mprClient.health(mprProperties.getHealthUrl());
         if (connectResponse.isError()) {
@@ -277,7 +276,6 @@ public class MprServiceImpl implements MprService {
         mprSliceMapper.insert(mprSliceList);
     }
 
-    @SuppressWarnings("unchecked")
     private void updateAfterPushMprTaskStatus(Integer taskStatus, MprPushParam mprPushParam, Integer pushResult,
                                               String errorMessage) {
         MprTaskPO task = UpdateEntity.of(MprTaskPO.class);

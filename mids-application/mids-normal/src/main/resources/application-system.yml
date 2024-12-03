@@ -26,6 +26,8 @@ ta404:
       com.yinhai.mids.business.mapper.KeyaQueryTaskMapper.queryTodoTasks: ERROR
       com.yinhai.mids.business.mapper.MprTaskMapper.queryTodoTasks_COUNT: ERROR
       com.yinhai.mids.business.mapper.MprTaskMapper.queryTodoTasks: ERROR
+      com.yinhai.mids.business.mapper.SpineRecogTaskMapper.queryTodoTasks_COUNT: ERROR
+      com.yinhai.mids.business.mapper.SpineRecogTaskMapper.queryTodoTasks: ERROR
       com.yinhai: DEBUG
       org.springframework.boot: INFO
     appender-type:

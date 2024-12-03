@@ -22,7 +22,7 @@
                c.patient_age,
                c.study_date_and_time
         FROM tb_keya_apply_task a
-                 JOIN tb_compute_series_info b ON a.compute_series_id = b.compute_series_id
+                 JOIN tb_compute_series b ON a.compute_series_id = b.compute_series_id
                  JOIN tb_study_info c ON b.study_id = c.study_id
         WHERE (a.task_status = 0 OR (a.task_status = 1 AND a.apply_time &lt; now() - INTERVAL 20 MINUTE))
           AND NOT EXISTS(SELECT 1

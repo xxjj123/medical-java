@@ -9,6 +9,11 @@ import lombok.Data;
  */
 @Data
 public class InstanceMetadata {
+    /**
+     * 实例ID
+     */
+    @Schema(description = "实例ID")
+    private String instanceId;
 
     /**
      * InstanceNumber 实例顺序
