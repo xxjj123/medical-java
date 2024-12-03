@@ -28,6 +28,7 @@ ta404:
       com.yinhai.mids.business.mapper.MprTaskMapper.queryTodoTasks: ERROR
       com.yinhai.mids.business.mapper.SpineRecogTaskMapper.queryTodoTasks_COUNT: ERROR
       com.yinhai.mids.business.mapper.SpineRecogTaskMapper.queryTodoTasks: ERROR
+      com.yinhai.ta404.component.captcha.core.util.CacheUtil: ERROR
       com.yinhai: DEBUG
       org.springframework.boot: INFO
     appender-type:

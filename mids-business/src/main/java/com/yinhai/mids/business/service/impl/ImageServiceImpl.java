@@ -13,6 +13,7 @@ import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.service.ImageService;
 import com.yinhai.mids.common.exception.AppAssert;
+import com.yinhai.mids.common.module.mybatis.Columns;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.core.utils.ResponseExportUtil;
@@ -161,9 +162,7 @@ public class ImageServiceImpl implements ImageService {
 
     @Override
     public void downloadDicom(String instanceId, HttpServletResponse response) {
-        InstanceInfoPO instanceInfo = instanceInfoMapper.selectOne(Wrappers.<InstanceInfoPO>lambdaQuery()
-                .select(InstanceInfoPO::getAccessPath)
-                .eq(InstanceInfoPO::getInstanceId, instanceId));
+        InstanceInfoPO instanceInfo = instanceInfoMapper.selectColumnsById(instanceId, Columns.of(InstanceInfoPO::getAccessPath));
         AppAssert.notNull(instanceInfo, "未找到DICOM文件");
         try (InputStream in = fileStoreService.download(instanceInfo.getAccessPath())) {
             ResponseExportUtil.exportFileWithStream(response, in, instanceId);
