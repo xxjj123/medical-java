@@ -11,6 +11,7 @@ import com.yinhai.ta404.core.restservice.resultbean.Page;
 import com.yinhai.ta404.module.mybatis.mapper.Ta404SupportMapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -49,4 +50,17 @@ public interface SuperMapper<T> extends BaseMapper<T>, Ta404SupportMapper {
      * @param updateWrapper 实体对象封装操作类（可以为 null,里面的 entity 用于生成 where 语句）
      */
     int updateSetterInvoked(@Param(Constants.ENTITY) T entity, @Param(Constants.WRAPPER) Wrapper<T> updateWrapper);
+
+    /**
+     * 根据 ID 查询指定的列。例如
+     * <pre> {@code
+     * User user = userMapper.selectColumnsById(1, Wrappers.<User>lambdaQuery().select(User::getName, User::getAge));
+     * 或
+     * User user = userMapper.selectColumnsById(1, Columns.of(User::getName, User::getAge));
+     * }</pre>
+     *
+     * @param id           主键ID
+     * @param queryWrapper 用于设置指定的列，其它配置不生效
+     */
+    T selectColumnsById(@Param(SelectColumnsById.ID) Serializable id, @Param(Constants.WRAPPER) Wrapper<T> queryWrapper);
 }
