@@ -33,10 +33,12 @@ ta404:
       org.springframework.boot: INFO
     appender-type:
       file:
+        appender-loader-class: com.yinhai.mids.common.module.logback.RollingFileAppenderLoader
+        file: /u01/mids/backend/logs/current.log
         file-name-pattern: /u01/mids/backend/logs/file_%d{yyyy-MM-dd}_%i.log  # 文件地址
-        max-history: 30    # 文件最大保留天数
-        max-file-size: 1024MB    # 单个文件最大容量(单位可以是kb,mb,gb)
-        clear-size: 12GB    # 所有文件最大容量(单位可以是kb,mb,gb
+        max-history: 90    # 文件最大保留天数
+        max-file-Size: 32MB    # 单个文件最大容量(单位可以是kb,mb,gb)
+        clear-size: 16GB    # 所有文件最大容量(单位可以是kb,mb,gb
   modules:
     captcha:
       number-check-code-level: 5
