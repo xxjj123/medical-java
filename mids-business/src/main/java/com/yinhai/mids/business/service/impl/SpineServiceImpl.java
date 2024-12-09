@@ -23,7 +23,6 @@ import com.yinhai.mids.business.service.SpineService;
 import com.yinhai.mids.business.spine.SpineClient;
 import com.yinhai.mids.business.spine.SpineProperties;
 import com.yinhai.mids.business.spine.SpineResponse;
-import com.yinhai.mids.business.util.DicomUtil;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.module.mybatis.UpdateEntity;
 import com.yinhai.mids.common.util.JsonKit;
@@ -92,8 +91,7 @@ public class SpineServiceImpl implements SpineService {
 
         try {
             TaFSObject fsObject = fsManager.getObject("mids", instanceInfoList.get(0).getAccessPath());
-            String imageBase64 = DicomUtil.convertToImageBase64(fsObject.getInputstream());
-            ForestResponse<SpineResponse> resp = spineClient.getBoneInfo(spineProperties.getQueryUrl(), imageBase64);
+            ForestResponse<SpineResponse> resp = spineClient.getBoneInfo(spineProperties.getQueryUrl(), fsObject.getInputstream());
             if (resp.isError()) {
                 log.error("连接脊柱AI服务失败，请检查网络配置或脊柱AI服务是否正常");
                 return;
