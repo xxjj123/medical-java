@@ -26,24 +26,16 @@ import com.yinhai.mids.common.util.SecurityKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.core.utils.ResponseExportUtil;
-import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
-import org.dcm4che3.imageio.plugins.dcm.DicomImageReader;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
 import javax.servlet.http.HttpServletResponse;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.Base64;
-import java.util.Iterator;
 import java.util.List;
 
 @Service
@@ -138,18 +130,7 @@ public class SingleImageServiceImpl implements SingleImageService {
             throw new AppException("上传的不是单张文件");
         }
         File file = files.get(0);
-        Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("DICOM");
-        DicomImageReader reader=(DicomImageReader)readers.next();
-        reader.setInput(ImageIO.createImageInputStream(file));
-
-        BufferedImage image = reader.read(0, new DicomImageReadParam());
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "jpg", baos);  // 将图像写入 ByteArrayOutputStream
-        byte[] bytes = baos.toByteArray();  // 转换为字节数组
-        baos.close();
-        String base64 = Base64.getEncoder().encodeToString(bytes);
-
-        ForestResponse<SpineResponse> resp = spineClient.getBoneInfo(spineProperties.getQueryUrl(),base64 );
+        ForestResponse<SpineResponse> resp = spineClient.getBoneInfo(spineProperties.getQueryUrl(), FileUtil.getInputStream(file));
         if (resp.isError()) {
             log.error("连接AI服务失败，请检查网络配置或AI服务是否正常");
         }
