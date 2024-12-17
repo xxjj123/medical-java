@@ -39,6 +39,12 @@ public class ImageInitInfoVO {
     private Integer imageCount;
 
     /**
+     * 我的收藏
+     */
+    @Schema(description = "我的收藏")
+    private Boolean myFavorite;
+
+    /**
      * 横切面数量
      */
     @Schema(description = "横切面数量")

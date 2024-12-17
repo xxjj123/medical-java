@@ -14,6 +14,7 @@ import com.yinhai.mids.business.service.FileStoreService;
 import com.yinhai.mids.business.service.ImageService;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.module.mybatis.Columns;
+import com.yinhai.mids.common.util.SecurityKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
 import com.yinhai.ta404.core.utils.ResponseExportUtil;
@@ -37,6 +38,9 @@ import java.util.Map;
 public class ImageServiceImpl implements ImageService {
 
     private static final Log log = LogFactory.get();
+
+    @Resource
+    private FavoriteMapper favoriteMapper;
 
     @Resource
     private StudyInfoMapper studyInfoMapper;
@@ -76,6 +80,11 @@ public class ImageServiceImpl implements ImageService {
         result.setStudyId(studyInfo.getStudyId());
         result.setSeriesId(seriesInfo.getSeriesId());
         result.setImageCount(seriesInfo.getImageCount());
+
+        String currentUserId = SecurityKit.currentUserId();
+        boolean favoriteExists = favoriteMapper.exists(Wrappers.<FavoritePO>lambdaQuery()
+                .eq(FavoritePO::getStudyId, studyInfo.getStudyId()).eq(FavoritePO::getUserId, currentUserId));
+        result.setMyFavorite(favoriteExists);
 
         List<ViewCount> viewCounts = mprSliceMapper.queryViewTotal(seriesInfo.getSeriesId());
         Map<String, Integer> viewCountMap = new HashMap<>();
