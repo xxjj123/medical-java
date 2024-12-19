@@ -1,23 +1,26 @@
 package com.yinhai.mids.business.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.exceptions.ExceptionUtil;
+import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.dtflys.forest.http.ForestResponse;
 import com.yinhai.mids.business.constant.ComputeStatus;
+import com.yinhai.mids.business.constant.DiagnosisType;
 import com.yinhai.mids.business.constant.TaskType;
+import com.yinhai.mids.business.entity.dto.ManualDiagnosisParam;
 import com.yinhai.mids.business.entity.dto.SpineRecogToDoTask;
-import com.yinhai.mids.business.entity.po.ComputeSeriesPO;
-import com.yinhai.mids.business.entity.po.InstanceInfoPO;
-import com.yinhai.mids.business.entity.po.SpineRecogTaskPO;
+import com.yinhai.mids.business.entity.model.ReportCommon;
+import com.yinhai.mids.business.entity.po.*;
 import com.yinhai.mids.business.entity.vo.SpineInfoVO;
+import com.yinhai.mids.business.entity.vo.TextReportVO;
 import com.yinhai.mids.business.job.TaskLockManager;
-import com.yinhai.mids.business.mapper.ComputeSeriesMapper;
-import com.yinhai.mids.business.mapper.InstanceInfoMapper;
-import com.yinhai.mids.business.mapper.SpineRecogTaskMapper;
+import com.yinhai.mids.business.mapper.*;
 import com.yinhai.mids.business.service.ComputeSeriesService;
 import com.yinhai.mids.business.service.SpineService;
 import com.yinhai.mids.business.spine.SpineClient;
@@ -25,6 +28,7 @@ import com.yinhai.mids.business.spine.SpineProperties;
 import com.yinhai.mids.business.spine.SpineResponse;
 import com.yinhai.mids.common.exception.AppAssert;
 import com.yinhai.mids.common.module.mybatis.UpdateEntity;
+import com.yinhai.mids.common.util.DbClock;
 import com.yinhai.mids.common.util.JsonKit;
 import com.yinhai.ta404.core.exception.AppException;
 import com.yinhai.ta404.core.transaction.annotation.TaTransactional;
@@ -55,6 +59,15 @@ public class SpineServiceImpl implements SpineService {
 
     @Resource
     private ComputeSeriesMapper computeSeriesMapper;
+
+    @Resource
+    private ManualDiagnosisMapper manualDiagnosisMapper;
+
+    @Resource
+    private TextReportMapper textReportMapper;
+
+    @Resource
+    private StudyInfoMapper studyInfoMapper;
 
     @Resource
     private ComputeSeriesService computeSeriesService;
@@ -147,5 +160,102 @@ public class SpineServiceImpl implements SpineService {
         AppAssert.notBlank(spineRecogTaskPO.getRecogResponse(), "脊柱识别结果丢失！");
         spineInfoVO.setData(JsonKit.parseObject(spineRecogTaskPO.getRecogResponse(), SpineResponse.class).getTemplate());
         return spineInfoVO;
+    }
+
+    @Override
+    public void saveSpineManualDiagnosis(ManualDiagnosisParam manualDiagnosisParam) {
+        String computeSeriesId = manualDiagnosisParam.getComputeSeriesId();
+        ManualDiagnosisPO one = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()
+                .select(ManualDiagnosisPO::getId)
+                .eq(ManualDiagnosisPO::getType, DiagnosisType.FRAC)
+                .eq(ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
+        if (one != null) {
+            manualDiagnosisMapper.update(new ManualDiagnosisPO(), Wrappers.<ManualDiagnosisPO>lambdaUpdate()
+                    .eq(ManualDiagnosisPO::getId, one.getId())
+                    .eq(ManualDiagnosisPO::getType, DiagnosisType.FRAC)
+                    .set(ManualDiagnosisPO::getDiagnosis, manualDiagnosisParam.getDiagnosis())
+                    .set(ManualDiagnosisPO::getFinding, manualDiagnosisParam.getFinding())
+                    .set(ManualDiagnosisPO::getDiagnoseTime, DbClock.now()));
+        } else {
+            ManualDiagnosisPO manualDiagnosisPO = new ManualDiagnosisPO();
+            manualDiagnosisPO.setComputeSeriesId(computeSeriesId);
+            manualDiagnosisPO.setType(DiagnosisType.FRAC);
+            manualDiagnosisPO.setDiagnosis(manualDiagnosisParam.getDiagnosis());
+            manualDiagnosisPO.setFinding(manualDiagnosisParam.getFinding());
+            manualDiagnosisPO.setDiagnoseTime(DbClock.now());
+            manualDiagnosisMapper.insert(manualDiagnosisPO);
+        }
+    }
+
+    @Override
+    public TextReportVO queryTextReport(String computeSeriesId, Boolean reset) {
+        boolean resetReport = BooleanUtil.isTrue(reset);
+        if (resetReport) {
+            textReportMapper.delete(Wrappers.<TextReportPO>lambdaQuery()
+                    .eq(TextReportPO::getReportType, DiagnosisType.FRAC)
+                    .eq(TextReportPO::getComputeSeriesId, computeSeriesId));
+            return generateAndSaveTextReport(computeSeriesId);
+        }
+        TextReportPO textReportPO = textReportMapper.selectOne(Wrappers.<TextReportPO>lambdaQuery()
+                .eq(TextReportPO::getReportType, DiagnosisType.FRAC)
+                .eq(TextReportPO::getComputeSeriesId, computeSeriesId));
+        if (textReportPO != null) {
+            return BeanUtil.copyProperties(textReportPO, TextReportVO.class);
+        }
+        return generateAndSaveTextReport(computeSeriesId);
+    }
+
+    @Override
+    public void updateTextReport(TextReportVO textReportVO) {
+        textReportMapper.updateById(BeanUtil.copyProperties(textReportVO, TextReportPO.class));
+    }
+
+    private TextReportVO generateAndSaveTextReport(String computeSeriesId) {
+        ReportCommon reportCommon = queryReportCommon(computeSeriesId);
+        TextReportVO textReportVO = BeanUtil.copyProperties(reportCommon, TextReportVO.class);
+
+        TextReportPO reportPO = BeanUtil.copyProperties(textReportVO, TextReportPO.class);
+        reportPO.setReportType(DiagnosisType.FRAC);
+        textReportMapper.insert(reportPO);
+        textReportVO.setId(reportPO.getId());
+
+        return textReportVO;
+    }
+
+    private ReportCommon queryReportCommon(String computeSeriesId) {
+        ComputeSeriesPO computeSeries = computeSeriesMapper.selectOne(Wrappers.<ComputeSeriesPO>lambdaQuery()
+                .select(ComputeSeriesPO::getStudyId)
+                .eq(ComputeSeriesPO::getComputeSeriesId, computeSeriesId));
+        AppAssert.notNull(computeSeries, "该序列不存在！");
+        StudyInfoPO studyInfo = studyInfoMapper.selectById(computeSeries.getStudyId());
+        AppAssert.notNull(studyInfo, "该序列对应检查不存在！");
+
+        ManualDiagnosisPO manualDiagnosisPO = manualDiagnosisMapper.selectOne(Wrappers.<ManualDiagnosisPO>lambdaQuery()
+                .eq(ManualDiagnosisPO::getType, DiagnosisType.FRAC)
+                .eq(ManualDiagnosisPO::getComputeSeriesId, computeSeriesId));
+        AppAssert.notNull(manualDiagnosisPO, "该序列对应诊断不存在！");
+
+        ReportCommon reportCommon = new ReportCommon();
+        reportCommon.setComputeSeriesId(computeSeriesId);
+        reportCommon.setPatientId(studyInfo.getPatientId());
+        reportCommon.setAccessionNumber(studyInfo.getAccessionNumber());
+        reportCommon.setStudyDate(studyInfo.getStudyDateAndTime());
+        reportCommon.setPatientName(studyInfo.getPatientName());
+        String patientSex = studyInfo.getPatientSex();
+        if (StrUtil.equals(patientSex, "M")) {
+            reportCommon.setPatientSex("男");
+        } else if (StrUtil.equals(patientSex, "F")) {
+            reportCommon.setPatientSex("女");
+        } else {
+            reportCommon.setPatientSex("");
+        }
+        reportCommon.setPatientAge(studyInfo.getPatientAge());
+        reportCommon.setExaminedName("脊柱侧弯");
+        reportCommon.setFinding(manualDiagnosisPO.getFinding());
+        reportCommon.setDiagnosis(manualDiagnosisPO.getDiagnosis());
+        reportCommon.setReportDate(DbClock.now());
+        reportCommon.setReportDoctor("");
+        reportCommon.setAuditDoctor("");
+        return reportCommon;
     }
 }
